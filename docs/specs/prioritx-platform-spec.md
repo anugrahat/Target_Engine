@@ -41,6 +41,7 @@ For each indication:
 - inclusion and exclusion criteria
 - validation label sources
 - expected known-positive targets
+- a machine-readable benchmark pack in `configs/indications/` that passes `ruby scripts/validate_benchmark_packs.rb`
 
 ### 2. Data Contract Pack
 

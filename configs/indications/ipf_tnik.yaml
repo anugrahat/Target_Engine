@@ -1,0 +1,189 @@
+schema_version: "0.1.0"
+benchmark_id: ipf_tnik
+indication:
+  name: idiopathic pulmonary fibrosis
+  aliases:
+    - IPF
+  ontology_ids:
+    efo: null
+    mesh: null
+    doid: null
+status: verified
+primary_sources:
+  - title: A small-molecule TNIK inhibitor targets fibrosis in preclinical and clinical models
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC11738990/
+datasets:
+  - id: GSE93606
+    source: GEO
+    role: discovery
+    modality: transcriptomics
+    tissue: blood
+    case_group: ipf
+    control_group: healthy
+    sample_counts: null
+    status: verified
+    notes: Explicitly listed in the paper data availability section.
+  - id: GSE38958
+    source: GEO
+    role: discovery
+    modality: transcriptomics
+    tissue: blood
+    case_group: ipf
+    control_group: healthy
+    sample_counts: null
+    status: verified
+    notes: Explicitly listed in the paper data availability section.
+  - id: GSE28042
+    source: GEO
+    role: discovery
+    modality: transcriptomics
+    tissue: blood
+    case_group: ipf
+    control_group: healthy
+    sample_counts: null
+    status: verified
+    notes: Explicitly listed in the paper data availability section.
+  - id: GSE33566
+    source: GEO
+    role: discovery
+    modality: transcriptomics
+    tissue: blood
+    case_group: ipf
+    control_group: healthy
+    sample_counts: null
+    status: verified
+    notes: Explicitly listed in the paper data availability section.
+  - id: GSE101286
+    source: GEO
+    role: discovery
+    modality: transcriptomics
+    tissue: lung
+    case_group: ipf
+    control_group: healthy
+    sample_counts: null
+    status: verified
+    notes: Explicitly listed in the paper data availability section.
+  - id: GSE72073
+    source: GEO
+    role: discovery
+    modality: transcriptomics
+    tissue: lung
+    case_group: ipf
+    control_group: healthy
+    sample_counts: null
+    status: verified
+    notes: Explicitly listed in the paper data availability section.
+  - id: GSE150910
+    source: GEO
+    role: discovery
+    modality: transcriptomics
+    tissue: lung
+    case_group: ipf
+    control_group: healthy
+    sample_counts: null
+    status: verified
+    notes: Explicitly listed in the paper data availability section.
+  - id: GSE92592
+    source: GEO
+    role: discovery
+    modality: transcriptomics
+    tissue: lung
+    case_group: ipf
+    control_group: healthy
+    sample_counts: null
+    status: verified
+    notes: Explicitly listed in the paper data availability section.
+  - id: GSE52463
+    source: GEO
+    role: discovery
+    modality: transcriptomics
+    tissue: lung
+    case_group: ipf
+    control_group: healthy
+    sample_counts: null
+    status: verified
+    notes: Explicitly listed in the paper data availability section.
+  - id: GSE83717
+    source: GEO
+    role: discovery
+    modality: transcriptomics
+    tissue: lung
+    case_group: ipf
+    control_group: healthy
+    sample_counts: null
+    status: verified
+    notes: Explicitly listed in the paper data availability section.
+  - id: GSE21369
+    source: GEO
+    role: discovery
+    modality: transcriptomics
+    tissue: lung
+    case_group: ipf
+    control_group: healthy
+    sample_counts: null
+    status: verified
+    notes: Explicitly listed in the paper data availability section.
+  - id: GSE15197
+    source: GEO
+    role: discovery
+    modality: transcriptomics
+    tissue: lung
+    case_group: ipf
+    control_group: healthy
+    sample_counts: null
+    status: verified
+    notes: Explicitly listed in the paper data availability section.
+  - id: GSE99621
+    source: GEO
+    role: discovery
+    modality: transcriptomics
+    tissue: lung
+    case_group: ipf
+    control_group: healthy
+    sample_counts: null
+    status: verified
+    notes: Explicitly listed in the paper data availability section.
+  - id: GSE138283
+    source: GEO
+    role: discovery
+    modality: transcriptomics
+    tissue: lung
+    case_group: ipf
+    control_group: healthy
+    sample_counts: null
+    status: verified
+    notes: Explicitly listed in the paper data availability section.
+  - id: GSE24206
+    source: GEO
+    role: discovery
+    modality: transcriptomics
+    tissue: lung
+    case_group: ipf
+    control_group: healthy
+    sample_counts: null
+    status: verified
+    notes: Explicitly listed in the paper data availability section.
+  - id: GSE136831
+    source: GEO
+    role: follow_up_scRNA_seq
+    modality: single_cell_rna_seq
+    tissue: lung
+    case_group: ipf
+    control_group: healthy
+    sample_counts:
+      case: 32
+      control: 28
+    status: verified
+    notes: Used for scRNA-seq analysis and TNIK virtual knockout follow-up.
+validation:
+  experimental:
+    - multiple in vitro anti-fibrotic assays
+    - multiple in vivo fibrosis models
+  clinical:
+    - NCT05154240
+    - CTR20221542
+  notes: Target-to-molecule progression is unusually strong; benchmark labels must avoid leakage from later clinical outcomes.
+open_questions:
+  - Recover per-cohort case and control sample counts for the 15 discovery GEO datasets.
+  - Define contrast logic for blood versus lung cohorts.
+  - Decide how to benchmark TNIK discovery without using later phase I evidence as a discovery-time label.

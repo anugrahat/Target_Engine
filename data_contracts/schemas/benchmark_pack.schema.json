@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prioritx.local/schemas/benchmark_pack.schema.json",
+  "title": "PrioriTx Benchmark Pack",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "benchmark_id",
+    "indication",
+    "status",
+    "primary_sources",
+    "datasets",
+    "validation",
+    "open_questions"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "benchmark_id": {
+      "type": "string"
+    },
+    "indication": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "aliases": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "ontology_ids": {
+          "type": "object",
+          "additionalProperties": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "status": {
+      "type": "string",
+      "enum": ["verified", "partial"]
+    },
+    "primary_sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["title", "url"],
+        "properties": {
+          "title": { "type": "string" },
+          "url": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "datasets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "source", "role", "status"],
+        "properties": {
+          "id": { "type": ["string", "null"] },
+          "source": { "type": "string" },
+          "role": { "type": "string" },
+          "modality": { "type": ["string", "null"] },
+          "tissue": { "type": ["string", "null"] },
+          "case_group": { "type": ["string", "null"] },
+          "control_group": { "type": ["string", "null"] },
+          "sample_counts": {
+            "type": ["object", "null"],
+            "properties": {
+              "case": { "type": ["integer", "null"] },
+              "control": { "type": ["integer", "null"] }
+            },
+            "additionalProperties": false
+          },
+          "status": {
+            "type": "string",
+            "enum": ["verified", "partial"]
+          },
+          "notes": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "validation": {
+      "type": "object",
+      "properties": {
+        "experimental": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "clinical": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "notes": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "open_questions": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

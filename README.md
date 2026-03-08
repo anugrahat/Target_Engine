@@ -16,6 +16,8 @@ This repository is currently in the pre-implementation phase.
 - [docs/README.md](./docs/README.md)
 - [docs/research/case_studies/benchmark_readiness.md](./docs/research/case_studies/benchmark_readiness.md)
 - [docs/research/manifests/README.md](./docs/research/manifests/README.md)
+- [configs/indications/README.md](./configs/indications/README.md)
+- [data_contracts/schemas/benchmark_pack.schema.json](./data_contracts/schemas/benchmark_pack.schema.json)
 
 ## Benchmark Priority
 
@@ -31,3 +33,13 @@ Current benchmark ordering after source verification:
 - no implementation code yet
 - research, architecture, and benchmark specifications are in place
 - next milestone is turning the verified benchmark manifests into formal data contracts and scaffolded pipeline layout
+
+## Validation
+
+Benchmark packs in `configs/indications/` are the canonical machine-readable definitions for the first PrioriTx benchmark cases.
+
+Validate them with:
+
+```bash
+ruby scripts/validate_benchmark_packs.rb
+```

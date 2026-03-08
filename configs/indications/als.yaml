@@ -1,0 +1,148 @@
+schema_version: "0.1.0"
+benchmark_id: als_pandaomics
+indication:
+  name: amyotrophic lateral sclerosis
+  aliases:
+    - ALS
+  ontology_ids:
+    efo: null
+    mesh: null
+    doid: null
+status: partial
+primary_sources:
+  - title: Identification of Therapeutic Targets for Amyotrophic Lateral Sclerosis Using PandaOmics
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC9273868/
+datasets:
+  - id: E-MTAB-1925
+    source: ArrayExpress
+    role: discovery_cns
+    modality: transcriptomics
+    tissue: motor_cortex
+    case_group: fALS_C9orf72
+    control_group: matched_control
+    sample_counts:
+      case: 3
+      control: 3
+    status: verified
+    notes: Explicitly listed in Table 1 of the paper.
+  - id: A-MEXP-2246
+    source: ArrayExpress
+    role: control_reference
+    modality: transcriptomics
+    tissue: motor_cortex
+    case_group: null
+    control_group: matched_control
+    sample_counts:
+      case: null
+      control: null
+    status: verified
+    notes: Appears as the paired control reference in the Table 1 comparison.
+  - id: GSE67196
+    source: GEO
+    role: discovery_cns
+    modality: transcriptomics
+    tissue: cerebellum_or_frontal_cortex
+    case_group: fALS_or_sALS
+    control_group: matched_control
+    sample_counts: null
+    status: verified
+    notes: Used in multiple tissue-specific comparisons in Table 1.
+  - id: GSE68605
+    source: GEO
+    role: discovery_cns
+    modality: transcriptomics
+    tissue: motor_neurons
+    case_group: fALS_C9orf72
+    control_group: matched_control
+    sample_counts:
+      case: 8
+      control: 3
+    status: verified
+    notes: Explicitly listed in Table 1.
+  - id: GSE20589
+    source: GEO
+    role: discovery_cns
+    modality: transcriptomics
+    tissue: motor_neurons
+    case_group: fALS_SOD1
+    control_group: matched_control
+    sample_counts:
+      case: 3
+      control: 7
+    status: verified
+    notes: Explicitly listed in Table 1.
+  - id: GSE122649
+    source: GEO
+    role: discovery_cns
+    modality: transcriptomics
+    tissue: motor_cortex
+    case_group: sALS
+    control_group: matched_control
+    sample_counts:
+      case: 26
+      control: 12
+    status: verified
+    notes: Explicitly listed in Table 1.
+  - id: GSE124439
+    source: GEO
+    role: discovery_cns
+    modality: transcriptomics
+    tissue: frontal_cortex_or_motor_cortex
+    case_group: sALS
+    control_group: matched_control
+    sample_counts: null
+    status: verified
+    notes: Used in multiple tissue-specific comparisons in Table 1.
+  - id: GSE19332
+    source: GEO
+    role: discovery_cns
+    modality: transcriptomics
+    tissue: motor_neurons
+    case_group: sALS
+    control_group: matched_control
+    sample_counts:
+      case: 3
+      control: 7
+    status: verified
+    notes: Explicitly listed in Table 1.
+  - id: GSE76220
+    source: GEO
+    role: discovery_cns
+    modality: transcriptomics
+    tissue: spinal_motor_neurons
+    case_group: sALS
+    control_group: matched_control
+    sample_counts:
+      case: 13
+      control: 8
+    status: verified
+    notes: Explicitly listed in Table 1.
+  - id: Answer ALS transcriptomics
+    source: Answer ALS
+    role: discovery_diMN
+    modality: transcriptomics
+    tissue: induced_motor_neurons
+    case_group: fALS_or_sALS
+    control_group: control
+    sample_counts: null
+    status: partial
+    notes: Explicitly named in the paper, but not accession-coded in the verified text.
+  - id: Answer ALS proteomics
+    source: Answer ALS
+    role: discovery_diMN
+    modality: proteomics
+    tissue: induced_motor_neurons
+    case_group: fALS_or_sALS
+    control_group: control
+    sample_counts: null
+    status: partial
+    notes: Explicitly named in the paper, but not accession-coded in the verified text.
+validation:
+  experimental:
+    - Drosophila c9ALS rescue experiments
+  clinical: []
+  notes: Eight prioritized genes were reported to rescue neurodegeneration in the fly model.
+open_questions:
+  - Recover stable public identifiers and exact subsets for the Answer ALS data used in the study.
+  - Separate tissue-specific comparisons for GSE67196 and GSE124439 in the formal manifest.
+  - Define how Drosophila rescue should map to benchmark labels without overstating translational certainty.
