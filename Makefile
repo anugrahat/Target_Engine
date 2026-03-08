@@ -16,3 +16,7 @@ test:
 .PHONY: registry-summary
 registry-summary:
 	$(PYTHONPATH_RUN) $(PYTHON) -m prioritx_data.cli
+
+.PHONY: api-dev
+api-dev:
+	$(PYTHONPATH_RUN) $(PYTHON) apps/api/server.py

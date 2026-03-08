@@ -40,5 +40,9 @@ Implementation scaffold:
 
 - `packages/py/prioritx_data/registry.py`
   - Minimal loader for generated first-wave registry fixtures.
+- `packages/py/prioritx_data/service.py`
+  - Query layer for benchmarks, subsets, dataset manifests, and study contrasts.
+- `apps/api/server.py`
+  - Minimal dependency-free read-only HTTP API over the curated registry layer.
 - `tests/unit/test_registry.py`
   - Sanity checks that the registry fixtures are consumable by code.
