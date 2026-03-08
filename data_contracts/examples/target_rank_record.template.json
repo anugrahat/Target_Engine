@@ -1,0 +1,41 @@
+{
+  "schema_version": "0.1.0",
+  "record_status": "template",
+  "run_id": "template_only",
+  "benchmark_id": "ipf_tnik",
+  "indication_name": "idiopathic pulmonary fibrosis",
+  "target": {
+    "ensembl_gene_id": null,
+    "hgnc_symbol": "TNIK",
+    "uniprot_id": null,
+    "entrez_gene_id": null
+  },
+  "rank": null,
+  "total_score": null,
+  "score_direction": "higher_is_better",
+  "score_components": [
+    {
+      "feature_family": "transcriptomic_evidence",
+      "feature_name": "meta_differential_expression",
+      "raw_value": null,
+      "normalized_value": null,
+      "weight": null,
+      "contribution": null,
+      "evidence_refs": [
+        "configs/indications/ipf_tnik.yaml",
+        "data_contracts/examples/study_contrast.ipf_tnik_lung_bulk_discovery.json"
+      ]
+    }
+  ],
+  "risk_flags": [
+    "illustrative_template_only",
+    "not_a_real_ranked_output"
+  ],
+  "explanation_refs": [],
+  "provenance": {
+    "manifest_version": "0.1.0",
+    "feature_code_version": null,
+    "run_timestamp": null
+  },
+  "notes": "This template exists to lock the output contract shape without implying a real PrioriTx score before implementation."
+}

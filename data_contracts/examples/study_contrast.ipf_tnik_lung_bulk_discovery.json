@@ -1,0 +1,36 @@
+{
+  "schema_version": "0.1.0",
+  "contrast_id": "ipf_tnik_lung_bulk_discovery",
+  "benchmark_id": "ipf_tnik",
+  "dataset_ids": [
+    "GSE101286",
+    "GSE72073",
+    "GSE150910",
+    "GSE92592",
+    "GSE52463",
+    "GSE83717",
+    "GSE21369",
+    "GSE15197",
+    "GSE99621",
+    "GSE138283",
+    "GSE24206"
+  ],
+  "modality": "transcriptomics",
+  "tissue": "lung",
+  "case_definition": "Idiopathic pulmonary fibrosis lung tissue",
+  "control_definition": "Healthy lung tissue",
+  "analysis_unit": "bulk_rna",
+  "comparison_label": "IPF lung versus healthy lung across the discovery bulk-transcriptomic cohorts",
+  "sample_counts": null,
+  "inclusion_rule_summary": "Use only the 11 lung GEO datasets explicitly disclosed in the TNIK IPF paper as discovery-time inputs.",
+  "exclusion_rule_summary": "Do not mix blood datasets or the GSE136831 scRNA-seq follow-up into this contrast.",
+  "leakage_risks": [
+    "Do not use downstream clinical-trial evidence as a discovery-time label.",
+    "Do not merge blood and lung tissue into a single contrast without an explicit heterogeneity model."
+  ],
+  "status": "verified",
+  "provenance": {
+    "primary_source_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11738990/",
+    "notes": "The accession list is explicit in the paper, but per-dataset sample counts remain to be recovered."
+  }
+}

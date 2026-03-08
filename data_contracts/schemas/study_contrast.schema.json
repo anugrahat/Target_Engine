@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prioritx.local/schemas/study_contrast.schema.json",
+  "title": "PrioriTx Study Contrast",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "contrast_id",
+    "benchmark_id",
+    "dataset_ids",
+    "modality",
+    "tissue",
+    "case_definition",
+    "control_definition",
+    "analysis_unit",
+    "comparison_label",
+    "sample_counts",
+    "inclusion_rule_summary",
+    "exclusion_rule_summary",
+    "leakage_risks",
+    "status",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "contrast_id": { "type": "string" },
+    "benchmark_id": { "type": "string" },
+    "dataset_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "modality": { "type": "string" },
+    "tissue": { "type": ["string", "null"] },
+    "case_definition": { "type": "string" },
+    "control_definition": { "type": "string" },
+    "analysis_unit": {
+      "type": "string",
+      "enum": [
+        "bulk_rna",
+        "single_cell_pseudobulk",
+        "proteomics",
+        "supplementary_summary"
+      ]
+    },
+    "comparison_label": { "type": "string" },
+    "sample_counts": {
+      "type": ["object", "null"],
+      "properties": {
+        "case": { "type": ["integer", "null"] },
+        "control": { "type": ["integer", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "inclusion_rule_summary": { "type": "string" },
+    "exclusion_rule_summary": { "type": ["string", "null"] },
+    "leakage_risks": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["verified", "partial"]
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["primary_source_url", "notes"],
+      "properties": {
+        "primary_source_url": { "type": "string" },
+        "notes": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

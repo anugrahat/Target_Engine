@@ -1,0 +1,54 @@
+{
+  "schema_version": "0.1.0",
+  "dataset_id": "ipf_tnik_gse136831",
+  "benchmark_id": "ipf_tnik",
+  "accession": {
+    "database": "GEO",
+    "id": "GSE136831",
+    "url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE136831"
+  },
+  "source_publication_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11738990/",
+  "disease_context": {
+    "name": "idiopathic pulmonary fibrosis",
+    "ontology_ids": {
+      "efo": null,
+      "mesh": null,
+      "doid": null
+    }
+  },
+  "modality": "single_cell_rna_seq",
+  "tissue": "lung",
+  "platform": null,
+  "species": "Homo sapiens",
+  "role": "follow_up_scRNA_seq",
+  "sample_units": "subject_level_summary",
+  "cohorts": [
+    {
+      "cohort_id": "ipf",
+      "label": "IPF",
+      "case_control_status": "case",
+      "disease_subtype": null,
+      "sample_count": 32,
+      "status": "verified",
+      "notes": "Sample count reported in the paper for the scRNA-seq follow-up dataset."
+    },
+    {
+      "cohort_id": "healthy",
+      "label": "Healthy",
+      "case_control_status": "control",
+      "disease_subtype": null,
+      "sample_count": 28,
+      "status": "verified",
+      "notes": "Sample count reported in the paper for the scRNA-seq follow-up dataset."
+    }
+  ],
+  "manifest_status": "verified",
+  "provenance": {
+    "primary_source_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11738990/",
+    "extraction_method": "manual_from_primary_paper",
+    "extracted_from_section": "Data availability"
+  },
+  "open_questions": [
+    "Recover platform details and cell-level preprocessing choices from the underlying GEO record if this dataset enters pipeline execution."
+  ]
+}

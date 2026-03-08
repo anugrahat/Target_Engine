@@ -14,12 +14,16 @@ Documents:
   - Includes a benchmark readiness ranking so implementation starts with the strongest public evidence.
 - `research/manifests/`
   - Pre-implementation manifest stubs with verified datasets and unresolved gaps for the benchmark cases.
+- `../data_contracts/`
+  - Machine-readable schema layer for benchmark packs, dataset manifests, study contrasts, and rank outputs.
 - `architecture/prioritx-system-architecture.md`
   - Proposed end-to-end system design for PrioriTx.
 - `architecture/repository-layout.md`
   - Recommended repository and package structure.
 - `specs/prioritx-platform-spec.md`
   - Product, data, ML, API, and evaluation specs that gate implementation.
+- `specs/benchmark-evaluation-protocol.md`
+  - Benchmarking rules that prevent downstream translational success from leaking into discovery-time evaluation.
 
 Principles:
 

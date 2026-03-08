@@ -17,6 +17,7 @@ This repository is currently in the pre-implementation phase.
 - [docs/research/case_studies/benchmark_readiness.md](./docs/research/case_studies/benchmark_readiness.md)
 - [docs/research/manifests/README.md](./docs/research/manifests/README.md)
 - [configs/indications/README.md](./configs/indications/README.md)
+- [data_contracts/README.md](./data_contracts/README.md)
 - [data_contracts/schemas/benchmark_pack.schema.json](./data_contracts/schemas/benchmark_pack.schema.json)
 
 ## Benchmark Priority
@@ -42,4 +43,5 @@ Validate them with:
 
 ```bash
 ruby scripts/validate_benchmark_packs.rb
+ruby scripts/validate_contract_examples.rb
 ```

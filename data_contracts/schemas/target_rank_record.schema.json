@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prioritx.local/schemas/target_rank_record.schema.json",
+  "title": "PrioriTx Target Rank Record",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "record_status",
+    "run_id",
+    "benchmark_id",
+    "indication_name",
+    "target",
+    "rank",
+    "total_score",
+    "score_direction",
+    "score_components",
+    "risk_flags",
+    "explanation_refs",
+    "provenance",
+    "notes"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "record_status": {
+      "type": "string",
+      "enum": ["scored", "template"]
+    },
+    "run_id": { "type": "string" },
+    "benchmark_id": { "type": "string" },
+    "indication_name": { "type": "string" },
+    "target": {
+      "type": "object",
+      "required": ["ensembl_gene_id", "hgnc_symbol", "uniprot_id", "entrez_gene_id"],
+      "properties": {
+        "ensembl_gene_id": { "type": ["string", "null"] },
+        "hgnc_symbol": { "type": "string" },
+        "uniprot_id": { "type": ["string", "null"] },
+        "entrez_gene_id": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "rank": { "type": ["integer", "null"] },
+    "total_score": { "type": ["number", "null"] },
+    "score_direction": {
+      "type": "string",
+      "enum": ["higher_is_better"]
+    },
+    "score_components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "feature_family",
+          "feature_name",
+          "raw_value",
+          "normalized_value",
+          "weight",
+          "contribution",
+          "evidence_refs"
+        ],
+        "properties": {
+          "feature_family": { "type": "string" },
+          "feature_name": { "type": "string" },
+          "raw_value": { "type": ["number", "null"] },
+          "normalized_value": { "type": ["number", "null"] },
+          "weight": { "type": ["number", "null"] },
+          "contribution": { "type": ["number", "null"] },
+          "evidence_refs": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "risk_flags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "explanation_refs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["manifest_version", "feature_code_version", "run_timestamp"],
+      "properties": {
+        "manifest_version": { "type": ["string", "null"] },
+        "feature_code_version": { "type": ["string", "null"] },
+        "run_timestamp": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "notes": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}

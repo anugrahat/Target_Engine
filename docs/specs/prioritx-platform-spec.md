@@ -55,6 +55,12 @@ Required contracts:
 - `target_rank_record`
 - `explanation_record`
 
+The first contract milestone should ship:
+
+- schemas for `benchmark_pack`, `dataset_manifest`, `study_contrast`, and `target_rank_record`
+- validated example records for IPF and HCC
+- explicit template status for any non-scientific example output
+
 ### 3. Evaluation Protocol
 
 Must define:
@@ -64,6 +70,10 @@ Must define:
 - time-split evaluation where possible
 - ablations by evidence family
 - calibration checks on top-ranked targets
+
+Current source of truth:
+
+- `docs/specs/benchmark-evaluation-protocol.md`
 
 ## Scientific Requirements
 
