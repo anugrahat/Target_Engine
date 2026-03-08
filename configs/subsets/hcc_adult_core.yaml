@@ -1,0 +1,61 @@
+schema_version: "0.1.0"
+subset_id: hcc_adult_core
+benchmark_id: hcc_cdk20
+mode: curated_prioritx_subset
+objective: First-wave adult HCC benchmark subset that excludes hepatoblastoma and mixed liver-disease cohorts.
+readiness: candidate
+inclusion_principles:
+  - Prefer adult hepatocellular carcinoma cohorts with direct tumor versus liver comparator definitions.
+  - Exclude hepatoblastoma, mixed cirrhosis-HCC, or unresolved multiregional cohorts from the first-wave subset.
+  - Separate target-discovery ranking from downstream chemistry validation.
+included_datasets:
+  - id: GSE45267
+    source: GEO
+    selection_mode: direct
+    case_definition: Primary hepatocellular carcinoma tissue
+    control_definition: Non-cancerous liver tissue
+    sample_counts:
+      case: 48
+      control: 39
+    reason: Adult HCC tissue cohort with explicit case/control counts in the accession design.
+  - id: GSE60502
+    source: GEO
+    selection_mode: direct
+    case_definition: Hepatocellular carcinoma tissue
+    control_definition: Adjacent non-tumorous liver tissue
+    sample_counts:
+      case: 18
+      control: 18
+    reason: Paired adult HCC cohort with explicit accession-level counts.
+  - id: GSE77314
+    source: GEO
+    selection_mode: direct
+    case_definition: Hepatocellular carcinoma tumor tissue
+    control_definition: Paired normal liver tissue
+    sample_counts:
+      case: 50
+      control: 50
+    reason: RNA-seq cohort with explicit paired tumor-normal counts.
+  - id: TCGA-LIHC
+    source: GDC
+    selection_mode: curated_public_arm
+    case_definition: Primary tumor samples in TCGA-LIHC
+    control_definition: Solid tissue normal samples in TCGA-LIHC
+    sample_counts:
+      case: 377
+      control: 89
+    reason: Public GDC project arms are explicit and can be curated separately from the paper's aggregated counts.
+excluded_datasets:
+  - id: GSE36376
+    reason: Adult HCC cohort but per-arm counts remain unresolved in this pass.
+  - id: GSE107170
+    reason: Mixed HDV-HCC, HCV-HCC, HBV-HCC, and cirrhosis cohort rather than a clean adult HCC benchmark.
+  - id: GSE102079
+    reason: Public accession metadata was not sufficiently recovered in this pass to verify a clean comparator arm.
+  - id: GSE133039
+    reason: Hepatoblastoma, not adult HCC.
+  - id: GSE104766
+    reason: Hepatoblastoma-focused cohort, not adult HCC.
+  - id: E-MTAB-5905
+    reason: Treatment-naive multiregional HCC study with unresolved per-arm counts in the retrieved public metadata.
+notes: This curated subset is a PrioriTx design choice and is intentionally stricter than the paper's published cohort list.

@@ -13,11 +13,14 @@ Current contract layers:
   - one analysis-ready case vs control contrast definition
 - `schemas/target_rank_record.schema.json`
   - one ranked-target output record, including component-level provenance
+- `schemas/benchmark_subset.schema.json`
+  - one PrioriTx-curated admissible benchmark subset definition
 
 Validation:
 
 ```bash
 ruby scripts/validate_benchmark_packs.rb
+ruby scripts/validate_subset_configs.rb
 ruby scripts/validate_contract_examples.rb
 ```
 

@@ -24,6 +24,8 @@ Documents:
   - Product, data, ML, API, and evaluation specs that gate implementation.
 - `specs/benchmark-evaluation-protocol.md`
   - Benchmarking rules that prevent downstream translational success from leaking into discovery-time evaluation.
+- `specs/first_wave_benchmark_subsets.md`
+  - Curated first-wave cohort subsets that are stricter than the paper-disclosed benchmark packs.
 
 Principles:
 

@@ -60,6 +60,7 @@ The first contract milestone should ship:
 - schemas for `benchmark_pack`, `dataset_manifest`, `study_contrast`, and `target_rank_record`
 - validated example records for IPF and HCC
 - explicit template status for any non-scientific example output
+- curated first-wave benchmark subsets for cases whose paper-disclosed cohort lists are too heterogeneous to benchmark directly
 
 ### 3. Evaluation Protocol
 

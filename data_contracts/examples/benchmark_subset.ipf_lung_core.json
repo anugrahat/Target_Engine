@@ -1,0 +1,122 @@
+{
+  "schema_version": "0.1.0",
+  "subset_id": "ipf_lung_core",
+  "benchmark_id": "ipf_tnik",
+  "mode": "curated_prioritx_subset",
+  "objective": "First-wave lung-tissue IPF benchmark subset with the cleanest publicly recoverable case-control definitions.",
+  "readiness": "candidate",
+  "inclusion_principles": [
+    "Prefer direct IPF lung versus control lung contrasts.",
+    "Exclude longitudinal-only, blood-only, mixed-ILD, or unresolved multi-arm studies from the first-wave subset.",
+    "Keep scRNA-seq follow-up separate from bulk discovery benchmarking."
+  ],
+  "included_datasets": [
+    {
+      "id": "GSE52463",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Idiopathic pulmonary fibrosis lung tissue",
+      "control_definition": "Healthy control lung tissue",
+      "sample_counts": {
+        "case": 8,
+        "control": 7
+      },
+      "reason": "Direct lung case-control RNA-seq cohort with explicit counts."
+    },
+    {
+      "id": "GSE72073",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Idiopathic pulmonary fibrosis lung tissue",
+      "control_definition": "Normal-control lung tissue from patients with primary spontaneous pneumothorax",
+      "sample_counts": {
+        "case": 5,
+        "control": 3
+      },
+      "reason": "Direct lung case-control microarray cohort with explicit counts, though the control source is not healthy donor lung."
+    },
+    {
+      "id": "GSE92592",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Idiopathic pulmonary fibrosis lung tissue",
+      "control_definition": "Control lung tissue",
+      "sample_counts": {
+        "case": 20,
+        "control": 19
+      },
+      "reason": "Direct IPF versus control lung RNA-seq cohort from LTRC with explicit counts."
+    },
+    {
+      "id": "GSE24206",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Idiopathic pulmonary fibrosis lung tissue",
+      "control_definition": "Healthy donor lungs collected at transplantation",
+      "sample_counts": {
+        "case": 17,
+        "control": 6
+      },
+      "reason": "Direct IPF versus healthy-donor lung comparison with explicit counts; repeated lobe sampling remains a known caveat."
+    },
+    {
+      "id": "GSE138283",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Idiopathic pulmonary fibrosis lung biopsy samples",
+      "control_definition": "Age-matched control lungs",
+      "sample_counts": {
+        "case": 28,
+        "control": 20
+      },
+      "reason": "Direct IPF biopsy versus age-matched control cohort with explicit counts."
+    }
+  ],
+  "excluded_datasets": [
+    {
+      "id": "GSE93606",
+      "reason": "Blood cohort with longitudinal follow-up rather than a simple first-wave lung benchmark."
+    },
+    {
+      "id": "GSE38958",
+      "reason": "Blood PBMC case-control cohort kept separate from the first-wave lung subset."
+    },
+    {
+      "id": "GSE28042",
+      "reason": "Replication cohort without a clean control arm in the accession-level design text."
+    },
+    {
+      "id": "GSE33566",
+      "reason": "Blood transcriptome cohort kept separate from the first-wave lung subset."
+    },
+    {
+      "id": "GSE101286",
+      "reason": "Chronic fibrosing IIP cohort rather than a clean IPF-only case-control series."
+    },
+    {
+      "id": "GSE150910",
+      "reason": "Includes CHP and IPF; admissible later with explicit subsetting, but excluded from the simplest first-wave subset."
+    },
+    {
+      "id": "GSE83717",
+      "reason": "Case-count discrepancy between GEO summary and overall design remains unresolved."
+    },
+    {
+      "id": "GSE21369",
+      "reason": "Mixed ILD cohort with only a UIP/IPF subset."
+    },
+    {
+      "id": "GSE15197",
+      "reason": "IPF with secondary pulmonary hypertension plus a separate PAH arm."
+    },
+    {
+      "id": "GSE99621",
+      "reason": "Affected, unaffected, and healthy-control regions are mixed without subgroup counts in the accession text."
+    },
+    {
+      "id": "GSE136831",
+      "reason": "Single-cell follow-up dataset reserved for mechanistic localization, not first-wave bulk discovery benchmarking."
+    }
+  ],
+  "notes": "This is a PrioriTx curation artifact, not a claim that the paper itself used only these datasets."
+}
