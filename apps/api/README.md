@@ -19,3 +19,4 @@ Current routes:
 - `/subsets/{subset_id}`
 - `/dataset-manifests`
 - `/study-contrasts`
+- `/contrast-readiness`

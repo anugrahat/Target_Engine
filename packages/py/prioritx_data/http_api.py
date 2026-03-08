@@ -6,6 +6,7 @@ from typing import Any
 
 from prioritx_data.service import (
     benchmark_index,
+    contrast_readiness_scores,
     get_subset,
     list_benchmark_subsets,
     query_dataset_manifests,
@@ -30,6 +31,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
                 "/subsets/{subset_id}",
                 "/dataset-manifests",
                 "/study-contrasts",
+                "/contrast-readiness",
             ],
         }
 
@@ -66,6 +68,16 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
     if path == "/study-contrasts":
         return 200, {
             "items": query_study_contrasts(
+                benchmark_id=_single(query, "benchmark_id"),
+                subset_id=_single(query, "subset_id"),
+                tissue=_single(query, "tissue"),
+                modality=_single(query, "modality"),
+            )
+        }
+
+    if path == "/contrast-readiness":
+        return 200, {
+            "items": contrast_readiness_scores(
                 benchmark_id=_single(query, "benchmark_id"),
                 subset_id=_single(query, "subset_id"),
                 tissue=_single(query, "tissue"),

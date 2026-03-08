@@ -4,6 +4,7 @@ import unittest
 
 from prioritx_data.service import (
     benchmark_index,
+    contrast_readiness_scores,
     get_subset,
     list_benchmark_subsets,
     query_dataset_manifests,
@@ -35,6 +36,11 @@ class RegistryServiceTests(unittest.TestCase):
         rows = {row["benchmark_id"]: row for row in benchmark_index()}
         self.assertEqual(["hcc_adult_core"], rows["hcc_cdk20"]["subset_ids"])
         self.assertEqual(["ipf_lung_core"], rows["ipf_tnik"]["subset_ids"])
+
+    def test_returns_sorted_contrast_readiness_scores(self) -> None:
+        items = contrast_readiness_scores(subset_id="hcc_adult_core")
+        self.assertEqual(4, len(items))
+        self.assertGreaterEqual(items[0]["score"], items[-1]["score"])
 
 
 if __name__ == "__main__":

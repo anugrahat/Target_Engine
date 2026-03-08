@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import Any
 
 from prioritx_data.registry import RegistryArtifact, list_dataset_manifests, list_study_contrasts, repo_root
+from prioritx_features.transcriptomics import derive_contrast_quality_features
+from prioritx_rank.baseline import score_contrast_readiness
 
 
 def _subset_example_dir() -> Path:
@@ -94,3 +96,25 @@ def benchmark_index() -> list[dict[str, Any]]:
             }
         )
     return rows
+
+
+def contrast_readiness_scores(
+    *,
+    benchmark_id: str | None = None,
+    subset_id: str | None = None,
+    tissue: str | None = None,
+    modality: str | None = None,
+) -> list[dict[str, Any]]:
+    """Compute metadata-derived readiness scores for filtered study contrasts."""
+    contrasts = query_study_contrasts(
+        benchmark_id=benchmark_id,
+        subset_id=subset_id,
+        tissue=tissue,
+        modality=modality,
+    )
+    scored = [
+        score_contrast_readiness(derive_contrast_quality_features(contrast))
+        for contrast in contrasts
+    ]
+    scored.sort(key=lambda item: item["score"], reverse=True)
+    return scored

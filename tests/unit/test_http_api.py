@@ -26,6 +26,12 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(200, status)
         self.assertEqual(4, len(payload["items"]))
 
+    def test_contrast_readiness_route(self) -> None:
+        status, payload = handle_get("/contrast-readiness", {"subset_id": ["ipf_lung_core"]})
+        self.assertEqual(200, status)
+        self.assertEqual(5, len(payload["items"]))
+        self.assertIn("score", payload["items"][0])
+
     def test_unknown_route_returns_404(self) -> None:
         status, payload = handle_get("/does-not-exist", {})
         self.assertEqual(404, status)
