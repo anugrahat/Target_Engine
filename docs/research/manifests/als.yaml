@@ -1,0 +1,32 @@
+indication: amyotrophic_lateral_sclerosis
+case_name: als_pandaomics
+manifest_readiness: medium_high
+primary_source: https://pmc.ncbi.nlm.nih.gov/articles/PMC9273868/
+explicit_cns_datasets:
+  - E-MTAB-1925
+  - A-MEXP-2246
+  - GSE67196
+  - GSE68605
+  - GSE20589
+  - GSE122649
+  - GSE124439
+  - GSE19332
+  - GSE76220
+explicit_imn_data_resources:
+  - Answer ALS transcriptomics
+  - Answer ALS proteomics
+experimental_validation:
+  model: drosophila_c9ALS
+  validated_genes:
+    - KCNB2
+    - KCNS3
+    - ADRA2B
+    - NR3C1
+    - P2RY14
+    - PPP3CB
+    - PTPRC
+    - RARA
+unresolved:
+  - accession-level recovery or stable public identifiers for Answer ALS components used in the study
+  - exact per-comparison inclusion logic and subgroup definitions
+  - mapping validation labels from fly rescue to benchmark outcome targets

@@ -1,0 +1,5 @@
+- Project is still greenfield. There is no implementation code yet.
+- Repo currently contains design artifacts, downloaded PandaOmics reference files, and the new `docs/` specification set.
+- Primary persistent project scope is now written into `AGENTS.md`.
+- Current work fits under research and benchmark verification, not implementation.
+- The next feature area is best described as `verify_scientific_accuracy`.

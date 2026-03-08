@@ -1,0 +1,24 @@
+# OS / editor
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Node
+node_modules/
+
+# Local automation artifacts
+.playwright-cli/
+
+# Research scratch
+tmp/
+
+# Future generated outputs
+artifacts/
+output/

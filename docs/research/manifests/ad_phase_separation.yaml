@@ -1,0 +1,23 @@
+indication: alzheimers_disease
+case_name: ad_phase_separation
+manifest_readiness: medium
+primary_source: https://pmc.ncbi.nlm.nih.gov/articles/PMC10556643/
+verified_study_design:
+  disease_landscape:
+    diseases: 64
+    disease_groups: 10
+  supplemental_datasets:
+    - Dataset S1
+    - Dataset S2
+    - Dataset S3
+ad_targets_highlighted:
+  - CAMKK2
+  - MARCKS
+  - SQSTM1
+experimental_validation:
+  - SH-SY5Y with exogenous Aβ42
+  - hiPSC-derived neurons carrying APP Swe
+unresolved:
+  - accession-level recovery from Dataset S1, Dataset S2, and Dataset S3
+  - mapping Alzheimer's-specific discovery collections from the cross-disease screen
+  - separating disease-landscape claims from AD-specific benchmark construction

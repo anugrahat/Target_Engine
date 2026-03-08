@@ -1,0 +1,32 @@
+indication: idiopathic_pulmonary_fibrosis
+case_name: ipf_tnik
+manifest_readiness: high
+primary_source: https://pmc.ncbi.nlm.nih.gov/articles/PMC11738990/
+discovery_datasets:
+  blood:
+    - GSE93606
+    - GSE38958
+    - GSE28042
+    - GSE33566
+  lung:
+    - GSE101286
+    - GSE72073
+    - GSE150910
+    - GSE92592
+    - GSE52463
+    - GSE83717
+    - GSE21369
+    - GSE15197
+    - GSE99621
+    - GSE138283
+    - GSE24206
+follow_up_datasets:
+  scRNA_seq:
+    - GSE136831
+clinical_validation:
+  - NCT05154240
+  - CTR20221542
+unresolved:
+  - per-cohort case_control contrast definitions
+  - harmonization and inclusion logic across the 15 discovery GEO cohorts
+  - benchmark-label design without leaking later clinical progress
