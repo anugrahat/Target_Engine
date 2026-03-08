@@ -1,0 +1,28 @@
+{
+  "schema_version": "0.1.0",
+  "contrast_id": "hcc_adult_core_gse45267",
+  "benchmark_id": "hcc_cdk20",
+  "dataset_ids": [
+    "GSE45267"
+  ],
+  "modality": "transcriptomics",
+  "tissue": "liver",
+  "case_definition": "Primary hepatocellular carcinoma tissue",
+  "control_definition": "Non-cancerous liver tissue",
+  "analysis_unit": "bulk_rna",
+  "comparison_label": "GSE45267 curated first-wave contrast",
+  "sample_counts": {
+    "case": 48,
+    "control": 39
+  },
+  "inclusion_rule_summary": "Included in curated subset hcc_adult_core because adult hcc tissue cohort with explicit case/control counts in the accession design.",
+  "exclusion_rule_summary": "Restrict the contrast to the curated case and control arms defined in configs/subsets/hcc_adult_core.yaml.",
+  "leakage_risks": [
+    "Do not use downstream validation outcomes as discovery-time features."
+  ],
+  "status": "verified",
+  "provenance": {
+    "primary_source_url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE45267",
+    "notes": "Generated from curated subset hcc_adult_core."
+  }
+}

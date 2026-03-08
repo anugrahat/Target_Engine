@@ -1,0 +1,29 @@
+{
+  "schema_version": "0.1.0",
+  "contrast_id": "hcc_adult_core_tcga_lihc",
+  "benchmark_id": "hcc_cdk20",
+  "dataset_ids": [
+    "TCGA-LIHC"
+  ],
+  "modality": "transcriptomics",
+  "tissue": "liver",
+  "case_definition": "Primary tumor samples in TCGA-LIHC",
+  "control_definition": "Solid tissue normal samples in TCGA-LIHC",
+  "analysis_unit": "bulk_rna",
+  "comparison_label": "TCGA-LIHC curated first-wave contrast",
+  "sample_counts": {
+    "case": 377,
+    "control": 89
+  },
+  "inclusion_rule_summary": "Included in curated subset hcc_adult_core because public gdc project arms are explicit and can be curated separately from the paper's aggregated counts.",
+  "exclusion_rule_summary": "Restrict the contrast to the curated case and control arms defined in configs/subsets/hcc_adult_core.yaml.",
+  "leakage_risks": [
+    "Do not use downstream validation outcomes as discovery-time features.",
+    "The comparator arm is derived from a curated public project arm rather than the exact paper-level aggregate."
+  ],
+  "status": "verified",
+  "provenance": {
+    "primary_source_url": "https://portal.gdc.cancer.gov/projects/TCGA-LIHC",
+    "notes": "Generated from curated subset hcc_adult_core."
+  }
+}

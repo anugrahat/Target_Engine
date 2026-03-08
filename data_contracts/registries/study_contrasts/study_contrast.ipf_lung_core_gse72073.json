@@ -1,0 +1,29 @@
+{
+  "schema_version": "0.1.0",
+  "contrast_id": "ipf_lung_core_gse72073",
+  "benchmark_id": "ipf_tnik",
+  "dataset_ids": [
+    "GSE72073"
+  ],
+  "modality": "transcriptomics",
+  "tissue": "lung",
+  "case_definition": "Idiopathic pulmonary fibrosis lung tissue",
+  "control_definition": "Normal-control lung tissue from patients with primary spontaneous pneumothorax",
+  "analysis_unit": "bulk_rna",
+  "comparison_label": "GSE72073 curated first-wave contrast",
+  "sample_counts": {
+    "case": 5,
+    "control": 3
+  },
+  "inclusion_rule_summary": "Included in curated subset ipf_lung_core because direct lung case-control microarray cohort with explicit counts, though the control source is not healthy donor lung.",
+  "exclusion_rule_summary": "Restrict the contrast to the curated case and control arms defined in configs/subsets/ipf_lung_core.yaml.",
+  "leakage_risks": [
+    "Do not use downstream validation outcomes as discovery-time features.",
+    "The comparator arm comes from pneumothorax tissue rather than healthy donor lung."
+  ],
+  "status": "verified",
+  "provenance": {
+    "primary_source_url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE72073",
+    "notes": "Generated from curated subset ipf_lung_core."
+  }
+}

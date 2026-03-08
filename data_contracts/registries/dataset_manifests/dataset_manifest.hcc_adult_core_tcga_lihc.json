@@ -1,0 +1,54 @@
+{
+  "schema_version": "0.1.0",
+  "dataset_id": "hcc_adult_core_tcga_lihc",
+  "benchmark_id": "hcc_cdk20",
+  "accession": {
+    "database": "GDC",
+    "id": "TCGA-LIHC",
+    "url": "https://portal.gdc.cancer.gov/projects/TCGA-LIHC"
+  },
+  "source_publication_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9906638/",
+  "disease_context": {
+    "name": "hepatocellular carcinoma",
+    "ontology_ids": {
+      "efo": null,
+      "mesh": null,
+      "doid": null
+    }
+  },
+  "modality": "transcriptomics",
+  "tissue": "liver",
+  "platform": null,
+  "species": "Homo sapiens",
+  "role": "discovery",
+  "sample_units": "bulk_sample",
+  "cohorts": [
+    {
+      "cohort_id": "case",
+      "label": "Primary tumor samples in TCGA-LIHC",
+      "case_control_status": "case",
+      "disease_subtype": null,
+      "sample_count": 377,
+      "status": "verified",
+      "notes": "Public GDC project arms are explicit and can be curated separately from the paper's aggregated counts."
+    },
+    {
+      "cohort_id": "control",
+      "label": "Solid tissue normal samples in TCGA-LIHC",
+      "case_control_status": "control",
+      "disease_subtype": null,
+      "sample_count": 89,
+      "status": "verified",
+      "notes": "The comparator arm is derived from a curated public project arm rather than the exact paper-level aggregate."
+    }
+  ],
+  "manifest_status": "verified",
+  "provenance": {
+    "primary_source_url": "https://portal.gdc.cancer.gov/projects/TCGA-LIHC",
+    "extraction_method": "generated_from_curated_subset_config",
+    "extracted_from_section": "configs/subsets/hcc_adult_core.yaml"
+  },
+  "open_questions": [
+    "Cross-check the generated registry record against the benchmark-pack note: Explicitly listed in Materials and methods, but this pass did not map the paper's aggregate counts back to the TCGA-LIHC arm definitions."
+  ]
+}

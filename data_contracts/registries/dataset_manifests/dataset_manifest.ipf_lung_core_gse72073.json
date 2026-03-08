@@ -1,0 +1,54 @@
+{
+  "schema_version": "0.1.0",
+  "dataset_id": "ipf_lung_core_gse72073",
+  "benchmark_id": "ipf_tnik",
+  "accession": {
+    "database": "GEO",
+    "id": "GSE72073",
+    "url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE72073"
+  },
+  "source_publication_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11738990/",
+  "disease_context": {
+    "name": "idiopathic pulmonary fibrosis",
+    "ontology_ids": {
+      "efo": null,
+      "mesh": null,
+      "doid": null
+    }
+  },
+  "modality": "transcriptomics",
+  "tissue": "lung",
+  "platform": null,
+  "species": "Homo sapiens",
+  "role": "discovery",
+  "sample_units": "bulk_sample",
+  "cohorts": [
+    {
+      "cohort_id": "case",
+      "label": "Idiopathic pulmonary fibrosis lung tissue",
+      "case_control_status": "case",
+      "disease_subtype": null,
+      "sample_count": 5,
+      "status": "verified",
+      "notes": "Direct lung case-control microarray cohort with explicit counts, though the control source is not healthy donor lung."
+    },
+    {
+      "cohort_id": "control",
+      "label": "Normal-control lung tissue from patients with primary spontaneous pneumothorax",
+      "case_control_status": "control",
+      "disease_subtype": null,
+      "sample_count": 3,
+      "status": "verified",
+      "notes": "The comparator arm comes from pneumothorax tissue rather than healthy donor lung."
+    }
+  ],
+  "manifest_status": "verified",
+  "provenance": {
+    "primary_source_url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE72073",
+    "extraction_method": "generated_from_curated_subset_config",
+    "extracted_from_section": "configs/subsets/ipf_lung_core.yaml"
+  },
+  "open_questions": [
+    "Cross-check the generated registry record against the benchmark-pack note: GEO overall design reports 5 IPF lung tissues and 3 normal-control lung tissues from patients with primary spontaneous pneumothorax."
+  ]
+}

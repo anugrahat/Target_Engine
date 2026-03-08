@@ -1,0 +1,28 @@
+{
+  "schema_version": "0.1.0",
+  "contrast_id": "ipf_lung_core_gse138283",
+  "benchmark_id": "ipf_tnik",
+  "dataset_ids": [
+    "GSE138283"
+  ],
+  "modality": "transcriptomics",
+  "tissue": "lung",
+  "case_definition": "Idiopathic pulmonary fibrosis lung biopsy samples",
+  "control_definition": "Age-matched control lungs",
+  "analysis_unit": "bulk_rna",
+  "comparison_label": "GSE138283 curated first-wave contrast",
+  "sample_counts": {
+    "case": 28,
+    "control": 20
+  },
+  "inclusion_rule_summary": "Included in curated subset ipf_lung_core because direct ipf biopsy versus age-matched control cohort with explicit counts.",
+  "exclusion_rule_summary": "Restrict the contrast to the curated case and control arms defined in configs/subsets/ipf_lung_core.yaml.",
+  "leakage_risks": [
+    "Do not use downstream validation outcomes as discovery-time features."
+  ],
+  "status": "verified",
+  "provenance": {
+    "primary_source_url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE138283",
+    "notes": "Generated from curated subset ipf_lung_core."
+  }
+}

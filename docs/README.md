@@ -26,6 +26,8 @@ Documents:
   - Benchmarking rules that prevent downstream translational success from leaking into discovery-time evaluation.
 - `specs/first_wave_benchmark_subsets.md`
   - Curated first-wave cohort subsets that are stricter than the paper-disclosed benchmark packs.
+- `../data_contracts/registries/`
+  - Generated registry fixtures that turn curated subset decisions into implementation-ready dataset manifests and study contrasts.
 
 Principles:
 

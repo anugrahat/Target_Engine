@@ -46,4 +46,5 @@ Validate them with:
 ruby scripts/validate_benchmark_packs.rb
 ruby scripts/validate_subset_configs.rb
 ruby scripts/validate_contract_examples.rb
+ruby scripts/validate_registry_artifacts.rb
 ```

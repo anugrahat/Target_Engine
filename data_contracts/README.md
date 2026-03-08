@@ -15,6 +15,8 @@ Current contract layers:
   - one ranked-target output record, including component-level provenance
 - `schemas/benchmark_subset.schema.json`
   - one PrioriTx-curated admissible benchmark subset definition
+- `registries/`
+  - generated first-wave dataset-manifest and study-contrast fixtures
 
 Validation:
 
@@ -22,6 +24,8 @@ Validation:
 ruby scripts/validate_benchmark_packs.rb
 ruby scripts/validate_subset_configs.rb
 ruby scripts/validate_contract_examples.rb
+ruby scripts/generate_first_wave_registry.rb
+ruby scripts/validate_registry_artifacts.rb
 ```
 
 Conventions:
