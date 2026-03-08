@@ -32,9 +32,9 @@ Current benchmark ordering after source verification:
 
 ## Repository Status
 
-- no implementation code yet
-- research, architecture, and benchmark specifications are in place
-- next milestone is turning the verified benchmark manifests into formal data contracts and scaffolded pipeline layout
+- monorepo scaffolding is in place for Python packages, pipelines, apps, infra, and tests
+- research, architecture, benchmark packs, curated subsets, and generated registry fixtures are in place
+- next milestone is implementing the dataset-registry and contrast-registry service layer on top of the generated fixtures
 
 ## Validation
 
@@ -46,5 +46,7 @@ Validate them with:
 ruby scripts/validate_benchmark_packs.rb
 ruby scripts/validate_subset_configs.rb
 ruby scripts/validate_contract_examples.rb
+ruby scripts/generate_first_wave_registry.rb
 ruby scripts/validate_registry_artifacts.rb
+PYTHONPATH=packages/py python3 -m unittest discover -s tests/unit -p 'test_*.py'
 ```

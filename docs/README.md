@@ -35,3 +35,10 @@ Principles:
 - Distinguish verified literature claims from our design choices.
 - Make dataset lineage explicit at the accession level for every indication.
 - Optimize for scientific traceability, not just model novelty.
+
+Implementation scaffold:
+
+- `packages/py/prioritx_data/registry.py`
+  - Minimal loader for generated first-wave registry fixtures.
+- `tests/unit/test_registry.py`
+  - Sanity checks that the registry fixtures are consumable by code.

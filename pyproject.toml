@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "prioritx"
+version = "0.1.0"
+description = "PrioriTx registry and benchmark scaffolding"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Proprietary"}
+authors = [
+  {name = "PrioriTx"}
+]
+dependencies = []
+
+[project.scripts]
+prioritx-registry-summary = "prioritx_data.cli:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-dir]
+"" = "packages/py"
+
+[tool.setuptools.packages.find]
+where = ["packages/py"]
+include = ["prioritx_core", "prioritx_data"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
