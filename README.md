@@ -36,7 +36,8 @@ Current benchmark ordering after source verification:
 - research, architecture, benchmark packs, curated subsets, generated registry fixtures, and a minimal read-only registry API are in place
 - a first metadata-derived transcriptomics readiness layer is in place over curated study contrasts
 - the read-only API also exposes metadata-derived contrast readiness scores
-- next milestone is implementing real expression-derived feature ingestion on top of the curated dataset and contrast registry layer
+- illustrative transcriptomics gene-stat fixtures and scoring scaffolds are in place for two curated contrasts
+- next milestone is replacing the illustrative fixtures with real accession-derived differential-expression inputs
 
 ## Validation
 
@@ -48,6 +49,7 @@ Validate them with:
 ruby scripts/validate_benchmark_packs.rb
 ruby scripts/validate_subset_configs.rb
 ruby scripts/validate_contract_examples.rb
+ruby scripts/validate_transcriptomics_fixtures.rb
 ruby scripts/generate_first_wave_registry.rb
 ruby scripts/validate_registry_artifacts.rb
 PYTHONPATH=packages/py python3 -m unittest discover -s tests/unit -p 'test_*.py'

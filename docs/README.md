@@ -48,5 +48,7 @@ Implementation scaffold:
   - Metadata-derived transcriptomics readiness features over curated study contrasts.
 - `packages/py/prioritx_rank/baseline.py`
   - Transparent baseline scoring for contrast readiness, explicitly not yet a target-ranking model.
+- `data_contracts/fixtures/transcriptomics/`
+  - Illustrative local DE-style fixtures for loader and API development, clearly separated from benchmark evidence.
 - `tests/unit/test_registry.py`
   - Sanity checks that the registry fixtures are consumable by code.

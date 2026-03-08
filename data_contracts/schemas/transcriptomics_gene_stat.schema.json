@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prioritx.local/schemas/transcriptomics_gene_stat.schema.json",
+  "title": "PrioriTx Transcriptomics Gene Stat",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "fixture_status",
+    "contrast_id",
+    "benchmark_id",
+    "dataset_id",
+    "gene",
+    "statistics",
+    "provenance",
+    "notes"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "fixture_status": {
+      "type": "string",
+      "enum": ["illustrative_fixture"]
+    },
+    "contrast_id": { "type": "string" },
+    "benchmark_id": { "type": "string" },
+    "dataset_id": { "type": "string" },
+    "gene": {
+      "type": "object",
+      "required": ["symbol", "ensembl_gene_id"],
+      "properties": {
+        "symbol": { "type": "string" },
+        "ensembl_gene_id": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "statistics": {
+      "type": "object",
+      "required": ["log2_fold_change", "p_value", "adjusted_p_value"],
+      "properties": {
+        "log2_fold_change": { "type": "number" },
+        "p_value": { "type": "number" },
+        "adjusted_p_value": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["source_kind", "derived_from"],
+      "properties": {
+        "source_kind": {
+          "type": "string",
+          "enum": ["fixture"]
+        },
+        "derived_from": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "notes": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}

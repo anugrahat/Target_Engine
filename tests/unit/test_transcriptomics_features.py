@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import unittest
 
+from prioritx_data.transcriptomics import load_transcriptomics_fixture
 from prioritx_data.service import query_study_contrasts
-from prioritx_features.transcriptomics import derive_contrast_quality_features
-from prioritx_rank.baseline import score_contrast_readiness
+from prioritx_features.transcriptomics import derive_contrast_quality_features, derive_gene_transcriptomics_features
+from prioritx_rank.baseline import score_contrast_readiness, score_gene_transcriptomics
 
 
 class TranscriptomicsFeatureTests(unittest.TestCase):
@@ -36,6 +37,13 @@ class TranscriptomicsFeatureTests(unittest.TestCase):
         self.assertEqual(1, features["curated_public_arm"])
         score = score_contrast_readiness(features)
         self.assertLess(score["components"]["curated_public_arm_penalty"], 0)
+
+    def test_gene_level_fixture_features_and_scores(self) -> None:
+        record = load_transcriptomics_fixture("hcc_adult_core_gse77314")[0]
+        features = derive_gene_transcriptomics_features(record)
+        self.assertEqual("CDK20", features["gene_symbol"])
+        score = score_gene_transcriptomics(features)
+        self.assertGreater(score["score"], 0)
 
 
 if __name__ == "__main__":

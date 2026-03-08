@@ -51,3 +51,24 @@ def score_contrast_readiness(features: dict[str, Any]) -> dict[str, Any]:
             "curated_public_arm_penalty": round(curated_public_arm_penalty, 4),
         },
     }
+
+
+def score_gene_transcriptomics(features: dict[str, Any]) -> dict[str, Any]:
+    """Score one gene from illustrative transcriptomics fixture features."""
+    effect_component = 0.6 * min(float(features["absolute_log2_fold_change"]) / 3.0, 1.0)
+    significance_component = 0.4 * min(float(features["significance_score"]) / 10.0, 1.0)
+
+    score = effect_component + significance_component
+    return {
+        "contrast_id": features["contrast_id"],
+        "benchmark_id": features["benchmark_id"],
+        "dataset_id": features["dataset_id"],
+        "gene_symbol": features["gene_symbol"],
+        "score_name": "fixture_transcriptomics_gene_score",
+        "score": round(score, 4),
+        "components": {
+            "effect_component": round(effect_component, 4),
+            "significance_component": round(significance_component, 4),
+        },
+        "fixture_status": features["fixture_status"],
+    }

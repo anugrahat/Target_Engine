@@ -1,0 +1,21 @@
+{
+  "schema_version": "0.1.0",
+  "fixture_status": "illustrative_fixture",
+  "contrast_id": "ipf_lung_core_gse92592",
+  "benchmark_id": "ipf_tnik",
+  "dataset_id": "GSE92592",
+  "gene": {
+    "symbol": "TNIK",
+    "ensembl_gene_id": null
+  },
+  "statistics": {
+    "log2_fold_change": 1.23,
+    "p_value": 0.0004,
+    "adjusted_p_value": 0.002
+  },
+  "provenance": {
+    "source_kind": "fixture",
+    "derived_from": "data_contracts/fixtures/transcriptomics/ipf_lung_core_gse92592.jsonl"
+  },
+  "notes": "Illustrative fixture record for contract testing only; not a real downloaded differential-expression result."
+}

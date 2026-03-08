@@ -9,6 +9,7 @@ from prioritx_data.service import (
     list_benchmark_subsets,
     query_dataset_manifests,
     query_study_contrasts,
+    transcriptomics_fixture_scores,
 )
 
 
@@ -41,6 +42,11 @@ class RegistryServiceTests(unittest.TestCase):
         items = contrast_readiness_scores(subset_id="hcc_adult_core")
         self.assertEqual(4, len(items))
         self.assertGreaterEqual(items[0]["score"], items[-1]["score"])
+
+    def test_returns_gene_scores_for_fixture_contrast(self) -> None:
+        items = transcriptomics_fixture_scores("ipf_lung_core_gse92592")
+        self.assertEqual(5, len(items))
+        self.assertEqual("fixture_transcriptomics_gene_score", items[0]["score_name"])
 
 
 if __name__ == "__main__":

@@ -15,8 +15,12 @@ Current contract layers:
   - one ranked-target output record, including component-level provenance
 - `schemas/benchmark_subset.schema.json`
   - one PrioriTx-curated admissible benchmark subset definition
+- `schemas/transcriptomics_gene_stat.schema.json`
+  - one illustrative local gene-level transcriptomics record for scaffolded DE-style inputs
 - `registries/`
   - generated first-wave dataset-manifest and study-contrast fixtures
+- `fixtures/transcriptomics/`
+  - small illustrative local DE-style fixtures used only for loader and API scaffolding
 
 Validation:
 
@@ -24,6 +28,7 @@ Validation:
 ruby scripts/validate_benchmark_packs.rb
 ruby scripts/validate_subset_configs.rb
 ruby scripts/validate_contract_examples.rb
+ruby scripts/validate_transcriptomics_fixtures.rb
 ruby scripts/generate_first_wave_registry.rb
 ruby scripts/validate_registry_artifacts.rb
 ```

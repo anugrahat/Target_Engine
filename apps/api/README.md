@@ -20,3 +20,9 @@ Current routes:
 - `/dataset-manifests`
 - `/study-contrasts`
 - `/contrast-readiness`
+- `/transcriptomics-fixture-scores?contrast_id=...`
+
+Important:
+
+- transcriptomics fixture score routes expose illustrative local fixtures only
+- they are scaffolding for future real differential-expression ingestion

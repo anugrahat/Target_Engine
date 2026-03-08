@@ -7,6 +7,7 @@ expression-derived signals have a stable, testable contract.
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 
@@ -57,4 +58,23 @@ def derive_contrast_quality_features(contrast: dict[str, Any]) -> dict[str, Any]
         "curated_public_arm": curated_public_arm,
         "verified_status": verified_status,
         "bulk_rna": bulk_rna,
+    }
+
+
+def derive_gene_transcriptomics_features(record: dict[str, Any]) -> dict[str, Any]:
+    """Derive transparent gene-level features from one transcriptomics record."""
+    stats = record["statistics"]
+    log2_fold_change = float(stats["log2_fold_change"])
+    adjusted_p_value = max(float(stats["adjusted_p_value"]), 1e-300)
+    significance = min(-math.log10(adjusted_p_value), 20.0)
+
+    return {
+        "contrast_id": record["contrast_id"],
+        "benchmark_id": record["benchmark_id"],
+        "dataset_id": record["dataset_id"],
+        "gene_symbol": record["gene"]["symbol"],
+        "effect_direction": 1 if log2_fold_change >= 0 else -1,
+        "absolute_log2_fold_change": round(abs(log2_fold_change), 4),
+        "significance_score": round(significance, 4),
+        "fixture_status": record["fixture_status"],
     }

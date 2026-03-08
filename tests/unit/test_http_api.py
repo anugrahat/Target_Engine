@@ -32,6 +32,20 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(5, len(payload["items"]))
         self.assertIn("score", payload["items"][0])
 
+    def test_transcriptomics_fixture_scores_route(self) -> None:
+        status, payload = handle_get(
+            "/transcriptomics-fixture-scores",
+            {"contrast_id": ["hcc_adult_core_gse77314"]},
+        )
+        self.assertEqual(200, status)
+        self.assertEqual(5, len(payload["items"]))
+        self.assertEqual("fixture_transcriptomics_gene_score", payload["items"][0]["score_name"])
+
+    def test_transcriptomics_fixture_scores_requires_contrast_id(self) -> None:
+        status, payload = handle_get("/transcriptomics-fixture-scores", {})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
     def test_unknown_route_returns_404(self) -> None:
         status, payload = handle_get("/does-not-exist", {})
         self.assertEqual(404, status)

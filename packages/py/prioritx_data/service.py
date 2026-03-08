@@ -7,8 +7,9 @@ from pathlib import Path
 from typing import Any
 
 from prioritx_data.registry import RegistryArtifact, list_dataset_manifests, list_study_contrasts, repo_root
-from prioritx_features.transcriptomics import derive_contrast_quality_features
-from prioritx_rank.baseline import score_contrast_readiness
+from prioritx_data.transcriptomics import list_fixture_contrast_ids, load_transcriptomics_fixture
+from prioritx_features.transcriptomics import derive_contrast_quality_features, derive_gene_transcriptomics_features
+from prioritx_rank.baseline import score_contrast_readiness, score_gene_transcriptomics
 
 
 def _subset_example_dir() -> Path:
@@ -115,6 +116,20 @@ def contrast_readiness_scores(
     scored = [
         score_contrast_readiness(derive_contrast_quality_features(contrast))
         for contrast in contrasts
+    ]
+    scored.sort(key=lambda item: item["score"], reverse=True)
+    return scored
+
+
+def transcriptomics_fixture_scores(contrast_id: str) -> list[dict[str, Any]]:
+    """Compute illustrative gene-level scores for one fixture contrast."""
+    if contrast_id not in set(list_fixture_contrast_ids()):
+        return []
+
+    records = load_transcriptomics_fixture(contrast_id)
+    scored = [
+        score_gene_transcriptomics(derive_gene_transcriptomics_features(record))
+        for record in records
     ]
     scored.sort(key=lambda item: item["score"], reverse=True)
     return scored
