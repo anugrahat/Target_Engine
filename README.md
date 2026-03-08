@@ -25,8 +25,8 @@ This repository is currently in the pre-implementation phase.
 Current benchmark ordering after source verification:
 
 1. idiopathic pulmonary fibrosis / TNIK
-2. hepatocellular carcinoma / CDK20
-3. amyotrophic lateral sclerosis
+2. amyotrophic lateral sclerosis
+3. hepatocellular carcinoma / CDK20
 4. Alzheimer's disease / phase separation
 
 ## Repository Status

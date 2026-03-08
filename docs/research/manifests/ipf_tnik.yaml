@@ -23,10 +23,28 @@ discovery_datasets:
 follow_up_datasets:
   scRNA_seq:
     - GSE136831
+recovered_cohort_details:
+  - dataset: GSE24206
+    case_samples: 17
+    control_samples: 6
+    control_definition: healthy donor lungs collected at transplantation
+    note: 17 case samples came from 11 IPF patients with repeated upper and lower lobe sampling where available.
+  - dataset: GSE52463
+    case_samples: 8
+    control_samples: 7
+    control_definition: healthy control lung tissue
+  - dataset: GSE72073
+    case_samples: 5
+    control_samples: 3
+    control_definition: normal lung tissue from patients with primary spontaneous pneumothorax
+  - dataset: GSE136831
+    case_samples: 32
+    control_samples: 28
+    control_definition: control lungs in the scRNA-seq follow-up analysis
 clinical_validation:
   - NCT05154240
   - CTR20221542
 unresolved:
-  - per-cohort case_control contrast definitions
+  - per-cohort case_control contrast definitions for the remaining unresolved discovery GEO series
   - harmonization and inclusion logic across the 15 discovery GEO cohorts
   - benchmark-label design without leaking later clinical progress

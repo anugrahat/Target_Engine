@@ -69,10 +69,12 @@ datasets:
     modality: transcriptomics
     tissue: lung
     case_group: ipf
-    control_group: healthy
-    sample_counts: null
+    control_group: primary_spontaneous_pneumothorax
+    sample_counts:
+      case: 5
+      control: 3
     status: verified
-    notes: Explicitly listed in the paper data availability section.
+    notes: GEO overall design reports 5 IPF lung tissues and 3 normal-control lung tissues from patients with primary spontaneous pneumothorax.
   - id: GSE150910
     source: GEO
     role: discovery
@@ -100,9 +102,11 @@ datasets:
     tissue: lung
     case_group: ipf
     control_group: healthy
-    sample_counts: null
+    sample_counts:
+      case: 8
+      control: 7
     status: verified
-    notes: Explicitly listed in the paper data availability section.
+    notes: GEO summary reports mRNA sequencing of 8 IPF and 7 control lung tissue samples.
   - id: GSE83717
     source: GEO
     role: discovery
@@ -159,10 +163,12 @@ datasets:
     modality: transcriptomics
     tissue: lung
     case_group: ipf
-    control_group: healthy
-    sample_counts: null
+    control_group: healthy_donor_lung
+    sample_counts:
+      case: 17
+      control: 6
     status: verified
-    notes: Explicitly listed in the paper data availability section.
+    notes: GEO overall design reports 17 IPF lung samples from 11 patients and 6 control specimens from healthy donor lungs collected at transplantation.
   - id: GSE136831
     source: GEO
     role: follow_up_scRNA_seq
@@ -184,6 +190,6 @@ validation:
     - CTR20221542
   notes: Target-to-molecule progression is unusually strong; benchmark labels must avoid leakage from later clinical outcomes.
 open_questions:
-  - Recover per-cohort case and control sample counts for the 15 discovery GEO datasets.
+  - Recover per-cohort case and control sample counts for the remaining unresolved discovery GEO datasets.
   - Define contrast logic for blood versus lung cohorts.
   - Decide how to benchmark TNIK discovery without using later phase I evidence as a discovery-time label.

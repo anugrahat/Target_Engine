@@ -1,0 +1,13 @@
+- Repo state: specification and contract phase, not implementation.
+- No language runtime or app scaffold exists yet; current assets are docs, configs, data contracts, scripts, and research artifacts.
+- Top-level directories:
+  - `.llm/`: workflow notes and research handoff context
+  - `configs/`: benchmark-pack YAMLs
+  - `data_contracts/`: schemas and example JSON records
+  - `docs/`: research, architecture, and specs
+  - `scripts/`: contract validation tooling
+- Current objective for this pass:
+  - improve benchmark completeness for IPF and HCC
+  - recover cohort-level sample counts and control definitions where public sources allow it
+  - update manifests and contracts only for verified facts
+- No `CLAUDE.md`, `package.json`, `pyproject.toml`, `go.mod`, or `Cargo.toml` is present yet.

@@ -9,22 +9,29 @@ Rank the first candidate indication case studies by how ready they are for Prior
 | Case | Primary paper | Manifest readiness | Why |
 | --- | --- | --- | --- |
 | IPF / TNIK | Nature Biotechnology 2024 | High | The discovery GEO cohorts are explicitly listed in `Data availability`, and validation is unusually strong. |
-| HCC / CDK20 | Chemical Science 2023 | High | The 10 discovery cohorts are explicitly listed in `Materials and methods`, and downstream chemistry validation is concrete. |
-| ALS | Frontiers in Aging Neuroscience 2022 | Medium-High | Multiple accession-coded datasets are named, but part of the stack is consortium-based (`Answer ALS`). |
+| ALS | Frontiers in Aging Neuroscience 2022 | Medium-High | Multiple accession-coded datasets are named, and the disease framing is cleaner than the public HCC pool, though part of the stack is consortium-based (`Answer ALS`). |
+| HCC / CDK20 | Chemical Science 2023 | Medium | The 10 discovery cohorts are explicitly listed, but the public pool is heterogeneous and includes hepatoblastoma and mixed liver-disease cohorts. |
 | AD / phase separation | PNAS 2023 | Medium | The paper is scientifically useful and exposes structured supplements, but accession-level recovery is still unresolved. |
 
 ## Recommended Build Order
 
 1. IPF
-2. HCC
-3. ALS
+2. ALS
+3. HCC
 4. AD
 
-## Why IPF And HCC Moved Up
+## Why IPF Stays First
 
-- both papers publicly disclose the discovery cohorts directly in the article text
-- both have strong downstream validation stories
-- both are easier to convert into manifest stubs without relying on consortium-only datasets
+- the paper publicly discloses the discovery cohorts directly in the article text
+- several cohort-level sample definitions are already recoverable from GEO
+- the disease framing is cleaner than the public HCC case
+
+## Why HCC Moved Down
+
+- the accession list is public, but the cohort pool is more heterogeneous than it first appeared
+- at least two disclosed cohorts are hepatoblastoma, not HCC
+- several controls are adjacent-normal or mixed liver-disease comparators rather than clean healthy controls
+- target-discovery evaluation is at higher risk of label leakage from downstream chemistry success
 
 ## What Needs To Happen Before Other Cases Graduate
 
@@ -35,6 +42,7 @@ Rank the first candidate indication case studies by how ready they are for Prior
 ### HCC
 
 - reconstruct sample contrasts and verify how `1133` disease and `674` healthy-control samples are distributed across the 10 cohorts
+- decide whether the benchmark should use the paper's full heterogeneous pool or a curated HCC-only subset
 
 ### AD
 

@@ -15,6 +15,7 @@
 - The target-selection setting followed a first-in-class scenario emphasizing novelty and small-molecule druggability.
 - AlphaFold-predicted structure plus Chemistry42 were used to generate compounds.
 - Seven compounds were synthesized and tested experimentally.
+- The dataset list is public, but the discovery pool is biologically heterogeneous and should not be treated as a clean HCC-only benchmark without curation.
 
 ## Exact datasets disclosed in the paper
 
@@ -32,6 +33,25 @@
 - `TCGA-LIHC`
 - aggregate counts of `1133` disease and `674` healthy-control samples
 
+## Recovered cohort details from GEO
+
+- `GSE45267`
+  - `48` primary HCC tissue samples
+  - `39` non-cancerous tissue profiles from `61` patients
+- `GSE60502`
+  - `18` hepatocellular carcinoma samples
+  - `18` adjacent non-tumorous liver tissue samples
+  - paired design
+- `GSE77314`
+  - `50` paired normal and tumor samples
+- `GSE107170`
+  - mixed liver-transplant cohort including HDV-HCC, HCV-HCC, HBV-HCC, and HDV cirrhosis without HCC
+  - this is not a simple healthy-control comparison
+- `GSE133039`
+  - hepatoblastoma, not adult HCC
+- `GSE104766`
+  - hepatoblastoma, not adult HCC
+
 ## Validation evidence
 
 ### Computational
@@ -47,18 +67,22 @@
 
 ## Benchmark readiness
 
-### Readiness: High
+### Readiness: Medium
 
 Reason:
 
 - validation story is real and concrete
 - discovery-data cohorts are explicitly listed in the paper
+- however, the disclosed discovery pool is not a clean HCC-only case-control set
+- at least two included cohorts are hepatoblastoma, and some controls are adjacent-normal rather than healthy liver
 
 ## Remaining gaps
 
 - map the disease/control sample counts back to accession IDs
+- separate true HCC cohorts from hepatoblastoma cohorts and other mixed liver-disease cohorts
 - separate target-ranking evidence from downstream structure-based chemistry steps
+- decide whether PrioriTx should benchmark the public list as-is, or build a curated HCC-only subset
 
 ## PrioriTx implication
 
-HCC is suitable for a first-pass accession manifest now. The remaining work is contrast reconstruction and benchmark-label design.
+HCC remains scientifically useful, but it should no longer be treated as a clean first-wave benchmark without explicit cohort curation. PrioriTx should either construct a curated HCC-only subset or downgrade this case below IPF for early benchmark work.

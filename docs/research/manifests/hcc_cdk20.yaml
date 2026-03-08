@@ -1,6 +1,6 @@
 indication: hepatocellular_carcinoma
 case_name: hcc_cdk20
-manifest_readiness: high
+manifest_readiness: medium
 primary_source: https://pmc.ncbi.nlm.nih.gov/articles/PMC9906638/
 discovery_datasets:
   - GSE36376
@@ -16,6 +16,34 @@ discovery_datasets:
 aggregate_counts:
   disease_samples: 1133
   healthy_controls: 674
+recovered_cohort_details:
+  - dataset: GSE45267
+    case_samples: 48
+    control_samples: 39
+    control_definition: non-cancerous liver tissue
+    note: 87 tissue profiles from 61 patients.
+  - dataset: GSE60502
+    case_samples: 18
+    control_samples: 18
+    control_definition: adjacent non-tumorous liver tissue
+    note: paired design.
+  - dataset: GSE77314
+    case_samples: 50
+    control_samples: 50
+    control_definition: paired normal liver tissue
+  - dataset: GSE107170
+    case_samples: null
+    control_samples: null
+    control_definition: mixed liver disease comparison rather than a clean healthy-control arm
+    note: includes HDV-HCC, HCV-HCC, HBV-HCC, and HDV cirrhosis without HCC.
+  - dataset: GSE133039
+    case_samples: null
+    control_samples: null
+    control_definition: hepatoblastoma study, not adult HCC
+  - dataset: GSE104766
+    case_samples: null
+    control_samples: null
+    control_definition: hepatoblastoma study, not adult HCC
 downstream_validation:
   - AlphaFold structure-based targetability
   - Chemistry42 generation
@@ -23,4 +51,6 @@ downstream_validation:
 unresolved:
   - mapping aggregate disease and control counts back to each source cohort
   - precise contrast definitions and covariate handling per dataset
+  - whether the public cohort pool should be curated into an HCC-only subset before PrioriTx benchmarking
+  - whether the paper's use of hepatoblastoma datasets should exclude those cohorts from a PrioriTx HCC benchmark
   - benchmark-label design that separates target discovery from later chemistry optimization

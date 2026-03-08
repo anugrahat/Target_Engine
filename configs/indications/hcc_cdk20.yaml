@@ -8,7 +8,7 @@ indication:
     efo: null
     mesh: null
     doid: null
-status: verified
+status: partial
 primary_sources:
   - title: AlphaFold Accelerates Artificial Intelligence Powered Drug Discovery Efficient Discovery of a Novel CDK20 Small Molecule Inhibitor
     url: https://pmc.ncbi.nlm.nih.gov/articles/PMC9906638/
@@ -19,100 +19,106 @@ datasets:
     modality: transcriptomics
     tissue: liver
     case_group: hcc
-    control_group: healthy_or_adjacent_normal
+    control_group: adjacent_non_tumor_liver
     sample_counts: null
-    status: verified
-    notes: Explicitly listed in Materials and methods.
+    status: partial
+    notes: Explicitly listed in Materials and methods. GEO title indicates tumor and adjacent non-tumor liver, but per-arm counts remain unresolved in this pass.
   - id: GSE107170
     source: GEO
     role: discovery
     modality: transcriptomics
     tissue: liver
-    case_group: hcc
-    control_group: healthy_or_adjacent_normal
+    case_group: mixed_viral_hcc
+    control_group: mixed_cirrhosis_or_cross_etiology_reference
     sample_counts: null
-    status: verified
-    notes: Explicitly listed in Materials and methods.
+    status: partial
+    notes: GEO overall design includes HDV-HCC, HCV-HCC, HBV-HCC, and HDV cirrhosis without HCC; this is not a clean healthy-control comparison.
   - id: GSE102079
     source: GEO
     role: discovery
     modality: transcriptomics
     tissue: liver
     case_group: hcc
-    control_group: healthy_or_adjacent_normal
+    control_group: null
     sample_counts: null
-    status: verified
-    notes: Explicitly listed in Materials and methods.
+    status: partial
+    notes: Explicitly listed in Materials and methods, but this pass did not recover a reliable control definition from the accession page.
   - id: GSE45267
     source: GEO
     role: discovery
     modality: transcriptomics
     tissue: liver
     case_group: hcc
-    control_group: healthy_or_adjacent_normal
-    sample_counts: null
+    control_group: non_cancerous_liver_tissue
+    sample_counts:
+      case: 48
+      control: 39
     status: verified
-    notes: Explicitly listed in Materials and methods.
+    notes: GEO overall design reports 87 tissue profiles containing 48 primary HCC samples and 39 non-cancerous tissues from 61 patients.
   - id: GSE133039
     source: GEO
     role: discovery
     modality: transcriptomics
     tissue: liver
-    case_group: hcc
-    control_group: healthy_or_adjacent_normal
+    case_group: hepatoblastoma
+    control_group: null
     sample_counts: null
-    status: verified
-    notes: Explicitly listed in Materials and methods.
+    status: partial
+    notes: GEO accession is hepatoblastoma RNA-seq, not adult HCC. It should not be treated as a clean HCC cohort.
   - id: GSE104766
     source: GEO
     role: discovery
     modality: transcriptomics
     tissue: liver
-    case_group: hcc
-    control_group: healthy_or_adjacent_normal
+    case_group: hepatoblastoma
+    control_group: corresponding_normal_liver
     sample_counts: null
-    status: verified
-    notes: Explicitly listed in Materials and methods.
+    status: partial
+    notes: GEO accession is hepatoblastoma-focused and includes hepatoblastoma tissues, cell lines, and corresponding normal livers rather than a clean adult HCC cohort.
   - id: GSE77314
     source: GEO
     role: discovery
     modality: transcriptomics
     tissue: liver
     case_group: hcc
-    control_group: healthy_or_adjacent_normal
-    sample_counts: null
+    control_group: paired_normal_liver
+    sample_counts:
+      case: 50
+      control: 50
     status: verified
-    notes: Explicitly listed in Materials and methods.
+    notes: GEO summary reports RNA-seq of 50 paired normal and tumor samples.
   - id: GSE60502
     source: GEO
     role: discovery
     modality: transcriptomics
     tissue: liver
     case_group: hcc
-    control_group: healthy_or_adjacent_normal
-    sample_counts: null
+    control_group: adjacent_non_tumorous_liver
+    sample_counts:
+      case: 18
+      control: 18
     status: verified
-    notes: Explicitly listed in Materials and methods.
+    notes: GEO title and sample list indicate 18 paired hepatocellular carcinoma and adjacent non-tumorous liver tissue samples.
   - id: E-MTAB-5905
     source: ArrayExpress
     role: discovery
     modality: transcriptomics
     tissue: liver
     case_group: hcc
-    control_group: healthy_or_adjacent_normal
+    control_group: null
     sample_counts: null
-    status: verified
-    notes: Explicitly listed in Materials and methods.
+    status: partial
+    notes: Explicitly listed in Materials and methods, but this pass did not recover the cohort definition from the public accession page.
   - id: TCGA-LIHC
     source: GDC
     role: discovery
     modality: transcriptomics
     tissue: liver
     case_group: hcc
-    control_group: healthy_or_adjacent_normal
+    control_group: null
     sample_counts: null
-    status: verified
-    notes: Explicitly listed in Materials and methods.
+    status: partial
+    notes: Explicitly listed in Materials and methods, but this pass did not map the paper's aggregate counts back to the TCGA-LIHC arm definitions.
 validation:
   experimental:
     - AlphaFold-based targetability assessment
@@ -120,8 +126,9 @@ validation:
     - seven synthesized compounds
     - biochemical and cellular validation
   clinical: []
-  notes: Aggregate paper counts are 1133 disease and 674 healthy-control samples across the 10 cohorts.
+  notes: Aggregate paper counts are 1133 disease and 674 healthy-control samples across the 10 cohorts, but the public cohort pool is heterogeneous and should not yet be treated as a clean HCC-only benchmark.
 open_questions:
-  - Recover per-dataset sample counts and contrast definitions.
+  - Recover per-dataset sample counts and contrast definitions for the unresolved cohorts.
+  - Decide whether PrioriTx should curate an HCC-only subset instead of reproducing the paper's full heterogeneous pool.
   - Separate benchmark labels for target nomination from later structure-based chemistry success.
   - Confirm whether all 10 cohorts are directly comparable as discovery-time transcriptomic inputs.

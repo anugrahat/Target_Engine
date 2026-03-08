@@ -36,6 +36,23 @@
 - `GSE24206`
 - `GSE136831` for single-cell RNA-seq follow-up analysis
 
+## Recovered cohort details from GEO
+
+- `GSE24206`
+  - `17` IPF lung samples from `11` patients
+  - `6` control specimens from healthy donor lungs obtained at transplantation
+  - Important caveat: the IPF arm includes repeated upper/lower lobe samples rather than one sample per patient
+- `GSE52463`
+  - `8` IPF lung samples
+  - `7` healthy control lung samples
+- `GSE72073`
+  - `5` IPF lung samples
+  - `3` normal-control lung samples from patients with primary spontaneous pneumothorax
+- `GSE136831`
+  - `32` IPF samples
+  - `28` control samples
+  - used for scRNA-seq follow-up rather than bulk discovery ranking
+
 ## Validation evidence
 
 ### Computational
@@ -60,11 +77,13 @@ Reason:
 
 - target validation is excellent
 - discovery GEO cohorts are explicitly listed in the paper
+- several cohort-level sample definitions can already be recovered from GEO without relying on the supplement
 - validation spans computational ranking, preclinical work, and phase I studies
 
 ## Remaining gaps
 
-- reconstruct the exact target-discovery contrasts for each listed cohort
+- reconstruct the exact target-discovery contrasts for every listed cohort
+- recover the remaining per-cohort sample counts for the unresolved blood and lung GEO series
 - ensure IPF benchmark labels do not improperly use later clinical progress as if it were an unbiased discovery-time label
 
 ## PrioriTx implication

@@ -19,17 +19,18 @@
   "case_definition": "Hepatocellular carcinoma tumor tissue",
   "control_definition": "Healthy or adjacent normal liver tissue",
   "analysis_unit": "bulk_rna",
-  "comparison_label": "HCC tumor versus healthy or adjacent-normal liver across the 10 disclosed discovery cohorts",
+  "comparison_label": "Paper-disclosed multi-cohort liver-cancer discovery pool used in the CDK20 study",
   "sample_counts": null,
-  "inclusion_rule_summary": "Use only the 10 transcriptomic cohorts explicitly listed in the CDK20 paper discovery methods.",
-  "exclusion_rule_summary": "Do not let AlphaFold targetability, Chemistry42 generation, or later biochemical assays leak into the discovery contrast.",
+  "inclusion_rule_summary": "This record mirrors the 10 cohorts explicitly listed in the CDK20 paper, even though the public pool is heterogeneous.",
+  "exclusion_rule_summary": "Do not let AlphaFold targetability, Chemistry42 generation, or later biochemical assays leak into the discovery contrast. Do not assume every cohort is adult HCC versus healthy liver.",
   "leakage_risks": [
     "Target-discovery evidence must stay separate from later chemistry success.",
-    "Adjacent-normal tissue may not be equivalent to healthy liver across all cohorts."
+    "Adjacent-normal tissue may not be equivalent to healthy liver across all cohorts.",
+    "The public cohort pool includes hepatoblastoma and mixed liver-disease comparisons."
   ],
-  "status": "verified",
+  "status": "partial",
   "provenance": {
     "primary_source_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9906638/",
-    "notes": "The paper gives aggregate sample totals across these cohorts, but not a fully resolved per-cohort count table in the extracted text."
+    "notes": "The paper gives aggregate sample totals across these cohorts, but the public accessions reveal disease-definition heterogeneity that makes this unsuitable as a clean HCC-only contrast."
   }
 }

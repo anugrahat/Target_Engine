@@ -1,0 +1,28 @@
+{
+  "schema_version": "0.1.0",
+  "contrast_id": "hcc_cdk20_gse60502_paired",
+  "benchmark_id": "hcc_cdk20",
+  "dataset_ids": [
+    "GSE60502"
+  ],
+  "modality": "transcriptomics",
+  "tissue": "liver",
+  "case_definition": "Hepatocellular carcinoma tissue",
+  "control_definition": "Adjacent non-tumorous liver tissue",
+  "analysis_unit": "bulk_rna",
+  "comparison_label": "Paired HCC versus adjacent non-tumorous liver in GSE60502",
+  "sample_counts": {
+    "case": 18,
+    "control": 18
+  },
+  "inclusion_rule_summary": "Use the paired HCC and adjacent non-tumorous liver samples disclosed in GSE60502.",
+  "exclusion_rule_summary": "Do not treat adjacent tissue as equivalent to healthy liver in any cross-study aggregation without an explicit correction.",
+  "leakage_risks": [
+    "Adjacent non-tumorous tissue is not the same as healthy liver."
+  ],
+  "status": "verified",
+  "provenance": {
+    "primary_source_url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60502",
+    "notes": "Counts and paired design are recoverable from the public GEO record."
+  }
+}
