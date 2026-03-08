@@ -108,7 +108,7 @@ datasets:
     control_group: null
     sample_counts: null
     status: partial
-    notes: Explicitly listed in Materials and methods, but this pass did not recover the cohort definition from the public accession page.
+    notes: BioStudies record reports 62 multiregional RNA-seq samples from treatment-naive hepatocellular carcinoma patients with tumor and adjacent tissue sampling, but not a resolved per-arm count table.
   - id: TCGA-LIHC
     source: GDC
     role: discovery

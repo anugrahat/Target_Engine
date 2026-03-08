@@ -25,6 +25,7 @@ Rank the first candidate indication case studies by how ready they are for Prior
 - the paper publicly discloses the discovery cohorts directly in the article text
 - several cohort-level sample definitions are already recoverable from GEO
 - the disease framing is cleaner than the public HCC case
+- some IPF cohorts are still mixed or longitudinal, but the public pool is easier to curate into defensible first-wave contrasts
 
 ## Why HCC Moved Down
 
@@ -38,6 +39,7 @@ Rank the first candidate indication case studies by how ready they are for Prior
 ### IPF
 
 - reconstruct sample contrasts and per-cohort case/control definitions
+- separate clean IPF-vs-control cohorts from longitudinal, mixed-IIP, and mixed-ILD series
 
 ### HCC
 

@@ -36,6 +36,11 @@ recovered_cohort_details:
     control_samples: null
     control_definition: mixed liver disease comparison rather than a clean healthy-control arm
     note: includes HDV-HCC, HCV-HCC, HBV-HCC, and HDV cirrhosis without HCC.
+  - dataset: E-MTAB-5905
+    case_samples: null
+    control_samples: null
+    control_definition: adjacent tissue sampled, but per-arm counts not recovered in this pass
+    note: BioStudies record reports 62 multiregional RNA-seq samples from treatment-naive hepatocellular carcinoma patients with tumor and adjacent tissue sampling.
   - dataset: GSE133039
     case_samples: null
     control_samples: null
@@ -53,4 +58,5 @@ unresolved:
   - precise contrast definitions and covariate handling per dataset
   - whether the public cohort pool should be curated into an HCC-only subset before PrioriTx benchmarking
   - whether the paper's use of hepatoblastoma datasets should exclude those cohorts from a PrioriTx HCC benchmark
+  - how to map the multiregional design of E-MTAB-5905 into a non-leaky benchmark contrast
   - benchmark-label design that separates target discovery from later chemistry optimization

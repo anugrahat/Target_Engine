@@ -47,6 +47,10 @@
 - `GSE107170`
   - mixed liver-transplant cohort including HDV-HCC, HCV-HCC, HBV-HCC, and HDV cirrhosis without HCC
   - this is not a simple healthy-control comparison
+- `E-MTAB-5905`
+  - `62` multiregional RNA-seq samples
+  - treatment-naive hepatocellular carcinoma patients at Mount Sinai
+  - tumor and adjacent tissue were both sampled, but the public study record does not expose a simple per-arm count table in the retrieved metadata
 - `GSE133039`
   - hepatoblastoma, not adult HCC
 - `GSE104766`
@@ -80,6 +84,7 @@ Reason:
 
 - map the disease/control sample counts back to accession IDs
 - separate true HCC cohorts from hepatoblastoma cohorts and other mixed liver-disease cohorts
+- recover per-arm sample definitions for `E-MTAB-5905`, `TCGA-LIHC`, `GSE36376`, and `GSE102079`
 - separate target-ranking evidence from downstream structure-based chemistry steps
 - decide whether PrioriTx should benchmark the public list as-is, or build a curated HCC-only subset
 

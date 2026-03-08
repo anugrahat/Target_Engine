@@ -19,10 +19,12 @@ datasets:
     modality: transcriptomics
     tissue: blood
     case_group: ipf
-    control_group: healthy
-    sample_counts: null
+    control_group: matched_control
+    sample_counts:
+      case: 60
+      control: 20
     status: verified
-    notes: Explicitly listed in the paper data availability section.
+    notes: GEO summary reports 60 IPF subjects and 20 matched controls at baseline, with additional longitudinal IPF follow-up samples collected.
   - id: GSE38958
     source: GEO
     role: discovery
@@ -30,19 +32,23 @@ datasets:
     tissue: blood
     case_group: ipf
     control_group: healthy
-    sample_counts: null
+    sample_counts:
+      case: 70
+      control: 45
     status: verified
-    notes: Explicitly listed in the paper data availability section.
+    notes: GEO overall design reports 70 IPF patients and 45 healthy controls.
   - id: GSE28042
     source: GEO
     role: discovery
     modality: transcriptomics
     tissue: blood
     case_group: ipf
-    control_group: healthy
-    sample_counts: null
-    status: verified
-    notes: Explicitly listed in the paper data availability section.
+    control_group: null
+    sample_counts:
+      case: 75
+      control: null
+    status: partial
+    notes: GEO overall design describes a 75-patient IPF replication cohort without a clean control arm in the retrieved accession text.
   - id: GSE33566
     source: GEO
     role: discovery
@@ -50,19 +56,23 @@ datasets:
     tissue: blood
     case_group: ipf
     control_group: healthy
-    sample_counts: null
+    sample_counts:
+      case: 93
+      control: 30
     status: verified
-    notes: Explicitly listed in the paper data availability section.
+    notes: GEO overall design reports 93 IPF patients and 30 healthy controls.
   - id: GSE101286
     source: GEO
     role: discovery
     modality: transcriptomics
     tissue: lung
-    case_group: ipf
-    control_group: healthy
-    sample_counts: null
-    status: verified
-    notes: Explicitly listed in the paper data availability section.
+    case_group: chronic_fibrosing_iip
+    control_group: null
+    sample_counts:
+      case: 12
+      control: null
+    status: partial
+    notes: GEO overall design reports 12 chronic fibrosing idiopathic interstitial pneumonia specimens; the retrieved accession text does not expose a clean IPF-only versus healthy-control split.
   - id: GSE72073
     source: GEO
     role: discovery
@@ -81,10 +91,12 @@ datasets:
     modality: transcriptomics
     tissue: lung
     case_group: ipf
-    control_group: healthy
-    sample_counts: null
+    control_group: unaffected_control
+    sample_counts:
+      case: 103
+      control: 103
     status: verified
-    notes: Explicitly listed in the paper data availability section.
+    notes: GEO overall design reports 103 IPF and 103 unaffected-control lung samples, but the full study also includes a CHP arm and requires explicit IPF subsetting.
   - id: GSE92592
     source: GEO
     role: discovery
@@ -92,9 +104,11 @@ datasets:
     tissue: lung
     case_group: ipf
     control_group: healthy
-    sample_counts: null
+    sample_counts:
+      case: 20
+      control: 19
     status: verified
-    notes: Explicitly listed in the paper data availability section.
+    notes: GEO summary reports 20 IPF and 19 control lung samples from the LTRC.
   - id: GSE52463
     source: GEO
     role: discovery
@@ -114,39 +128,45 @@ datasets:
     tissue: lung
     case_group: ipf
     control_group: healthy
-    sample_counts: null
-    status: verified
-    notes: Explicitly listed in the paper data availability section.
+    sample_counts:
+      case: null
+      control: 5
+    status: partial
+    notes: GEO summary reports 7 IPF and 5 control FFPE lung tissues, while overall design reports 6 IPF and 5 control tissues; keep unresolved until the sample table is checked directly.
   - id: GSE21369
     source: GEO
     role: discovery
     modality: transcriptomics
     tissue: lung
-    case_group: ipf
-    control_group: healthy
-    sample_counts: null
-    status: verified
-    notes: Explicitly listed in the paper data availability section.
+    case_group: uip_ipf_subset
+    control_group: uninvolved_or_transplant_lung
+    sample_counts:
+      case: 11
+      control: 6
+    status: partial
+    notes: Mixed ILD cohort; GEO overall design exposes 11 UIP/IPF samples within a broader ILD set and 6 controls.
   - id: GSE15197
     source: GEO
     role: discovery
     modality: transcriptomics
     tissue: lung
-    case_group: ipf
+    case_group: ipf_with_secondary_ph
     control_group: healthy
-    sample_counts: null
-    status: verified
-    notes: Explicitly listed in the paper data availability section.
+    sample_counts:
+      case: 8
+      control: 13
+    status: partial
+    notes: GEO overall design includes 8 IPF subjects with secondary pulmonary hypertension, 13 normal controls, and an additional PAH arm.
   - id: GSE99621
     source: GEO
     role: discovery
     modality: transcriptomics
     tissue: lung
-    case_group: ipf
+    case_group: ipf_affected_and_unaffected_regions
     control_group: healthy
     sample_counts: null
-    status: verified
-    notes: Explicitly listed in the paper data availability section.
+    status: partial
+    notes: GEO overall design reports 26 total samples across IPF affected, IPF unaffected, and healthy-control lung tissues without subgroup counts.
   - id: GSE138283
     source: GEO
     role: discovery
@@ -154,9 +174,11 @@ datasets:
     tissue: lung
     case_group: ipf
     control_group: healthy
-    sample_counts: null
+    sample_counts:
+      case: 28
+      control: 20
     status: verified
-    notes: Explicitly listed in the paper data availability section.
+    notes: GEO overall design reports 28 IPF lung biopsy samples and 20 age-matched controls.
   - id: GSE24206
     source: GEO
     role: discovery
@@ -192,4 +214,5 @@ validation:
 open_questions:
   - Recover per-cohort case and control sample counts for the remaining unresolved discovery GEO datasets.
   - Define contrast logic for blood versus lung cohorts.
+  - Decide which listed series qualify as clean first-wave benchmark contrasts versus mixed or longitudinal support datasets.
   - Decide how to benchmark TNIK discovery without using later phase I evidence as a discovery-time label.

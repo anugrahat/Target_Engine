@@ -24,6 +24,38 @@ follow_up_datasets:
   scRNA_seq:
     - GSE136831
 recovered_cohort_details:
+  - dataset: GSE93606
+    case_samples: 60
+    control_samples: 20
+    control_definition: matched controls at baseline
+    note: IPF subjects also contributed longitudinal follow-up samples, so this is not a simple one-time case-control design.
+  - dataset: GSE38958
+    case_samples: 70
+    control_samples: 45
+    control_definition: healthy controls
+  - dataset: GSE28042
+    case_samples: 75
+    control_samples: null
+    control_definition: null
+    note: Replication cohort of IPF PBMC samples without a clean control arm exposed in the GEO design text.
+  - dataset: GSE33566
+    case_samples: 93
+    control_samples: 30
+    control_definition: healthy controls
+  - dataset: GSE101286
+    case_samples: 12
+    control_samples: null
+    control_definition: null
+    note: Chronic fibrosing idiopathic interstitial pneumonia cohort; accession text does not expose a clean IPF-only versus control split.
+  - dataset: GSE150910
+    case_samples: 103
+    control_samples: 103
+    control_definition: unaffected control lung
+    note: Full study also includes chronic hypersensitivity pneumonitis and requires explicit IPF-arm subsetting.
+  - dataset: GSE92592
+    case_samples: 20
+    control_samples: 19
+    control_definition: control lung tissue
   - dataset: GSE24206
     case_samples: 17
     control_samples: 6
@@ -37,6 +69,30 @@ recovered_cohort_details:
     case_samples: 5
     control_samples: 3
     control_definition: normal lung tissue from patients with primary spontaneous pneumothorax
+  - dataset: GSE83717
+    case_samples: null
+    control_samples: 5
+    control_definition: control FFPE lung tissue
+    note: GEO summary reports 7 IPF cases while GEO overall design reports 6; leave unresolved until the sample table is checked directly.
+  - dataset: GSE21369
+    case_samples: 11
+    control_samples: 6
+    control_definition: uninvolved lung tissue or transplant tissue
+    note: Mixed ILD cohort; only a subset is UIP/IPF.
+  - dataset: GSE15197
+    case_samples: 8
+    control_samples: 13
+    control_definition: normal controls
+    note: Includes IPF subjects with secondary pulmonary hypertension and a separate PAH arm.
+  - dataset: GSE99621
+    case_samples: null
+    control_samples: null
+    control_definition: healthy control lung tissue
+    note: GEO design reports 26 total samples across IPF affected, IPF unaffected, and healthy-control groups without subgroup counts.
+  - dataset: GSE138283
+    case_samples: 28
+    control_samples: 20
+    control_definition: age-matched controls
   - dataset: GSE136831
     case_samples: 32
     control_samples: 28
@@ -47,4 +103,5 @@ clinical_validation:
 unresolved:
   - per-cohort case_control contrast definitions for the remaining unresolved discovery GEO series
   - harmonization and inclusion logic across the 15 discovery GEO cohorts
+  - explicit separation of clean IPF-vs-control cohorts from longitudinal, mixed-IIP, and mixed-ILD cohorts
   - benchmark-label design without leaking later clinical progress
