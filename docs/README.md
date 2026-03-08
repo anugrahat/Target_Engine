@@ -44,5 +44,9 @@ Implementation scaffold:
   - Query layer for benchmarks, subsets, dataset manifests, and study contrasts.
 - `apps/api/server.py`
   - Minimal dependency-free read-only HTTP API over the curated registry layer.
+- `packages/py/prioritx_features/transcriptomics.py`
+  - Metadata-derived transcriptomics readiness features over curated study contrasts.
+- `packages/py/prioritx_rank/baseline.py`
+  - Transparent baseline scoring for contrast readiness, explicitly not yet a target-ranking model.
 - `tests/unit/test_registry.py`
   - Sanity checks that the registry fixtures are consumable by code.

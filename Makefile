@@ -17,6 +17,10 @@ test:
 registry-summary:
 	$(PYTHONPATH_RUN) $(PYTHON) -m prioritx_data.cli
 
+.PHONY: contrast-readiness
+contrast-readiness:
+	$(PYTHONPATH_RUN) $(PYTHON) -m prioritx_rank.cli
+
 .PHONY: api-dev
 api-dev:
 	$(PYTHONPATH_RUN) $(PYTHON) apps/api/server.py
