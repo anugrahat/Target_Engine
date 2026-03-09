@@ -4,27 +4,38 @@ from __future__ import annotations
 
 import csv
 import math
+import re
 from dataclasses import dataclass
-from statistics import fmean, stdev
+from statistics import NormalDist, fmean, stdev
 from typing import Any
 
-from prioritx_data.hgnc import load_hgnc_symbol_map
+from prioritx_data.hgnc import load_hgnc_symbol_map, load_hgnc_symbol_reverse_map
 from prioritx_data.remote_cache import load_text_with_cache, normalize_geo_url
 
-REAL_COUNT_CONTRASTS: dict[str, dict[str, str]] = {
+REAL_CONTRASTS: dict[str, dict[str, str]] = {
     "ipf_lung_core_gse52463": {
+        "source_type": "geo_rnaseq_counts",
         "series_accession": "GSE52463",
         "benchmark_id": "ipf_tnik",
         "dataset_id": "GSE52463",
         "case_label": "idiopathic pulmonary fibrosis",
         "control_label": "normal",
-    }
+    },
+    "hcc_adult_core_gse60502": {
+        "source_type": "geo_microarray_series",
+        "series_accession": "GSE60502",
+        "platform_accession": "GPL96",
+        "benchmark_id": "hcc_cdk20",
+        "dataset_id": "GSE60502",
+        "case_label": "hepatocellular carcinoma",
+        "control_label": "adjacent non-tumorous liver",
+    },
 }
 
 
 @dataclass(frozen=True)
-class GeoCountSample:
-    """One GEO sample with phenotype metadata and a count-table URL."""
+class GeoSample:
+    """One GEO sample with phenotype metadata and optional supplement URLs."""
 
     geo_accession: str
     title: str
@@ -34,7 +45,7 @@ class GeoCountSample:
 
 def list_real_contrast_ids() -> list[str]:
     """List contrast ids that have accession-backed transcriptomics loaders."""
-    return sorted(REAL_COUNT_CONTRASTS)
+    return sorted(REAL_CONTRASTS)
 
 
 def _geo_series_bucket(accession: str) -> str:
@@ -47,6 +58,14 @@ def _series_matrix_url(series_accession: str) -> str:
     return f"https://ftp.ncbi.nlm.nih.gov/geo/series/{bucket}/{series_accession}/matrix/{series_accession}_series_matrix.txt.gz"
 
 
+def _platform_quick_text_url(platform_accession: str) -> str:
+    return f"https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc={platform_accession}&targ=self&form=text&view=quick"
+
+
+def _platform_annotation_url(platform_accession: str) -> str:
+    return f"https://ftp.ncbi.nlm.nih.gov/geo/platforms/GPLnnn/{platform_accession}/annot/{platform_accession}.annot.gz"
+
+
 def _parse_tsv_row(line: str) -> list[str]:
     reader = csv.reader([line], delimiter="\t", quotechar='"')
     return next(reader)
@@ -56,7 +75,7 @@ def _empty_sample_columns(size: int) -> list[dict[str, str]]:
     return [{} for _ in range(size)]
 
 
-def parse_geo_series_samples(series_matrix_text: str) -> list[GeoCountSample]:
+def parse_geo_series_samples(series_matrix_text: str) -> list[GeoSample]:
     """Parse sample phenotype metadata and supplementary URLs from a GEO matrix."""
     row_map: dict[str, list[list[str]]] = {}
     for line in series_matrix_text.splitlines():
@@ -80,11 +99,17 @@ def parse_geo_series_samples(series_matrix_text: str) -> list[GeoCountSample]:
             key, value = raw_value.split(": ", 1)
             characteristics[index][key.strip().lower()] = value.strip()
 
-    samples: list[GeoCountSample] = []
+    samples: list[GeoSample] = []
     for index, accession in enumerate(accessions):
-        phenotype = characteristics[index].get("phenotype", characteristics[index].get("disease", ""))
+        phenotype = (
+            characteristics[index].get("phenotype")
+            or characteristics[index].get("disease")
+            or characteristics[index].get("diagnosis")
+            or characteristics[index].get("tissue type")
+            or ""
+        )
         samples.append(
-            GeoCountSample(
+            GeoSample(
                 geo_accession=accession,
                 title=titles[index],
                 phenotype=phenotype,
@@ -105,7 +130,64 @@ def parse_gene_count_text(gene_count_text: str) -> dict[str, int]:
     return counts
 
 
-def _select_samples(samples: list[GeoCountSample], label: str) -> list[GeoCountSample]:
+def parse_geo_series_matrix_table(series_matrix_text: str) -> tuple[list[str], list[tuple[str, list[float]]]]:
+    """Parse the expression table from a GEO series matrix."""
+    lines = series_matrix_text.splitlines()
+    in_table = False
+    sample_ids: list[str] = []
+    rows: list[tuple[str, list[float]]] = []
+
+    for line in lines:
+        if line.startswith("!series_matrix_table_begin"):
+            in_table = True
+            continue
+        if line.startswith("!series_matrix_table_end"):
+            break
+        if not in_table:
+            continue
+        cells = _parse_tsv_row(line)
+        if not sample_ids:
+            sample_ids = cells[1:]
+            continue
+        rows.append((cells[0], [float(value) for value in cells[1:]]))
+    return sample_ids, rows
+
+
+def parse_geo_platform_gene_symbols(platform_text: str) -> dict[str, str]:
+    """Parse unambiguous probe-to-symbol mappings from a GEO annotation file."""
+    lines = platform_text.splitlines()
+    header: list[str] | None = None
+    data_lines: list[str] = []
+    for line in lines:
+        if line.startswith("#ID ="):
+            header = ["ID"]
+            continue
+        if header is not None and line.startswith("#"):
+            label = line[1:].split(" = ", 1)[0]
+            header.append(label)
+            continue
+        if line.startswith("^Annotation") or line.startswith("!"):
+            continue
+        if line.strip():
+            data_lines.append(line)
+
+    if header is None:
+        return {}
+
+    reader = csv.DictReader(data_lines, delimiter="\t", fieldnames=header)
+    mapping: dict[str, str] = {}
+    for row in reader:
+        probe_id = (row.get("ID") or "").strip()
+        gene_symbol = (row.get("Gene symbol") or "").strip()
+        if not probe_id or not gene_symbol or gene_symbol == "---":
+            continue
+        if "///" in gene_symbol:
+            continue
+        mapping[probe_id] = gene_symbol
+    return mapping
+
+
+def _select_samples(samples: list[GeoSample], label: str) -> list[GeoSample]:
     expected = label.lower()
     return [sample for sample in samples if expected in sample.phenotype.lower()]
 
@@ -130,20 +212,73 @@ def _standardized_mean_difference(case_values: list[float], control_values: list
     return (fmean(case_values) - fmean(control_values)) / pooled
 
 
+def _paired_standardized_effect(case_values: list[float], control_values: list[float]) -> float:
+    differences = [case - control for case, control in zip(case_values, control_values)]
+    if len(differences) < 2:
+        return 0.0
+    diff_sd = stdev(differences)
+    if diff_sd == 0.0:
+        return 0.0
+    return fmean(differences) / diff_sd
+
+
+def _safe_ttest_ind(case_values: list[float], control_values: list[float]) -> tuple[float, float]:
+    if len(case_values) < 2 or len(control_values) < 2:
+        return 0.0, 1.0
+    case_mean = fmean(case_values)
+    control_mean = fmean(control_values)
+    case_var = stdev(case_values) ** 2
+    control_var = stdev(control_values) ** 2
+    denominator = math.sqrt((case_var / len(case_values)) + (control_var / len(control_values)))
+    if denominator == 0.0:
+        return 0.0, 1.0
+    statistic = (case_mean - control_mean) / denominator
+    p_value = 2.0 * (1.0 - NormalDist().cdf(abs(statistic)))
+    return float(statistic), float(max(min(p_value, 1.0), 0.0))
+
+
+def _safe_ttest_rel(case_values: list[float], control_values: list[float]) -> tuple[float, float]:
+    differences = [case - control for case, control in zip(case_values, control_values)]
+    if len(differences) < 2:
+        return 0.0, 1.0
+    diff_mean = fmean(differences)
+    diff_sd = stdev(differences)
+    if diff_sd == 0.0:
+        return 0.0, 1.0
+    statistic = diff_mean / (diff_sd / math.sqrt(len(differences)))
+    p_value = 2.0 * (1.0 - NormalDist().cdf(abs(statistic)))
+    return float(statistic), float(max(min(p_value, 1.0), 0.0))
+
+
+def _bh_adjust(records: list[dict[str, Any]]) -> None:
+    ranked = sorted(enumerate(records), key=lambda item: item[1]["statistics"]["p_value"])
+    total = len(ranked)
+    running_min = 1.0
+    adjusted = [1.0] * total
+    for reverse_rank, (index, record) in enumerate(reversed(ranked), start=1):
+        rank = total - reverse_rank + 1
+        p_value = float(record["statistics"]["p_value"])
+        corrected = min(p_value * total / rank, 1.0)
+        running_min = min(running_min, corrected)
+        adjusted[index] = running_min
+    for index, value in enumerate(adjusted):
+        records[index]["statistics"]["adjusted_p_value"] = round(value, 12)
+
+
 def build_real_gene_statistics(
     *,
     contrast_id: str,
     benchmark_id: str,
     dataset_id: str,
-    case_samples: list[GeoCountSample],
-    control_samples: list[GeoCountSample],
+    case_samples: list[GeoSample],
+    control_samples: list[GeoSample],
     sample_counts: dict[str, dict[str, int]],
 ) -> list[dict[str, Any]]:
-    """Build real gene-level transcriptomics statistics from accession-level counts."""
+    """Build inferential RNA-seq gene statistics from accession-level counts."""
     ordered_samples = case_samples + control_samples
     library_sizes = _library_sizes(sample_counts)
     all_genes = sorted({gene_id for counts in sample_counts.values() for gene_id in counts})
-    stats: list[dict[str, Any]] = []
+    records: list[dict[str, Any]] = []
 
     for gene_id in all_genes:
         case_values = [
@@ -157,7 +292,8 @@ def build_real_gene_statistics(
         mean_case = fmean(case_values)
         mean_control = fmean(control_values)
         raw_counts = [sample_counts[sample.geo_accession].get(gene_id, 0) for sample in ordered_samples]
-        stats.append(
+        t_statistic, p_value = _safe_ttest_ind(case_values, control_values)
+        records.append(
             {
                 "schema_version": "0.1.0",
                 "evidence_kind": "accession_backed_real",
@@ -172,6 +308,8 @@ def build_real_gene_statistics(
                     "case_mean_log2_cpm": round(mean_case, 6),
                     "control_mean_log2_cpm": round(mean_control, 6),
                     "log2_fold_change": round(mean_case - mean_control, 6),
+                    "t_statistic": round(t_statistic, 6),
+                    "p_value": round(p_value, 12),
                     "standardized_mean_difference": round(
                         _standardized_mean_difference(case_values, control_values),
                         6,
@@ -186,19 +324,160 @@ def build_real_gene_statistics(
                     "source_kind": "geo_sample_supplement",
                     "series_accession": dataset_id,
                     "sample_geo_accessions": [sample.geo_accession for sample in ordered_samples],
-                    "analysis_notes": "Computed from accession-level GEO gene count tables using log2(CPM+1) group means.",
+                    "analysis_notes": "Computed from accession-level GEO gene count tables using log2(CPM+1) with Welch t-tests and BH FDR.",
+                    "inferential_limit": "Two-sided p-values use a normal approximation to the test statistic in the default stdlib-only implementation.",
                 },
             }
         )
-    return stats
+    _bh_adjust(records)
+    return records
 
 
-def load_real_geo_gene_statistics(contrast_id: str) -> list[dict[str, Any]]:
-    """Load real accession-backed gene statistics for a supported contrast."""
-    config = REAL_COUNT_CONTRASTS.get(contrast_id)
-    if config is None:
-        return []
+def _pair_id_from_title(title: str) -> str | None:
+    hcc_match = re.search(r"HCC(\d+)", title, re.IGNORECASE)
+    if hcc_match:
+        return hcc_match.group(1)
+    patient_match = re.search(r"Patient\s+(\d+)", title, re.IGNORECASE)
+    if patient_match:
+        return patient_match.group(1)
+    return None
 
+
+def _is_case_sample(sample: GeoSample) -> bool:
+    phenotype = sample.phenotype.lower()
+    if "non-tumorous" in phenotype or "normal" in phenotype or "adjacent" in phenotype:
+        return False
+    return "carcinoma" in phenotype or "tumor" in phenotype
+
+
+def _aggregate_probe_rows_by_gene(
+    sample_ids: list[str],
+    rows: list[tuple[str, list[float]]],
+    probe_to_symbol: dict[str, str],
+    symbol_to_gene: dict[str, dict[str, str]],
+) -> list[dict[str, Any]]:
+    grouped: dict[str, dict[str, Any]] = {}
+    for probe_id, values in rows:
+        symbol = probe_to_symbol.get(probe_id)
+        if symbol is None:
+            continue
+        gene = symbol_to_gene.get(symbol)
+        if gene is None:
+            continue
+        bucket = grouped.setdefault(
+            gene["ensembl_gene_id"],
+            {
+                "symbol": symbol,
+                "hgnc_id": gene["hgnc_id"],
+                "probes": [],
+                "vectors": [],
+            },
+        )
+        bucket["probes"].append(probe_id)
+        bucket["vectors"].append(values)
+
+    aggregated: list[dict[str, Any]] = []
+    for ensembl_gene_id, bucket in grouped.items():
+        vectors = bucket["vectors"]
+        averaged = [
+            fmean(vector[column] for vector in vectors)
+            for column in range(len(sample_ids))
+        ]
+        aggregated.append(
+            {
+                "ensembl_gene_id": ensembl_gene_id,
+                "symbol": bucket["symbol"],
+                "hgnc_id": bucket["hgnc_id"],
+                "probe_ids": sorted(bucket["probes"]),
+                "probe_count": len(bucket["probes"]),
+                "values": averaged,
+            }
+        )
+    return aggregated
+
+
+def build_microarray_gene_statistics(
+    *,
+    contrast_id: str,
+    benchmark_id: str,
+    dataset_id: str,
+    samples: list[GeoSample],
+    sample_ids: list[str],
+    gene_rows: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Build inferential microarray gene statistics from paired GEO matrix values."""
+    sample_by_accession = {sample.geo_accession: sample for sample in samples}
+    pairs: dict[str, dict[str, str]] = {}
+    for sample_id in sample_ids:
+        sample = sample_by_accession[sample_id]
+        pair_id = _pair_id_from_title(sample.title)
+        if pair_id is None:
+            continue
+        pair_bucket = pairs.setdefault(pair_id, {})
+        if _is_case_sample(sample):
+            pair_bucket["case"] = sample_id
+        else:
+            pair_bucket["control"] = sample_id
+
+    ordered_pairs = sorted(
+        (pair_id, values["case"], values["control"])
+        for pair_id, values in pairs.items()
+        if "case" in values and "control" in values
+    )
+    sample_index = {sample_id: index for index, sample_id in enumerate(sample_ids)}
+    records: list[dict[str, Any]] = []
+
+    for gene_row in gene_rows:
+        case_values = [gene_row["values"][sample_index[case_id]] for _, case_id, _ in ordered_pairs]
+        control_values = [gene_row["values"][sample_index[control_id]] for _, _, control_id in ordered_pairs]
+        mean_case = fmean(case_values)
+        mean_control = fmean(control_values)
+        t_statistic, p_value = _safe_ttest_rel(case_values, control_values)
+        records.append(
+            {
+                "schema_version": "0.1.0",
+                "evidence_kind": "accession_backed_real",
+                "contrast_id": contrast_id,
+                "benchmark_id": benchmark_id,
+                "dataset_id": dataset_id,
+                "gene": {
+                    "ensembl_gene_id": gene_row["ensembl_gene_id"],
+                    "symbol": gene_row["symbol"],
+                    "hgnc_id": gene_row["hgnc_id"],
+                },
+                "statistics": {
+                    "case_mean_log2_intensity": round(mean_case, 6),
+                    "control_mean_log2_intensity": round(mean_control, 6),
+                    "log2_fold_change": round(mean_case - mean_control, 6),
+                    "t_statistic": round(t_statistic, 6),
+                    "p_value": round(p_value, 12),
+                    "standardized_mean_difference": round(
+                        _paired_standardized_effect(case_values, control_values),
+                        6,
+                    ),
+                    "mean_expression": round(fmean(case_values + control_values), 6),
+                    "probe_count": gene_row["probe_count"],
+                },
+                "sample_counts": {
+                    "case": len(case_values),
+                    "control": len(control_values),
+                },
+                "provenance": {
+                    "source_kind": "geo_series_matrix",
+                    "series_accession": dataset_id,
+                    "sample_geo_accessions": sample_ids,
+                    "paired_design": True,
+                    "source_probe_ids": gene_row["probe_ids"],
+                    "analysis_notes": "Computed from GEO series-matrix log-intensity values using paired t-tests after averaging unambiguous GPL96 probes per HGNC-mapped gene.",
+                    "inferential_limit": "Two-sided p-values use a normal approximation to the test statistic in the default stdlib-only implementation.",
+                },
+            }
+        )
+    _bh_adjust(records)
+    return records
+
+
+def _load_rnaseq_count_contrast(config: dict[str, str], contrast_id: str) -> list[dict[str, Any]]:
     series_text = load_text_with_cache(_series_matrix_url(config["series_accession"]), namespace="geo_cache")
     samples = parse_geo_series_samples(series_text)
     case_samples = _select_samples(samples, config["case_label"])
@@ -231,3 +510,35 @@ def load_real_geo_gene_statistics(contrast_id: str) -> list[dict[str, Any]]:
                 "hgnc_id": mapping["hgnc_id"],
             }
     return records
+
+
+def _load_microarray_series_contrast(config: dict[str, str], contrast_id: str) -> list[dict[str, Any]]:
+    series_text = load_text_with_cache(_series_matrix_url(config["series_accession"]), namespace="geo_cache")
+    samples = parse_geo_series_samples(series_text)
+    sample_ids, rows = parse_geo_series_matrix_table(series_text)
+    platform_text = load_text_with_cache(_platform_annotation_url(config["platform_accession"]), namespace="geo_platform_cache")
+    probe_to_symbol = parse_geo_platform_gene_symbols(platform_text)
+    symbol_to_gene = load_hgnc_symbol_reverse_map()
+    gene_rows = _aggregate_probe_rows_by_gene(sample_ids, rows, probe_to_symbol, symbol_to_gene)
+    return build_microarray_gene_statistics(
+        contrast_id=contrast_id,
+        benchmark_id=config["benchmark_id"],
+        dataset_id=config["dataset_id"],
+        samples=samples,
+        sample_ids=sample_ids,
+        gene_rows=gene_rows,
+    )
+
+
+def load_real_geo_gene_statistics(contrast_id: str) -> list[dict[str, Any]]:
+    """Load real accession-backed gene statistics for a supported contrast."""
+    config = REAL_CONTRASTS.get(contrast_id)
+    if config is None:
+        return []
+
+    source_type = config["source_type"]
+    if source_type == "geo_rnaseq_counts":
+        return _load_rnaseq_count_contrast(config, contrast_id)
+    if source_type == "geo_microarray_series":
+        return _load_microarray_series_contrast(config, contrast_id)
+    raise ValueError(f"Unsupported real contrast source type: {source_type}")

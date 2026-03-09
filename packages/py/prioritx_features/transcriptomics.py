@@ -85,7 +85,10 @@ def derive_real_gene_transcriptomics_features(record: dict[str, Any]) -> dict[st
     stats = record["statistics"]
     log2_fold_change = float(stats["log2_fold_change"])
     standardized_mean_difference = float(stats["standardized_mean_difference"])
-    mean_raw_count = max(float(stats["mean_raw_count"]), 0.0)
+    adjusted_p_value = max(float(stats["adjusted_p_value"]), 1e-300)
+    significance = min(-math.log10(adjusted_p_value), 20.0)
+    abundance_value = float(stats.get("mean_raw_count", stats.get("mean_expression", 0.0)))
+    abundance_kind = "raw_count" if "mean_raw_count" in stats else "expression"
 
     return {
         "contrast_id": record["contrast_id"],
@@ -96,6 +99,8 @@ def derive_real_gene_transcriptomics_features(record: dict[str, Any]) -> dict[st
         "effect_direction": 1 if log2_fold_change >= 0 else -1,
         "absolute_log2_fold_change": round(abs(log2_fold_change), 4),
         "absolute_standardized_mean_difference": round(abs(standardized_mean_difference), 4),
-        "mean_raw_count": round(mean_raw_count, 4),
+        "significance_score": round(significance, 4),
+        "abundance_value": round(max(abundance_value, 0.0), 4),
+        "abundance_kind": abundance_kind,
         "evidence_kind": record["evidence_kind"],
     }

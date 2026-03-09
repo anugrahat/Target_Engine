@@ -36,7 +36,10 @@ Current benchmark ordering after source verification:
 - research, architecture, benchmark packs, curated subsets, generated registry fixtures, and a minimal read-only registry API are in place
 - a first metadata-derived transcriptomics readiness layer is in place over curated study contrasts
 - the read-only API also exposes metadata-derived contrast readiness scores
-- a first accession-backed RNA-seq evidence path is in place for `ipf_lung_core_gse52463` using official GEO sample-level gene-count tables plus HGNC-backed approved-symbol mapping
+- two accession-backed transcriptomics evidence paths are now live:
+  - `ipf_lung_core_gse52463` via GEO RNA-seq sample-level gene-count tables
+  - `hcc_adult_core_gse60502` via paired GEO series-matrix microarray values plus `GPL96.annot.gz`
+- both real-data paths expose inferential statistics, BH-adjusted p-values, and HGNC-backed identifiers where recoverable
 - illustrative transcriptomics gene-stat fixtures remain isolated for test scaffolding only
 
 ## Validation

@@ -76,24 +76,30 @@ def score_gene_transcriptomics(features: dict[str, Any]) -> dict[str, Any]:
 
 
 def score_real_gene_transcriptomics(features: dict[str, Any]) -> dict[str, Any]:
-    """Score accession-backed transcriptomics evidence from real GEO counts."""
-    effect_component = 0.5 * min(float(features["absolute_log2_fold_change"]) / 3.0, 1.0)
-    standardized_component = 0.35 * min(float(features["absolute_standardized_mean_difference"]) / 3.0, 1.0)
-    count_component = 0.15 * min(math.log10(float(features["mean_raw_count"]) + 1.0) / 4.0, 1.0)
+    """Score accession-backed transcriptomics evidence with inferential support."""
+    effect_component = 0.35 * min(float(features["absolute_log2_fold_change"]) / 3.0, 1.0)
+    significance_component = 0.35 * min(float(features["significance_score"]) / 10.0, 1.0)
+    standardized_component = 0.2 * min(float(features["absolute_standardized_mean_difference"]) / 3.0, 1.0)
 
-    score = effect_component + standardized_component + count_component
+    if features["abundance_kind"] == "raw_count":
+        abundance_component = 0.1 * min(math.log10(float(features["abundance_value"]) + 1.0) / 4.0, 1.0)
+    else:
+        abundance_component = 0.1 * min(float(features["abundance_value"]) / 15.0, 1.0)
+
+    score = effect_component + significance_component + standardized_component + abundance_component
     return {
         "contrast_id": features["contrast_id"],
         "benchmark_id": features["benchmark_id"],
         "dataset_id": features["dataset_id"],
         "ensembl_gene_id": features["ensembl_gene_id"],
         "gene_symbol": features["gene_symbol"],
-        "score_name": "real_transcriptomics_effect_score",
+        "score_name": "real_transcriptomics_inferential_score",
         "score": round(score, 4),
         "components": {
             "effect_component": round(effect_component, 4),
+            "significance_component": round(significance_component, 4),
             "standardized_component": round(standardized_component, 4),
-            "count_component": round(count_component, 4),
+            "abundance_component": round(abundance_component, 4),
         },
         "evidence_kind": features["evidence_kind"],
     }

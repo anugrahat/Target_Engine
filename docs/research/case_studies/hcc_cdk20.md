@@ -91,3 +91,7 @@ Reason:
 ## PrioriTx implication
 
 HCC remains scientifically useful, but it should no longer be treated as a clean first-wave benchmark without explicit cohort curation. PrioriTx should either construct a curated HCC-only subset or downgrade this case below IPF for early benchmark work.
+
+Current implementation note:
+
+- `GSE60502` is now a real accession-backed PrioriTx transcriptomics path because the GEO series matrix is complete, the design is paired, and `GPL96.annot.gz` provides recoverable primary-source probe annotation

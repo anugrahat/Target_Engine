@@ -115,18 +115,20 @@ Disease keys:
 - tractability signal
 - tissue liability or safety signal
 
-### First Real Transcriptomics Connector
+### First Real Transcriptomics Connectors
 
-The first accession-backed transcriptomics connector admitted into implementation is:
+The first accession-backed transcriptomics connectors admitted into implementation are:
 
 - `ipf_lung_core_gse52463`
+- `hcc_adult_core_gse60502`
 
 Scientific constraints:
 
 - source must remain the official GEO series metadata plus accession-resolved `*.genes.txt.gz` sample supplements
-- the current scoring path is a transparent effect-ranking over log2(CPM+1), not a full DESeq2 or limma-style inferential pipeline
+- microarray paths must use platform annotation files recoverable from GEO, not opaque third-party remappings
 - primary gene key remains Ensembl gene ID even after adding HGNC-backed symbol mapping
 - approved gene symbols should come from the HGNC complete set and be cached locally for reproducibility
+- the current inferential layer uses transparent t-statistics plus BH correction, with a normal-approximation two-sided p-value in the default stdlib-only runtime
 
 ## Ranking Spec
 

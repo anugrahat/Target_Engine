@@ -48,14 +48,14 @@ class HttpApiTests(unittest.TestCase):
         self.assertIn("error", payload)
 
     def test_transcriptomics_real_scores_route(self) -> None:
-        mocked_items = [{"ensembl_gene_id": "ENSG000001", "score_name": "real_transcriptomics_effect_score"}]
+        mocked_items = [{"ensembl_gene_id": "ENSG000001", "score_name": "real_transcriptomics_inferential_score"}]
         with patch("prioritx_data.http_api.transcriptomics_real_scores", return_value=mocked_items):
             status, payload = handle_get(
                 "/transcriptomics-real-scores",
                 {"contrast_id": ["ipf_lung_core_gse52463"]},
             )
         self.assertEqual(200, status)
-        self.assertEqual("real_transcriptomics_effect_score", payload["items"][0]["score_name"])
+        self.assertEqual("real_transcriptomics_inferential_score", payload["items"][0]["score_name"])
 
     def test_transcriptomics_real_scores_requires_contrast_id(self) -> None:
         status, payload = handle_get("/transcriptomics-real-scores", {})

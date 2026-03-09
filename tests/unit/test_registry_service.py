@@ -61,6 +61,7 @@ class RegistryServiceTests(unittest.TestCase):
                 "statistics": {
                     "log2_fold_change": 1.8,
                     "standardized_mean_difference": 2.1,
+                    "adjusted_p_value": 0.001,
                     "mean_raw_count": 120.0,
                 },
                 "sample_counts": {"case": 8, "control": 7},
@@ -70,7 +71,7 @@ class RegistryServiceTests(unittest.TestCase):
         with patch("prioritx_data.service.load_real_geo_gene_statistics", return_value=mocked_records):
             items = transcriptomics_real_scores("ipf_lung_core_gse52463")
         self.assertEqual(1, len(items))
-        self.assertEqual("real_transcriptomics_effect_score", items[0]["score_name"])
+        self.assertEqual("real_transcriptomics_inferential_score", items[0]["score_name"])
 
 
 if __name__ == "__main__":
