@@ -95,3 +95,4 @@ HCC remains scientifically useful, but it should no longer be treated as a clean
 Current implementation note:
 
 - `GSE60502` is now a real accession-backed PrioriTx transcriptomics path because the GEO series matrix is complete, the design is paired, and `GPL96.annot.gz` provides recoverable primary-source probe annotation
+- `GSE45267` is now a second real accession-backed HCC transcriptomics path because the GEO series matrix is complete and `GPL570.annot.gz` provides recoverable primary-source probe annotation for an unpaired tumor-versus-noncancerous comparison

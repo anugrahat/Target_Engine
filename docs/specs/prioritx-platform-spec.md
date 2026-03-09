@@ -121,6 +121,7 @@ The first accession-backed transcriptomics connectors admitted into implementati
 
 - `ipf_lung_core_gse52463`
 - `hcc_adult_core_gse60502`
+- `hcc_adult_core_gse45267`
 
 Scientific constraints:
 

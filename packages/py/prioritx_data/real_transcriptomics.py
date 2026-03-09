@@ -25,10 +25,21 @@ REAL_CONTRASTS: dict[str, dict[str, str]] = {
         "source_type": "geo_microarray_series",
         "series_accession": "GSE60502",
         "platform_accession": "GPL96",
+        "design": "paired",
         "benchmark_id": "hcc_cdk20",
         "dataset_id": "GSE60502",
         "case_label": "hepatocellular carcinoma",
         "control_label": "adjacent non-tumorous liver",
+    },
+    "hcc_adult_core_gse45267": {
+        "source_type": "geo_microarray_series",
+        "series_accession": "GSE45267",
+        "platform_accession": "GPL570",
+        "design": "unpaired",
+        "benchmark_id": "hcc_cdk20",
+        "dataset_id": "GSE45267",
+        "case_label": "tumor",
+        "control_label": "normal",
     },
 }
 
@@ -106,6 +117,7 @@ def parse_geo_series_samples(series_matrix_text: str) -> list[GeoSample]:
             or characteristics[index].get("disease")
             or characteristics[index].get("diagnosis")
             or characteristics[index].get("tissue type")
+            or characteristics[index].get("tissue")
             or ""
         )
         samples.append(
@@ -486,35 +498,58 @@ def build_microarray_gene_statistics(
     samples: list[GeoSample],
     sample_ids: list[str],
     gene_rows: list[dict[str, Any]],
+    paired_design: bool,
 ) -> list[dict[str, Any]]:
     """Build inferential microarray gene statistics from paired GEO matrix values."""
     sample_by_accession = {sample.geo_accession: sample for sample in samples}
-    pairs: dict[str, dict[str, str]] = {}
-    for sample_id in sample_ids:
-        sample = sample_by_accession[sample_id]
-        pair_id = _pair_id_from_title(sample.title)
-        if pair_id is None:
-            continue
-        pair_bucket = pairs.setdefault(pair_id, {})
-        if _is_case_sample(sample):
-            pair_bucket["case"] = sample_id
-        else:
-            pair_bucket["control"] = sample_id
-
-    ordered_pairs = sorted(
-        (pair_id, values["case"], values["control"])
-        for pair_id, values in pairs.items()
-        if "case" in values and "control" in values
-    )
     sample_index = {sample_id: index for index, sample_id in enumerate(sample_ids)}
+    case_ids = [sample_id for sample_id in sample_ids if _is_case_sample(sample_by_accession[sample_id])]
+    control_ids = [sample_id for sample_id in sample_ids if not _is_case_sample(sample_by_accession[sample_id])]
     records: list[dict[str, Any]] = []
 
+    if paired_design:
+        pairs: dict[str, dict[str, str]] = {}
+        for sample_id in sample_ids:
+            sample = sample_by_accession[sample_id]
+            pair_id = _pair_id_from_title(sample.title)
+            if pair_id is None:
+                continue
+            pair_bucket = pairs.setdefault(pair_id, {})
+            if _is_case_sample(sample):
+                pair_bucket["case"] = sample_id
+            else:
+                pair_bucket["control"] = sample_id
+
+        ordered_pairs = sorted(
+            (pair_id, values["case"], values["control"])
+            for pair_id, values in pairs.items()
+            if "case" in values and "control" in values
+        )
+    else:
+        ordered_pairs = []
+
     for gene_row in gene_rows:
-        case_values = [gene_row["values"][sample_index[case_id]] for _, case_id, _ in ordered_pairs]
-        control_values = [gene_row["values"][sample_index[control_id]] for _, _, control_id in ordered_pairs]
+        if paired_design:
+            case_values = [gene_row["values"][sample_index[case_id]] for _, case_id, _ in ordered_pairs]
+            control_values = [gene_row["values"][sample_index[control_id]] for _, _, control_id in ordered_pairs]
+            t_statistic, p_value, degrees_of_freedom = _safe_ttest_rel(case_values, control_values)
+            standardized_effect = _paired_standardized_effect(case_values, control_values)
+            p_value_method = "Student t distribution with paired t degrees of freedom."
+            analysis_notes = "Computed from GEO series-matrix log-intensity values using paired t-tests after averaging unambiguous platform probes per HGNC-mapped gene."
+            paired_flag = True
+        else:
+            case_values = [gene_row["values"][sample_index[case_id]] for case_id in case_ids]
+            control_values = [gene_row["values"][sample_index[control_id]] for control_id in control_ids]
+            t_statistic, p_value, degrees_of_freedom = _safe_ttest_ind(case_values, control_values)
+            standardized_effect = _standardized_mean_difference(case_values, control_values)
+            p_value_method = "Student t distribution with Welch-Satterthwaite degrees of freedom."
+            analysis_notes = "Computed from GEO series-matrix log-intensity values using Welch t-tests after averaging unambiguous platform probes per HGNC-mapped gene."
+            paired_flag = False
+
+        if not case_values or not control_values:
+            continue
         mean_case = fmean(case_values)
         mean_control = fmean(control_values)
-        t_statistic, p_value, degrees_of_freedom = _safe_ttest_rel(case_values, control_values)
         records.append(
             {
                 "schema_version": "0.1.0",
@@ -534,10 +569,7 @@ def build_microarray_gene_statistics(
                     "t_statistic": round(t_statistic, 6),
                     "degrees_of_freedom": round(degrees_of_freedom, 6),
                     "p_value": round(p_value, 12),
-                    "standardized_mean_difference": round(
-                        _paired_standardized_effect(case_values, control_values),
-                        6,
-                    ),
+                    "standardized_mean_difference": round(standardized_effect, 6),
                     "mean_expression": round(fmean(case_values + control_values), 6),
                     "probe_count": gene_row["probe_count"],
                 },
@@ -549,10 +581,10 @@ def build_microarray_gene_statistics(
                     "source_kind": "geo_series_matrix",
                     "series_accession": dataset_id,
                     "sample_geo_accessions": sample_ids,
-                    "paired_design": True,
+                    "paired_design": paired_flag,
                     "source_probe_ids": gene_row["probe_ids"],
-                    "analysis_notes": "Computed from GEO series-matrix log-intensity values using paired t-tests after averaging unambiguous GPL96 probes per HGNC-mapped gene.",
-                    "p_value_method": "Student t distribution with paired t degrees of freedom.",
+                    "analysis_notes": analysis_notes,
+                    "p_value_method": p_value_method,
                 },
             }
         )
@@ -610,6 +642,7 @@ def _load_microarray_series_contrast(config: dict[str, str], contrast_id: str) -
         samples=samples,
         sample_ids=sample_ids,
         gene_rows=gene_rows,
+        paired_design=config.get("design") == "paired",
     )
 
 

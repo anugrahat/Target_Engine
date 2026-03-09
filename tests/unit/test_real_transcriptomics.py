@@ -127,11 +127,44 @@ class RealTranscriptomicsTests(unittest.TestCase):
             samples=samples,
             sample_ids=sample_ids,
             gene_rows=gene_rows,
+            paired_design=True,
         )
         self.assertEqual(1, len(records))
         self.assertGreater(records[0]["statistics"]["log2_fold_change"], 0.0)
         self.assertIn("adjusted_p_value", records[0]["statistics"])
         self.assertEqual(1.0, records[0]["statistics"]["degrees_of_freedom"])
+        self.assertTrue(records[0]["provenance"]["paired_design"])
+
+    def test_builds_unpaired_microarray_gene_statistics(self) -> None:
+        samples = [
+            GeoSample("GSMN1", "normal 1", "Normal", ""),
+            GeoSample("GSMN2", "normal 2", "Normal", ""),
+            GeoSample("GSMT1", "tumor 1", "Tumor", ""),
+            GeoSample("GSMT2", "tumor 2", "Tumor", ""),
+        ]
+        sample_ids = ["GSMN1", "GSMN2", "GSMT1", "GSMT2"]
+        gene_rows = [
+            {
+                "ensembl_gene_id": "ENSG000001",
+                "symbol": "GENEA",
+                "hgnc_id": "HGNC:1",
+                "probe_ids": ["1007_s_at"],
+                "probe_count": 1,
+                "values": [4.8, 5.1, 8.0, 8.2],
+            }
+        ]
+        records = build_microarray_gene_statistics(
+            contrast_id="hcc_adult_core_gse45267",
+            benchmark_id="hcc_cdk20",
+            dataset_id="GSE45267",
+            samples=samples,
+            sample_ids=sample_ids,
+            gene_rows=gene_rows,
+            paired_design=False,
+        )
+        self.assertEqual(1, len(records))
+        self.assertFalse(records[0]["provenance"]["paired_design"])
+        self.assertGreater(records[0]["statistics"]["degrees_of_freedom"], 0.0)
 
     def test_student_t_two_sided_p_value_matches_known_reference(self) -> None:
         p_value = _student_t_two_sided_p_value(2.228, 10.0)
