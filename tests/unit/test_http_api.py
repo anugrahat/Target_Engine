@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 from prioritx_data.http_api import handle_get
 
@@ -43,6 +44,21 @@ class HttpApiTests(unittest.TestCase):
 
     def test_transcriptomics_fixture_scores_requires_contrast_id(self) -> None:
         status, payload = handle_get("/transcriptomics-fixture-scores", {})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
+    def test_transcriptomics_real_scores_route(self) -> None:
+        mocked_items = [{"ensembl_gene_id": "ENSG000001", "score_name": "real_transcriptomics_effect_score"}]
+        with patch("prioritx_data.http_api.transcriptomics_real_scores", return_value=mocked_items):
+            status, payload = handle_get(
+                "/transcriptomics-real-scores",
+                {"contrast_id": ["ipf_lung_core_gse52463"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("real_transcriptomics_effect_score", payload["items"][0]["score_name"])
+
+    def test_transcriptomics_real_scores_requires_contrast_id(self) -> None:
+        status, payload = handle_get("/transcriptomics-real-scores", {})
         self.assertEqual(400, status)
         self.assertIn("error", payload)
 

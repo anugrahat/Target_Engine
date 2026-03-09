@@ -68,6 +68,7 @@
 - `GSE52463`
   - `8` IPF lung samples
   - `7` healthy control lung samples
+  - the accession-resolved `*.genes.txt.gz` sample supplements are cleaner than the aggregate `GSE52463_genes.txt.gz` file, whose column labels do not perfectly match the 15-sample GEO series record
 - `GSE72073`
   - `5` IPF lung samples
   - `3` normal-control lung samples from patients with primary spontaneous pneumothorax

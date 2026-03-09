@@ -6,10 +6,19 @@ import json
 from pathlib import Path
 from typing import Any
 
+from prioritx_data.real_transcriptomics import list_real_contrast_ids, load_real_geo_gene_statistics
 from prioritx_data.registry import RegistryArtifact, list_dataset_manifests, list_study_contrasts, repo_root
 from prioritx_data.transcriptomics import list_fixture_contrast_ids, load_transcriptomics_fixture
-from prioritx_features.transcriptomics import derive_contrast_quality_features, derive_gene_transcriptomics_features
-from prioritx_rank.baseline import score_contrast_readiness, score_gene_transcriptomics
+from prioritx_features.transcriptomics import (
+    derive_contrast_quality_features,
+    derive_gene_transcriptomics_features,
+    derive_real_gene_transcriptomics_features,
+)
+from prioritx_rank.baseline import (
+    score_contrast_readiness,
+    score_gene_transcriptomics,
+    score_real_gene_transcriptomics,
+)
 
 
 def _subset_example_dir() -> Path:
@@ -129,6 +138,25 @@ def transcriptomics_fixture_scores(contrast_id: str) -> list[dict[str, Any]]:
     records = load_transcriptomics_fixture(contrast_id)
     scored = [
         score_gene_transcriptomics(derive_gene_transcriptomics_features(record))
+        for record in records
+    ]
+    scored.sort(key=lambda item: item["score"], reverse=True)
+    return scored
+
+
+def transcriptomics_real_scores(contrast_id: str) -> list[dict[str, Any]]:
+    """Compute accession-backed gene-level scores for one supported contrast."""
+    if contrast_id not in set(list_real_contrast_ids()):
+        return []
+
+    records = load_real_geo_gene_statistics(contrast_id)
+    scored = [
+        {
+            **score_real_gene_transcriptomics(derive_real_gene_transcriptomics_features(record)),
+            "statistics": record["statistics"],
+            "sample_counts": record["sample_counts"],
+            "provenance": record["provenance"],
+        }
         for record in records
     ]
     scored.sort(key=lambda item: item["score"], reverse=True)

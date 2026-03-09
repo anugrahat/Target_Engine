@@ -1,0 +1,8 @@
+!Series_geo_accession	"GSE52463"
+!Sample_title	"Norm1"	"Norm2"	"IPF1"	"IPF2"
+!Sample_geo_accession	"GSMN1"	"GSMN2"	"GSMI1"	"GSMI2"
+!Sample_characteristics_ch1	"phenotype: normal"	"phenotype: normal"	"phenotype: Idiopathic pulmonary fibrosis"	"phenotype: Idiopathic pulmonary fibrosis"
+!Sample_supplementary_file_1	"ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSMNnnn/GSMN1/suppl/GSMN1_Norm1.genes.txt.gz"	"ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSMNnnn/GSMN2/suppl/GSMN2_Norm2.genes.txt.gz"	"ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSMInnn/GSMI1/suppl/GSMI1_IPF1.genes.txt.gz"	"ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSMInnn/GSMI2/suppl/GSMI2_IPF2.genes.txt.gz"
+!series_matrix_table_begin
+"ID_REF"	"GSMN1"	"GSMN2"	"GSMI1"	"GSMI2"
+!series_matrix_table_end

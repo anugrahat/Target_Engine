@@ -12,6 +12,7 @@ from prioritx_data.service import (
     query_dataset_manifests,
     query_study_contrasts,
     transcriptomics_fixture_scores,
+    transcriptomics_real_scores,
 )
 
 
@@ -33,6 +34,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
                 "/dataset-manifests",
                 "/study-contrasts",
                 "/contrast-readiness",
+                "/transcriptomics-real-scores",
                 "/transcriptomics-fixture-scores",
             ],
         }
@@ -92,5 +94,11 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
         if not contrast_id:
             return 400, {"error": "contrast_id query parameter is required"}
         return 200, {"items": transcriptomics_fixture_scores(contrast_id)}
+
+    if path == "/transcriptomics-real-scores":
+        contrast_id = _single(query, "contrast_id")
+        if not contrast_id:
+            return 400, {"error": "contrast_id query parameter is required"}
+        return 200, {"items": transcriptomics_real_scores(contrast_id)}
 
     return 404, {"error": f"Unknown route: {path}"}

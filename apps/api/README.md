@@ -20,9 +20,11 @@ Current routes:
 - `/dataset-manifests`
 - `/study-contrasts`
 - `/contrast-readiness`
+- `/transcriptomics-real-scores?contrast_id=...`
 - `/transcriptomics-fixture-scores?contrast_id=...`
 
 Important:
 
+- `transcriptomics-real-scores` fetches accession-backed GEO inputs on demand and caches them under `tmp/geo_cache/`
 - transcriptomics fixture score routes expose illustrative local fixtures only
 - they are scaffolding for future real differential-expression ingestion

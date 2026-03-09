@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from prioritx_data.real_transcriptomics import list_real_contrast_ids
 from prioritx_data.transcriptomics import list_fixture_contrast_ids, load_transcriptomics_fixture
-from prioritx_data.service import query_study_contrasts
+from prioritx_data.service import query_study_contrasts, transcriptomics_real_scores
 from prioritx_features.transcriptomics import derive_contrast_quality_features, derive_gene_transcriptomics_features
 from prioritx_rank.baseline import score_contrast_readiness, score_gene_transcriptomics
 
@@ -32,6 +33,16 @@ def main() -> int:
             gene_scores.sort(key=lambda item: item["score"], reverse=True)
             top = gene_scores[0]
             print(f"- {contrast_id}: top {top['gene_symbol']} ({top['score']})")
+
+    real_ids = list_real_contrast_ids()
+    if real_ids:
+        print("Real transcriptomics gene scores:")
+        for contrast_id in real_ids:
+            gene_scores = transcriptomics_real_scores(contrast_id)
+            if not gene_scores:
+                continue
+            top = gene_scores[0]
+            print(f"- {contrast_id}: top {top['ensembl_gene_id']} ({top['score']})")
     return 0
 
 

@@ -78,3 +78,24 @@ def derive_gene_transcriptomics_features(record: dict[str, Any]) -> dict[str, An
         "significance_score": round(significance, 4),
         "fixture_status": record["fixture_status"],
     }
+
+
+def derive_real_gene_transcriptomics_features(record: dict[str, Any]) -> dict[str, Any]:
+    """Derive transparent features from accession-backed transcriptomics statistics."""
+    stats = record["statistics"]
+    log2_fold_change = float(stats["log2_fold_change"])
+    standardized_mean_difference = float(stats["standardized_mean_difference"])
+    mean_raw_count = max(float(stats["mean_raw_count"]), 0.0)
+
+    return {
+        "contrast_id": record["contrast_id"],
+        "benchmark_id": record["benchmark_id"],
+        "dataset_id": record["dataset_id"],
+        "ensembl_gene_id": record["gene"]["ensembl_gene_id"],
+        "gene_symbol": record["gene"]["symbol"],
+        "effect_direction": 1 if log2_fold_change >= 0 else -1,
+        "absolute_log2_fold_change": round(abs(log2_fold_change), 4),
+        "absolute_standardized_mean_difference": round(abs(standardized_mean_difference), 4),
+        "mean_raw_count": round(mean_raw_count, 4),
+        "evidence_kind": record["evidence_kind"],
+    }

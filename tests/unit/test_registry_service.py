@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 from prioritx_data.service import (
     benchmark_index,
@@ -10,6 +11,7 @@ from prioritx_data.service import (
     query_dataset_manifests,
     query_study_contrasts,
     transcriptomics_fixture_scores,
+    transcriptomics_real_scores,
 )
 
 
@@ -47,6 +49,28 @@ class RegistryServiceTests(unittest.TestCase):
         items = transcriptomics_fixture_scores("ipf_lung_core_gse92592")
         self.assertEqual(5, len(items))
         self.assertEqual("fixture_transcriptomics_gene_score", items[0]["score_name"])
+
+    def test_returns_real_scores_for_supported_contrast(self) -> None:
+        mocked_records = [
+            {
+                "contrast_id": "ipf_lung_core_gse52463",
+                "benchmark_id": "ipf_tnik",
+                "dataset_id": "GSE52463",
+                "gene": {"ensembl_gene_id": "ENSG000001", "symbol": None},
+                "evidence_kind": "accession_backed_real",
+                "statistics": {
+                    "log2_fold_change": 1.8,
+                    "standardized_mean_difference": 2.1,
+                    "mean_raw_count": 120.0,
+                },
+                "sample_counts": {"case": 8, "control": 7},
+                "provenance": {"series_accession": "GSE52463"},
+            }
+        ]
+        with patch("prioritx_data.service.load_real_geo_gene_statistics", return_value=mocked_records):
+            items = transcriptomics_real_scores("ipf_lung_core_gse52463")
+        self.assertEqual(1, len(items))
+        self.assertEqual("real_transcriptomics_effect_score", items[0]["score_name"])
 
 
 if __name__ == "__main__":

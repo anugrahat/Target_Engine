@@ -115,6 +115,18 @@ Disease keys:
 - tractability signal
 - tissue liability or safety signal
 
+### First Real Transcriptomics Connector
+
+The first accession-backed transcriptomics connector admitted into implementation is:
+
+- `ipf_lung_core_gse52463`
+
+Scientific constraints:
+
+- source must remain the official GEO series metadata plus accession-resolved `*.genes.txt.gz` sample supplements
+- the current scoring path is a transparent effect-ranking over log2(CPM+1), not a full DESeq2 or limma-style inferential pipeline
+- primary gene key remains Ensembl gene ID until a source-backed symbol mapping layer is added
+
 ## Ranking Spec
 
 ### Baseline Ranker
