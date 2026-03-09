@@ -128,7 +128,7 @@ Scientific constraints:
 - microarray paths must use platform annotation files recoverable from GEO, not opaque third-party remappings
 - primary gene key remains Ensembl gene ID even after adding HGNC-backed symbol mapping
 - approved gene symbols should come from the HGNC complete set and be cached locally for reproducibility
-- the current inferential layer uses transparent t-statistics plus BH correction, with a normal-approximation two-sided p-value in the default stdlib-only runtime
+- the current inferential layer uses transparent t-statistics plus BH correction, with Student t distribution p-values and explicit degrees of freedom
 
 ## Ranking Spec
 

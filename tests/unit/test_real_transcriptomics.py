@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from prioritx_data.real_transcriptomics import (
     GeoSample,
+    _student_t_two_sided_p_value,
     build_microarray_gene_statistics,
     build_real_gene_statistics,
     load_real_geo_gene_statistics,
@@ -68,6 +69,8 @@ class RealTranscriptomicsTests(unittest.TestCase):
         self.assertEqual("real_transcriptomics_inferential_score", target["score_name"])
         source = next(record for record in records if record["gene"]["ensembl_gene_id"] == "ENSG000001")
         self.assertIn("adjusted_p_value", source["statistics"])
+        self.assertIn("degrees_of_freedom", source["statistics"])
+        self.assertGreater(source["statistics"]["degrees_of_freedom"], 0.0)
 
     def test_parses_platform_mapping_and_matrix_table(self) -> None:
         platform_text = "\n".join(
@@ -128,6 +131,11 @@ class RealTranscriptomicsTests(unittest.TestCase):
         self.assertEqual(1, len(records))
         self.assertGreater(records[0]["statistics"]["log2_fold_change"], 0.0)
         self.assertIn("adjusted_p_value", records[0]["statistics"])
+        self.assertEqual(1.0, records[0]["statistics"]["degrees_of_freedom"])
+
+    def test_student_t_two_sided_p_value_matches_known_reference(self) -> None:
+        p_value = _student_t_two_sided_p_value(2.228, 10.0)
+        self.assertAlmostEqual(0.05, p_value, delta=0.003)
 
     def test_loads_real_geo_gene_statistics_with_patched_downloads(self) -> None:
         matrix_text = (self.fixture_dir / "gse52463_series_matrix_minimal.txt").read_text()

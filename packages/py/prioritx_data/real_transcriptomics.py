@@ -6,7 +6,7 @@ import csv
 import math
 import re
 from dataclasses import dataclass
-from statistics import NormalDist, fmean, stdev
+from statistics import fmean, stdev
 from typing import Any
 
 from prioritx_data.hgnc import load_hgnc_symbol_map, load_hgnc_symbol_reverse_map
@@ -222,32 +222,113 @@ def _paired_standardized_effect(case_values: list[float], control_values: list[f
     return fmean(differences) / diff_sd
 
 
-def _safe_ttest_ind(case_values: list[float], control_values: list[float]) -> tuple[float, float]:
+def _log_beta(a: float, b: float) -> float:
+    return math.lgamma(a) + math.lgamma(b) - math.lgamma(a + b)
+
+
+def _betacf(a: float, b: float, x: float) -> float:
+    max_iterations = 200
+    epsilon = 3.0e-14
+    tiny = 1.0e-300
+    qab = a + b
+    qap = a + 1.0
+    qam = a - 1.0
+    c = 1.0
+    d = 1.0 - (qab * x / qap)
+    if abs(d) < tiny:
+        d = tiny
+    d = 1.0 / d
+    fraction = d
+
+    for iteration in range(1, max_iterations + 1):
+        even_index = 2 * iteration
+        aa = iteration * (b - iteration) * x / ((qam + even_index) * (a + even_index))
+        d = 1.0 + (aa * d)
+        if abs(d) < tiny:
+            d = tiny
+        c = 1.0 + (aa / c)
+        if abs(c) < tiny:
+            c = tiny
+        d = 1.0 / d
+        fraction *= d * c
+
+        aa = -(a + iteration) * (qab + iteration) * x / ((a + even_index) * (qap + even_index))
+        d = 1.0 + (aa * d)
+        if abs(d) < tiny:
+            d = tiny
+        c = 1.0 + (aa / c)
+        if abs(c) < tiny:
+            c = tiny
+        d = 1.0 / d
+        delta = d * c
+        fraction *= delta
+        if abs(delta - 1.0) < epsilon:
+            break
+    return fraction
+
+
+def _regularized_incomplete_beta(a: float, b: float, x: float) -> float:
+    if x <= 0.0:
+        return 0.0
+    if x >= 1.0:
+        return 1.0
+    front = math.exp((a * math.log(x)) + (b * math.log1p(-x)) - _log_beta(a, b)) / a
+    if x < (a + 1.0) / (a + b + 2.0):
+        return front * _betacf(a, b, x)
+    return 1.0 - (math.exp((b * math.log1p(-x)) + (a * math.log(x)) - _log_beta(b, a)) / b) * _betacf(b, a, 1.0 - x)
+
+
+def _student_t_two_sided_p_value(statistic: float, degrees_of_freedom: float) -> float:
+    if degrees_of_freedom <= 0.0:
+        return 1.0
+    x = degrees_of_freedom / (degrees_of_freedom + (statistic ** 2))
+    return float(max(min(_regularized_incomplete_beta(degrees_of_freedom / 2.0, 0.5, x), 1.0), 0.0))
+
+
+def _welch_satterthwaite_df(case_values: list[float], control_values: list[float]) -> float:
+    case_var = stdev(case_values) ** 2
+    control_var = stdev(control_values) ** 2
+    case_term = case_var / len(case_values)
+    control_term = control_var / len(control_values)
+    numerator = (case_term + control_term) ** 2
+    denominator = 0.0
+    if len(case_values) > 1 and case_term > 0.0:
+        denominator += (case_term ** 2) / (len(case_values) - 1)
+    if len(control_values) > 1 and control_term > 0.0:
+        denominator += (control_term ** 2) / (len(control_values) - 1)
+    if denominator == 0.0:
+        return 0.0
+    return numerator / denominator
+
+
+def _safe_ttest_ind(case_values: list[float], control_values: list[float]) -> tuple[float, float, float]:
     if len(case_values) < 2 or len(control_values) < 2:
-        return 0.0, 1.0
+        return 0.0, 1.0, 0.0
     case_mean = fmean(case_values)
     control_mean = fmean(control_values)
     case_var = stdev(case_values) ** 2
     control_var = stdev(control_values) ** 2
     denominator = math.sqrt((case_var / len(case_values)) + (control_var / len(control_values)))
     if denominator == 0.0:
-        return 0.0, 1.0
+        return 0.0, 1.0, 0.0
     statistic = (case_mean - control_mean) / denominator
-    p_value = 2.0 * (1.0 - NormalDist().cdf(abs(statistic)))
-    return float(statistic), float(max(min(p_value, 1.0), 0.0))
+    degrees_of_freedom = _welch_satterthwaite_df(case_values, control_values)
+    p_value = _student_t_two_sided_p_value(statistic, degrees_of_freedom)
+    return float(statistic), float(max(min(p_value, 1.0), 0.0)), float(degrees_of_freedom)
 
 
-def _safe_ttest_rel(case_values: list[float], control_values: list[float]) -> tuple[float, float]:
+def _safe_ttest_rel(case_values: list[float], control_values: list[float]) -> tuple[float, float, float]:
     differences = [case - control for case, control in zip(case_values, control_values)]
     if len(differences) < 2:
-        return 0.0, 1.0
+        return 0.0, 1.0, 0.0
     diff_mean = fmean(differences)
     diff_sd = stdev(differences)
     if diff_sd == 0.0:
-        return 0.0, 1.0
+        return 0.0, 1.0, 0.0
     statistic = diff_mean / (diff_sd / math.sqrt(len(differences)))
-    p_value = 2.0 * (1.0 - NormalDist().cdf(abs(statistic)))
-    return float(statistic), float(max(min(p_value, 1.0), 0.0))
+    degrees_of_freedom = float(len(differences) - 1)
+    p_value = _student_t_two_sided_p_value(statistic, degrees_of_freedom)
+    return float(statistic), float(max(min(p_value, 1.0), 0.0)), degrees_of_freedom
 
 
 def _bh_adjust(records: list[dict[str, Any]]) -> None:
@@ -292,7 +373,7 @@ def build_real_gene_statistics(
         mean_case = fmean(case_values)
         mean_control = fmean(control_values)
         raw_counts = [sample_counts[sample.geo_accession].get(gene_id, 0) for sample in ordered_samples]
-        t_statistic, p_value = _safe_ttest_ind(case_values, control_values)
+        t_statistic, p_value, degrees_of_freedom = _safe_ttest_ind(case_values, control_values)
         records.append(
             {
                 "schema_version": "0.1.0",
@@ -309,6 +390,7 @@ def build_real_gene_statistics(
                     "control_mean_log2_cpm": round(mean_control, 6),
                     "log2_fold_change": round(mean_case - mean_control, 6),
                     "t_statistic": round(t_statistic, 6),
+                    "degrees_of_freedom": round(degrees_of_freedom, 6),
                     "p_value": round(p_value, 12),
                     "standardized_mean_difference": round(
                         _standardized_mean_difference(case_values, control_values),
@@ -325,7 +407,7 @@ def build_real_gene_statistics(
                     "series_accession": dataset_id,
                     "sample_geo_accessions": [sample.geo_accession for sample in ordered_samples],
                     "analysis_notes": "Computed from accession-level GEO gene count tables using log2(CPM+1) with Welch t-tests and BH FDR.",
-                    "inferential_limit": "Two-sided p-values use a normal approximation to the test statistic in the default stdlib-only implementation.",
+                    "p_value_method": "Student t distribution with Welch-Satterthwaite degrees of freedom.",
                 },
             }
         )
@@ -432,7 +514,7 @@ def build_microarray_gene_statistics(
         control_values = [gene_row["values"][sample_index[control_id]] for _, _, control_id in ordered_pairs]
         mean_case = fmean(case_values)
         mean_control = fmean(control_values)
-        t_statistic, p_value = _safe_ttest_rel(case_values, control_values)
+        t_statistic, p_value, degrees_of_freedom = _safe_ttest_rel(case_values, control_values)
         records.append(
             {
                 "schema_version": "0.1.0",
@@ -450,6 +532,7 @@ def build_microarray_gene_statistics(
                     "control_mean_log2_intensity": round(mean_control, 6),
                     "log2_fold_change": round(mean_case - mean_control, 6),
                     "t_statistic": round(t_statistic, 6),
+                    "degrees_of_freedom": round(degrees_of_freedom, 6),
                     "p_value": round(p_value, 12),
                     "standardized_mean_difference": round(
                         _paired_standardized_effect(case_values, control_values),
@@ -469,7 +552,7 @@ def build_microarray_gene_statistics(
                     "paired_design": True,
                     "source_probe_ids": gene_row["probe_ids"],
                     "analysis_notes": "Computed from GEO series-matrix log-intensity values using paired t-tests after averaging unambiguous GPL96 probes per HGNC-mapped gene.",
-                    "inferential_limit": "Two-sided p-values use a normal approximation to the test statistic in the default stdlib-only implementation.",
+                    "p_value_method": "Student t distribution with paired t degrees of freedom.",
                 },
             }
         )

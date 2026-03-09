@@ -27,6 +27,6 @@ Important:
 
 - `transcriptomics-real-scores` fetches accession-backed GEO inputs on demand, caches GEO and HGNC resources under `tmp/`, and returns Ensembl-primary records with HGNC-backed symbols when available
 - current live real-data contrast IDs are `ipf_lung_core_gse52463` and `hcc_adult_core_gse60502`
-- current inferential statistics use transparent t-statistics with a normal-approximation two-sided p-value in the stdlib-only runtime
+- current inferential statistics use transparent t-statistics, Student t distribution p-values, BH correction, and explicit degrees of freedom
 - transcriptomics fixture score routes expose illustrative local fixtures only
 - they are scaffolding for future real differential-expression ingestion
