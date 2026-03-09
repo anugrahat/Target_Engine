@@ -1,0 +1,4 @@
+hgnc_id	symbol	status	ensembl_gene_id
+HGNC:1	A1BG	Approved	ENSG00000121410
+HGNC:2	A2M	Approved	ENSG00000175899
+HGNC:3	TEST1	Symbol Withdrawn	ENSG00000999999

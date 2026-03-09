@@ -125,7 +125,8 @@ Scientific constraints:
 
 - source must remain the official GEO series metadata plus accession-resolved `*.genes.txt.gz` sample supplements
 - the current scoring path is a transparent effect-ranking over log2(CPM+1), not a full DESeq2 or limma-style inferential pipeline
-- primary gene key remains Ensembl gene ID until a source-backed symbol mapping layer is added
+- primary gene key remains Ensembl gene ID even after adding HGNC-backed symbol mapping
+- approved gene symbols should come from the HGNC complete set and be cached locally for reproducibility
 
 ## Ranking Spec
 

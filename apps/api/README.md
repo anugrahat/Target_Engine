@@ -25,6 +25,6 @@ Current routes:
 
 Important:
 
-- `transcriptomics-real-scores` fetches accession-backed GEO inputs on demand and caches them under `tmp/geo_cache/`
+- `transcriptomics-real-scores` fetches accession-backed GEO inputs on demand, caches GEO and HGNC resources under `tmp/`, and returns Ensembl-primary records with HGNC-backed symbols when available
 - transcriptomics fixture score routes expose illustrative local fixtures only
 - they are scaffolding for future real differential-expression ingestion

@@ -3,16 +3,13 @@
 from __future__ import annotations
 
 import csv
-import gzip
-import hashlib
 import math
 from dataclasses import dataclass
-from pathlib import Path
 from statistics import fmean, stdev
 from typing import Any
-from urllib.request import urlopen
 
-from prioritx_data.registry import repo_root
+from prioritx_data.hgnc import load_hgnc_symbol_map
+from prioritx_data.remote_cache import load_text_with_cache, normalize_geo_url
 
 REAL_COUNT_CONTRASTS: dict[str, dict[str, str]] = {
     "ipf_lung_core_gse52463": {
@@ -48,39 +45,6 @@ def _geo_series_bucket(accession: str) -> str:
 def _series_matrix_url(series_accession: str) -> str:
     bucket = _geo_series_bucket(series_accession)
     return f"https://ftp.ncbi.nlm.nih.gov/geo/series/{bucket}/{series_accession}/matrix/{series_accession}_series_matrix.txt.gz"
-
-
-def _cache_dir() -> Path:
-    path = repo_root() / "tmp" / "geo_cache"
-    path.mkdir(parents=True, exist_ok=True)
-    return path
-
-
-def _cache_path(url: str) -> Path:
-    digest = hashlib.sha256(url.encode("utf-8")).hexdigest()[:16]
-    basename = url.rsplit("/", 1)[-1] or "payload"
-    return _cache_dir() / f"{digest}-{basename}"
-
-
-def _normalize_geo_url(url: str) -> str:
-    return url.replace("ftp://ftp.ncbi.nlm.nih.gov", "https://ftp.ncbi.nlm.nih.gov")
-
-
-def _read_url_bytes(url: str) -> bytes:
-    with urlopen(url, timeout=60) as response:
-        return response.read()
-
-
-def load_text_with_cache(url: str) -> str:
-    """Load a text payload from cache or download it once."""
-    normalized = _normalize_geo_url(url)
-    cache_path = _cache_path(normalized)
-    if not cache_path.exists():
-        cache_path.write_bytes(_read_url_bytes(normalized))
-    data = cache_path.read_bytes()
-    if cache_path.suffix == ".gz":
-        return gzip.decompress(data).decode("utf-8", "replace")
-    return data.decode("utf-8", "replace")
 
 
 def _parse_tsv_row(line: str) -> list[str]:
@@ -124,7 +88,7 @@ def parse_geo_series_samples(series_matrix_text: str) -> list[GeoCountSample]:
                 geo_accession=accession,
                 title=titles[index],
                 phenotype=phenotype,
-                supplementary_gene_url=_normalize_geo_url(supplementary_urls[index]),
+                supplementary_gene_url=normalize_geo_url(supplementary_urls[index]),
             )
         )
     return samples
@@ -235,18 +199,21 @@ def load_real_geo_gene_statistics(contrast_id: str) -> list[dict[str, Any]]:
     if config is None:
         return []
 
-    series_text = load_text_with_cache(_series_matrix_url(config["series_accession"]))
+    series_text = load_text_with_cache(_series_matrix_url(config["series_accession"]), namespace="geo_cache")
     samples = parse_geo_series_samples(series_text)
     case_samples = _select_samples(samples, config["case_label"])
     control_samples = _select_samples(samples, config["control_label"])
     if not case_samples or not control_samples:
         raise ValueError(f"Failed to recover case/control samples for {contrast_id}")
 
+    symbol_map = load_hgnc_symbol_map()
     sample_counts = {
-        sample.geo_accession: parse_gene_count_text(load_text_with_cache(sample.supplementary_gene_url))
+        sample.geo_accession: parse_gene_count_text(
+            load_text_with_cache(sample.supplementary_gene_url, namespace="geo_cache")
+        )
         for sample in case_samples + control_samples
     }
-    return build_real_gene_statistics(
+    records = build_real_gene_statistics(
         contrast_id=contrast_id,
         benchmark_id=config["benchmark_id"],
         dataset_id=config["dataset_id"],
@@ -254,3 +221,13 @@ def load_real_geo_gene_statistics(contrast_id: str) -> list[dict[str, Any]]:
         control_samples=control_samples,
         sample_counts=sample_counts,
     )
+    for record in records:
+        mapping = symbol_map.get(record["gene"]["ensembl_gene_id"])
+        if mapping is not None:
+            record["gene"]["symbol"] = mapping["symbol"]
+            record["gene"]["hgnc_id"] = mapping["hgnc_id"]
+            record["provenance"]["identifier_mapping"] = {
+                "source": "HGNC complete set",
+                "hgnc_id": mapping["hgnc_id"],
+            }
+    return records

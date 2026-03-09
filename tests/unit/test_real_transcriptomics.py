@@ -75,15 +75,21 @@ class RealTranscriptomicsTests(unittest.TestCase):
             "https://ftp.ncbi.nlm.nih.gov/geo/samples/GSMInnn/GSMI2/suppl/GSMI2_IPF2.genes.txt.gz": (self.fixture_dir / "gsm_ipf2.genes.txt").read_text(),
         }
 
-        def fake_load_text(url: str) -> str:
+        def fake_load_text(url: str, namespace: str) -> str:
             if url.endswith("GSE52463_series_matrix.txt.gz"):
                 return matrix_text
             return gene_texts[url]
 
-        with patch("prioritx_data.real_transcriptomics.load_text_with_cache", side_effect=fake_load_text):
+        hgnc_map = {"ENSG000001": {"symbol": "TESTGENE1", "hgnc_id": "HGNC:1000"}}
+        with patch("prioritx_data.real_transcriptomics.load_text_with_cache", side_effect=fake_load_text), patch(
+            "prioritx_data.real_transcriptomics.load_hgnc_symbol_map",
+            return_value=hgnc_map,
+        ):
             records = load_real_geo_gene_statistics("ipf_lung_core_gse52463")
         self.assertEqual(3, len(records))
         self.assertTrue(all(record["evidence_kind"] == "accession_backed_real" for record in records))
+        mapped = next(record for record in records if record["gene"]["ensembl_gene_id"] == "ENSG000001")
+        self.assertEqual("TESTGENE1", mapped["gene"]["symbol"])
 
 
 if __name__ == "__main__":
