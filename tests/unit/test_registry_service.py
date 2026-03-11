@@ -10,6 +10,7 @@ from prioritx_data.service import (
     fused_target_evidence,
     list_benchmark_subsets,
     reactome_pathway_scores,
+    pubmed_literature_scores,
     query_dataset_manifests,
     query_study_contrasts,
     open_targets_genetics_scores,
@@ -293,6 +294,41 @@ class RegistryServiceTests(unittest.TestCase):
 
         self.assertEqual(2, len(items))
         self.assertEqual("reactome_pathway_support_score", items[0]["score_name"])
+
+    def test_returns_pubmed_literature_scores(self) -> None:
+        transcriptomics_items = [
+            {
+                "benchmark_id": "hcc_cdk20",
+                "subset_id": "hcc_adult_extended",
+                "ensembl_gene_id": "ENSG000001",
+                "gene_symbol": "GENE1",
+                "score": 0.7,
+                "supporting_contrast_count": 2,
+                "direction_conflict": False,
+                "evidence_kind": "cross_contrast_real_transcriptomics",
+                "source_contrast_ids": ["a", "b"],
+                "support_rule": {"max_adjusted_p_value": 0.05, "min_absolute_log2_fold_change": 0.5},
+            }
+        ]
+        literature_record = {
+            "benchmark_id": "hcc_cdk20",
+            "gene": {"ensembl_gene_id": "ENSG000001", "symbol": "GENE1"},
+            "statistics": {"pubmed_count": 5},
+            "top_hits": [{"pmid": "1", "title": "Paper"}],
+            "provenance": {"query": "GENE1 AND HCC"},
+            "evidence_kind": "pubmed_literature_support",
+        }
+        with patch("prioritx_data.service.transcriptomics_indication_evidence", return_value=transcriptomics_items), patch(
+            "prioritx_data.service.open_targets_genetics_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_data.service.load_pubmed_gene_support",
+            return_value=literature_record,
+        ):
+            items = pubmed_literature_scores(benchmark_id="hcc_cdk20", subset_id="hcc_adult_extended", candidate_top_n=25)
+
+        self.assertEqual(1, len(items))
+        self.assertEqual("pubmed_literature_support_score", items[0]["score_name"])
 
     def test_fuses_transcriptomics_and_genetics(self) -> None:
         transcriptomics_items = [

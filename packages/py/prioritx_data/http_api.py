@@ -13,6 +13,7 @@ from prioritx_data.service import (
     query_dataset_manifests,
     query_study_contrasts,
     open_targets_genetics_scores,
+    pubmed_literature_scores,
     reactome_pathway_scores,
     open_targets_tractability_scores,
     transcriptomics_indication_evidence,
@@ -42,6 +43,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
                 "/contrast-readiness",
                 "/open-targets-genetics",
                 "/open-targets-tractability",
+                "/pubmed-literature-support",
                 "/reactome-pathway-support",
                 "/fused-target-evidence",
                 "/benchmark-evaluation",
@@ -122,6 +124,23 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
         if not gene_ids:
             return 400, {"error": "at least one ensembl_gene_id query parameter is required"}
         return 200, {"items": open_targets_tractability_scores(gene_ids)}
+
+    if path == "/pubmed-literature-support":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        candidate_top_n_raw = _single(query, "candidate_top_n")
+        try:
+            candidate_top_n = int(candidate_top_n_raw) if candidate_top_n_raw else 100
+        except ValueError:
+            return 400, {"error": "candidate_top_n must be an integer"}
+        return 200, {
+            "items": pubmed_literature_scores(
+                benchmark_id=benchmark_id,
+                subset_id=_single(query, "subset_id"),
+                candidate_top_n=candidate_top_n,
+            )
+        }
 
     if path == "/reactome-pathway-support":
         benchmark_id = _single(query, "benchmark_id")

@@ -6,6 +6,7 @@ import gzip
 import hashlib
 import json
 from pathlib import Path
+from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 from prioritx_data.registry import repo_root
@@ -35,12 +36,18 @@ def load_bytes_with_cache(url: str, *, namespace: str) -> bytes:
     """Load a binary payload from cache or download it once."""
     normalized = normalize_geo_url(url)
     digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:16]
-    basename = normalized.rsplit("/", 1)[-1] or "payload"
+    basename = Path(urlparse(normalized).path).name or "payload"
     cache_path = cache_dir(namespace) / f"{digest}-{basename}"
     if not cache_path.exists():
         with urlopen(normalized, timeout=60) as response:
             cache_path.write_bytes(response.read())
     return cache_path.read_bytes()
+
+
+def load_json_with_cache(url: str, *, namespace: str) -> object:
+    """Load a JSON payload from cache or download it once."""
+    data = load_bytes_with_cache(url, namespace=namespace)
+    return json.loads(data.decode("utf-8", "replace"))
 
 
 def load_json_post_with_cache(url: str, *, namespace: str, payload: dict[str, object]) -> object:

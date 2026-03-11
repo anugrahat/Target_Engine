@@ -22,6 +22,7 @@ Current routes:
 - `/contrast-readiness`
 - `/open-targets-genetics?benchmark_id=...`
 - `/open-targets-tractability?ensembl_gene_id=...`
+- `/pubmed-literature-support?benchmark_id=...`
 - `/reactome-pathway-support?benchmark_id=...`
 - `/fused-target-evidence?benchmark_id=...`
 - `/benchmark-evaluation?benchmark_id=...`
@@ -35,6 +36,7 @@ Important:
 - `transcriptomics-real-scores` fetches accession-backed GEO inputs on demand, caches GEO and HGNC resources under `tmp/`, and returns Ensembl-primary records with HGNC-backed symbols when available
 - `open-targets-genetics` fetches benchmark-disease associations from the official Open Targets GraphQL API, caches the responses under `tmp/`, and scores genetics evidence with an explicit weighting toward the `genetic_association` datatype score
 - `open-targets-tractability` fetches target tractability buckets from the official Open Targets GraphQL API and summarizes modality-level tractability evidence
+- `pubmed-literature-support` queries official NCBI E-utilities for disease-gene mention counts and top PubMed hits in the current candidate slice, but remains diagnostic-only rather than fused into ranking
 - `reactome-pathway-support` submits the current disease-support gene slice to the official Reactome Analysis Service, then overlaps enriched pathways with per-gene Reactome memberships for the candidate slice
 - `fused-target-evidence` now applies a transparent four-stage rerank: transcriptomics plus genetics define the candidate set, Open Targets tractability and Reactome pathway support enrich the larger candidate slice, and STRING network support reranks a smaller top slice
 - `benchmark-evaluation` scores the live fused ranking against source-backed benchmark positives and reports whether PrioriTx recovers targets such as `TNIK` and `CDK20`

@@ -11,6 +11,7 @@ from prioritx_data.open_targets import (
     load_open_targets_genetics,
     load_open_targets_tractability,
 )
+from prioritx_data.pubmed import load_pubmed_gene_support
 from prioritx_data.reactome import load_reactome_gene_pathways, load_reactome_pathway_enrichment
 from prioritx_data.real_transcriptomics import list_real_contrast_ids, load_real_geo_gene_statistics
 from prioritx_data.registry import RegistryArtifact, list_dataset_manifests, list_study_contrasts, repo_root
@@ -20,6 +21,7 @@ from prioritx_features.fusion import derive_fused_target_evidence_features
 from prioritx_features.genetics import derive_open_targets_genetics_features
 from prioritx_features.network import derive_string_network_features
 from prioritx_features.pathway import derive_reactome_pathway_features
+from prioritx_features.literature import derive_pubmed_literature_features
 from prioritx_features.tractability import derive_open_targets_tractability_features
 from prioritx_features.transcriptomics import (
     derive_contrast_quality_features,
@@ -31,6 +33,7 @@ from prioritx_rank.baseline import (
     score_fused_target_evidence,
     score_open_targets_genetics,
     score_open_targets_tractability,
+    score_pubmed_literature_support,
     score_reactome_pathway_support,
     score_cross_contrast_transcriptomics_evidence,
     score_contrast_readiness,
@@ -343,6 +346,39 @@ def transcriptomics_indication_evidence(
         ),
         reverse=True,
     )
+    return scored
+
+
+def pubmed_literature_scores(
+    *,
+    benchmark_id: str,
+    subset_id: str | None = None,
+    candidate_top_n: int = 100,
+) -> list[dict[str, Any]]:
+    """Return PubMed disease-gene support for the current candidate slice."""
+    transcriptomics_items = transcriptomics_indication_evidence(
+        benchmark_id=benchmark_id,
+        subset_id=subset_id,
+        min_support=1,
+    )
+    genetics_items = open_targets_genetics_scores(benchmark_id, size=candidate_top_n)
+
+    candidate_map: dict[str, str | None] = {}
+    for item in transcriptomics_items[: max(candidate_top_n, 0)]:
+        if item.get("gene_symbol"):
+            candidate_map[item["gene_symbol"]] = item.get("ensembl_gene_id")
+    for item in genetics_items[: max(candidate_top_n, 0)]:
+        if item.get("gene_symbol"):
+            candidate_map.setdefault(item["gene_symbol"], item.get("ensembl_gene_id"))
+
+    scored = []
+    for gene_symbol, ensembl_gene_id in sorted(candidate_map.items()):
+        record = load_pubmed_gene_support(benchmark_id, gene_symbol, ensembl_gene_id)
+        item = score_pubmed_literature_support(derive_pubmed_literature_features(record))
+        item["provenance"] = record["provenance"]
+        scored.append(item)
+
+    scored.sort(key=lambda item: (item["score"], item["pubmed_count"]), reverse=True)
     return scored
 
 

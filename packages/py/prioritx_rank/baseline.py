@@ -255,6 +255,27 @@ def score_reactome_pathway_support(features: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def score_pubmed_literature_support(features: dict[str, Any]) -> dict[str, Any]:
+    """Score disease-gene PubMed support without fusing it into ranking yet."""
+    count_component = min(float(features["log_count"]) / 2.0, 1.0)
+    top_hit_component = min(float(features["top_hit_count"]) / 5.0, 1.0)
+    score = (0.8 * count_component) + (0.2 * top_hit_component)
+    return {
+        "benchmark_id": features["benchmark_id"],
+        "ensembl_gene_id": features["ensembl_gene_id"],
+        "gene_symbol": features["gene_symbol"],
+        "score_name": "pubmed_literature_support_score",
+        "score": round(score, 4),
+        "components": {
+            "count_component": round(0.8 * count_component, 4),
+            "top_hit_component": round(0.2 * top_hit_component, 4),
+        },
+        "pubmed_count": features["pubmed_count"],
+        "top_hits": features["top_hits"],
+        "evidence_kind": features["evidence_kind"],
+    }
+
+
 def score_open_targets_tractability(features: dict[str, Any]) -> dict[str, Any]:
     """Score modality-aware Open Targets tractability evidence."""
     best_modality_score = max(features["modality_scores"].values(), default=0.0)

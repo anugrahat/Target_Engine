@@ -48,9 +48,11 @@ Current benchmark ordering after source verification:
 - all real-data paths expose inferential statistics, BH-adjusted p-values, and HGNC-backed identifiers where recoverable
 - Open Targets genetics evidence is now available for benchmark diseases through the official GraphQL API
 - Open Targets tractability evidence is now available for target genes through the official GraphQL API
+- PubMed literature support is now available through the official NCBI E-utilities APIs as a provenance-heavy disease-gene inspection layer
 - Reactome pathway support is now available through the official Reactome Analysis Service by intersecting disease-enriched pathways with per-gene Reactome memberships
 - STRING-based network support is now available over the top disease-specific candidate slice
 - a first fused target-evidence layer now combines transcriptomics, genetics, tractability, Reactome pathway support, and STRING network support by Ensembl gene
+- PubMed literature support is intentionally kept outside the fused rank for now so benchmark papers and broad literature popularity do not silently dominate discovery-time scoring
 - source-backed benchmark target assertions now evaluate whether the live fused ranking recovers paper-backed positives such as `TNIK` and `CDK20`
 - illustrative transcriptomics gene-stat fixtures remain isolated for test scaffolding only
 

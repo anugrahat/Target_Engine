@@ -117,6 +117,26 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(400, status)
         self.assertIn("error", payload)
 
+    def test_pubmed_literature_route(self) -> None:
+        mocked_items = [{"ensembl_gene_id": "ENSG000001", "score_name": "pubmed_literature_support_score"}]
+        with patch("prioritx_data.http_api.pubmed_literature_scores", return_value=mocked_items):
+            status, payload = handle_get(
+                "/pubmed-literature-support",
+                {"benchmark_id": ["ipf_tnik"], "subset_id": ["ipf_lung_extended"], "candidate_top_n": ["25"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("pubmed_literature_support_score", payload["items"][0]["score_name"])
+
+    def test_pubmed_literature_requires_benchmark_id(self) -> None:
+        status, payload = handle_get("/pubmed-literature-support", {})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
+    def test_pubmed_literature_validates_candidate_top_n(self) -> None:
+        status, payload = handle_get("/pubmed-literature-support", {"benchmark_id": ["ipf_tnik"], "candidate_top_n": ["abc"]})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
     def test_fused_target_evidence_route(self) -> None:
         mocked_items = [{"ensembl_gene_id": "ENSG000001", "score_name": "fused_target_evidence_score"}]
         with patch("prioritx_data.http_api.fused_target_evidence", return_value=mocked_items):
