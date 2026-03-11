@@ -189,6 +189,13 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(200, status)
         self.assertEqual("strict", payload["mode"])
 
+    def test_benchmark_mode_comparison_route(self) -> None:
+        mocked_result = {"benchmark_id": "ipf_tnik", "benchmark_positive_comparison": []}
+        with patch("prioritx_data.http_api.compare_benchmark_modes", return_value=mocked_result):
+            status, payload = handle_get("/benchmark-mode-comparison", {"benchmark_id": ["ipf_tnik"], "top_n": ["5"]})
+        self.assertEqual(200, status)
+        self.assertEqual("ipf_tnik", payload["benchmark_id"])
+
     def test_target_audit_route(self) -> None:
         mocked_result = {"benchmark_id": "ipf_tnik", "gene_symbol": "TNIK"}
         with patch("prioritx_data.http_api.audit_target_evidence", return_value=mocked_result):
@@ -231,6 +238,16 @@ class HttpApiTests(unittest.TestCase):
 
     def test_target_audit_requires_benchmark_id_and_gene_symbol(self) -> None:
         status, payload = handle_get("/target-audit", {"benchmark_id": ["ipf_tnik"]})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
+    def test_benchmark_mode_comparison_requires_benchmark_id(self) -> None:
+        status, payload = handle_get("/benchmark-mode-comparison", {})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
+    def test_benchmark_mode_comparison_validates_top_n(self) -> None:
+        status, payload = handle_get("/benchmark-mode-comparison", {"benchmark_id": ["ipf_tnik"], "top_n": ["bad"]})
         self.assertEqual(400, status)
         self.assertIn("error", payload)
 

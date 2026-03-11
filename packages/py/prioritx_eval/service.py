@@ -745,3 +745,90 @@ def explain_target_shortlist(
             "source_ranking": "fused_target_evidence",
         },
     }
+
+
+def compare_benchmark_modes(
+    benchmark_id: str,
+    *,
+    top_n: int = 10,
+) -> dict[str, Any]:
+    strict = explain_target_shortlist(benchmark_id, mode="strict", top_n=top_n)
+    exploratory = explain_target_shortlist(benchmark_id, mode="exploratory", top_n=top_n)
+
+    def _overlay_map(payload: dict[str, Any]) -> dict[str, dict[str, Any]]:
+        return {item["gene_symbol"]: item for item in payload["benchmark_positive_overlay"]["items"]}
+
+    strict_overlay = _overlay_map(strict)
+    exploratory_overlay = _overlay_map(exploratory)
+    comparison_items = []
+    for gene_symbol in sorted(set(strict_overlay) | set(exploratory_overlay)):
+        strict_item = strict_overlay.get(gene_symbol)
+        exploratory_item = exploratory_overlay.get(gene_symbol)
+        strict_rank = strict_item["rank"] if strict_item else None
+        exploratory_rank = exploratory_item["rank"] if exploratory_item else None
+        if strict_rank is None and exploratory_rank is None:
+            movement = "not_recovered"
+            rank_delta = None
+        elif strict_rank is None:
+            movement = "recovered_only_in_exploratory"
+            rank_delta = None
+        elif exploratory_rank is None:
+            movement = "recovered_only_in_strict"
+            rank_delta = None
+        else:
+            rank_delta = strict_rank - exploratory_rank
+            if rank_delta > 0:
+                movement = "improved_in_exploratory"
+            elif rank_delta < 0:
+                movement = "worsened_in_exploratory"
+            else:
+                movement = "unchanged"
+        comparison_items.append(
+            {
+                "gene_symbol": gene_symbol,
+                "label_tier": (strict_item or exploratory_item)["label_tier"],
+                "strict_rank": strict_rank,
+                "exploratory_rank": exploratory_rank,
+                "rank_delta": rank_delta,
+                "strict_recovered_in_top_n": strict_item["recovered_in_top_n"] if strict_item else False,
+                "exploratory_recovered_in_top_n": exploratory_item["recovered_in_top_n"] if exploratory_item else False,
+                "movement": movement,
+                "source": (strict_item or exploratory_item)["source"],
+            }
+        )
+
+    return {
+        "benchmark_id": benchmark_id,
+        "indication_name": strict["indication_name"],
+        "top_n": top_n,
+        "strict": {
+            "subset_id": strict["subset_id"],
+            "top_targets": [
+                {
+                    "rank": item["rank"],
+                    "gene_symbol": item["gene_symbol"],
+                    "score": item["score"],
+                }
+                for item in strict["items"]
+            ],
+        },
+        "exploratory": {
+            "subset_id": exploratory["subset_id"],
+            "top_targets": [
+                {
+                    "rank": item["rank"],
+                    "gene_symbol": item["gene_symbol"],
+                    "score": item["score"],
+                }
+                for item in exploratory["items"]
+            ],
+        },
+        "benchmark_positive_comparison": comparison_items,
+        "integrity_review": {
+            "strict": strict["integrity_review"],
+            "exploratory": exploratory["integrity_review"],
+        },
+        "provenance": {
+            "comparison_kind": "strict_vs_exploratory_benchmark_overlay",
+        },
+    }

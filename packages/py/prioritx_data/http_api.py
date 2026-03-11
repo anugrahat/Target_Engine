@@ -23,6 +23,7 @@ from prioritx_data.service import (
 from prioritx_eval.policy import BENCHMARK_MODES, benchmark_integrity_review
 from prioritx_eval.service import (
     audit_target_evidence,
+    compare_benchmark_modes,
     evaluate_fused_benchmark,
     explain_target_evidence,
     explain_target_shortlist,
@@ -64,6 +65,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
                 "/fused-target-evidence",
                 "/benchmark-evaluation",
                 "/benchmark-integrity",
+                "/benchmark-mode-comparison",
                 "/target-explanation",
                 "/target-shortlist-explanations",
                 "/target-evidence-graph",
@@ -243,6 +245,17 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
         if mode == "__invalid__":
             return 400, {"error": "mode must be one of: strict, exploratory"}
         return 200, benchmark_integrity_review(benchmark_id, mode=mode or "strict")
+
+    if path == "/benchmark-mode-comparison":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        top_n_raw = _single(query, "top_n")
+        try:
+            top_n = int(top_n_raw) if top_n_raw else 10
+        except ValueError:
+            return 400, {"error": "top_n must be an integer"}
+        return 200, compare_benchmark_modes(benchmark_id, top_n=top_n)
 
     if path == "/target-audit":
         benchmark_id = _single(query, "benchmark_id")

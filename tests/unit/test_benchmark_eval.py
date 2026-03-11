@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from prioritx_eval.service import (
     audit_target_evidence,
+    compare_benchmark_modes,
     evaluate_fused_benchmark,
     explain_target_evidence,
     explain_target_shortlist,
@@ -238,6 +239,52 @@ class BenchmarkEvalTests(unittest.TestCase):
         self.assertEqual(1, result["benchmark_positive_overlay"]["recovered_in_top_n_count"])
         self.assertEqual("TNIK", result["benchmark_positive_overlay"]["items"][0]["gene_symbol"])
         self.assertEqual(2, result["benchmark_positive_overlay"]["items"][0]["rank"])
+
+    def test_compares_strict_and_exploratory_modes(self) -> None:
+        strict = {
+            "benchmark_id": "ipf_tnik",
+            "indication_name": "idiopathic pulmonary fibrosis",
+            "subset_id": "ipf_lung_core",
+            "items": [{"rank": 1, "gene_symbol": "MUC5B", "score": 0.9}],
+            "benchmark_positive_overlay": {
+                "items": [
+                    {
+                        "gene_symbol": "TNIK",
+                        "label_tier": "tier1_mechanistic_support",
+                        "recovered_in_top_n": False,
+                        "rank": 4633,
+                        "source": {"title": "paper"},
+                    }
+                ]
+            },
+            "integrity_review": {"subset_id": "ipf_lung_core"},
+        }
+        exploratory = {
+            "benchmark_id": "ipf_tnik",
+            "indication_name": "idiopathic pulmonary fibrosis",
+            "subset_id": "ipf_lung_extended",
+            "items": [{"rank": 1, "gene_symbol": "MUC5B", "score": 0.92}],
+            "benchmark_positive_overlay": {
+                "items": [
+                    {
+                        "gene_symbol": "TNIK",
+                        "label_tier": "tier1_mechanistic_support",
+                        "recovered_in_top_n": True,
+                        "rank": 640,
+                        "source": {"title": "paper"},
+                    }
+                ]
+            },
+            "integrity_review": {"subset_id": "ipf_lung_extended"},
+        }
+        with patch("prioritx_eval.service.explain_target_shortlist", side_effect=[strict, exploratory]):
+            result = compare_benchmark_modes("ipf_tnik", top_n=10)
+
+        self.assertEqual("ipf_tnik", result["benchmark_id"])
+        self.assertEqual("improved_in_exploratory", result["benchmark_positive_comparison"][0]["movement"])
+        self.assertEqual(3993, result["benchmark_positive_comparison"][0]["rank_delta"])
+        self.assertEqual("ipf_lung_core", result["strict"]["subset_id"])
+        self.assertEqual("ipf_lung_extended", result["exploratory"]["subset_id"])
 
 
 if __name__ == "__main__":
