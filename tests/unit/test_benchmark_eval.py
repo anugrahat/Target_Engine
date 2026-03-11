@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
-from prioritx_eval.service import audit_target_evidence, evaluate_fused_benchmark
+from prioritx_eval.service import audit_target_evidence, evaluate_fused_benchmark, target_evidence_graph
 
 
 class BenchmarkEvalTests(unittest.TestCase):
@@ -86,6 +86,79 @@ class BenchmarkEvalTests(unittest.TestCase):
         self.assertEqual(887, result["open_targets_genetics"]["association_rank"])
         self.assertTrue(result["fused_target_evidence"]["found"])
         self.assertEqual("strict", result["mode"])
+
+    def test_builds_target_evidence_graph(self) -> None:
+        transcriptomics = [
+            {
+                "gene_symbol": "TNIK",
+                "ensembl_gene_id": "ENSG000001",
+                "score": 0.22,
+                "statistics": {"log2_fold_change": 0.4, "adjusted_p_value": 0.07},
+            }
+        ]
+        genetics = [{
+            "gene_symbol": "TNIK",
+            "ensembl_gene_id": "ENSG000001",
+            "score": 0.55,
+            "provenance": {"association_rank": 887, "disease_id": "EFO_0000001"},
+        }]
+        fused = [{
+            "gene_symbol": "TNIK",
+            "ensembl_gene_id": "ENSG000001",
+            "score": 0.4,
+            "components": {"genetics_component": 0.2},
+            "network_provenance": {"top_partners": [{"partner_symbol": "MAPK1", "score": 0.91}]},
+        }]
+        pathway = [{
+            "gene_symbol": "TNIK",
+            "ensembl_gene_id": "ENSG000001",
+            "score": 0.3,
+            "overlap_count": 1,
+            "top_overlap_pathways": [
+                {
+                    "st_id": "R-HSA-123",
+                    "name": "Example pathway",
+                    "fdr": 0.01,
+                }
+            ],
+        }]
+        tractability = [{
+            "gene_symbol": "TNIK",
+            "ensembl_gene_id": "ENSG000001",
+            "score": 0.25,
+            "positive_bucket_count": 1,
+            "positive_modalities": ["SM"],
+            "positive_buckets": [{"label": "SM", "value": True}],
+        }]
+        contrasts = [{"contrast_id": "ipf_lung_core_gse52463"}]
+        with patch("prioritx_eval.service.query_study_contrasts", return_value=contrasts), patch(
+            "prioritx_eval.service.transcriptomics_real_scores",
+            return_value=transcriptomics,
+        ), patch(
+            "prioritx_eval.service.open_targets_genetics_scores",
+            return_value=genetics,
+        ), patch(
+            "prioritx_eval.service.fused_target_evidence",
+            return_value=fused,
+        ), patch(
+            "prioritx_eval.service.reactome_pathway_scores",
+            return_value=pathway,
+        ), patch(
+            "prioritx_eval.service.open_targets_tractability_scores",
+            return_value=tractability,
+        ):
+            result = target_evidence_graph("ipf_tnik", gene_symbol="TNIK")
+
+        self.assertEqual("TNIK", result["gene_symbol"])
+        self.assertTrue(result["evidence_summary"]["genetics_found"])
+        self.assertTrue(result["evidence_summary"]["network_found"])
+        node_ids = {item["id"] for item in result["graph"]["nodes"]}
+        self.assertIn("gene:ENSG000001", node_ids)
+        self.assertIn("pathway:R-HSA-123", node_ids)
+        edge_types = {item["type"] for item in result["graph"]["edges"]}
+        self.assertIn("transcriptomics_support", edge_types)
+        self.assertIn("genetics_association", edge_types)
+        self.assertIn("string_interaction", edge_types)
 
 
 if __name__ == "__main__":

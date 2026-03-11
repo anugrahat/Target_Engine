@@ -199,6 +199,16 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(200, status)
         self.assertEqual("TNIK", payload["gene_symbol"])
 
+    def test_target_evidence_graph_route(self) -> None:
+        mocked_result = {"benchmark_id": "ipf_tnik", "gene_symbol": "TNIK", "graph": {"nodes": [], "edges": []}}
+        with patch("prioritx_data.http_api.target_evidence_graph", return_value=mocked_result):
+            status, payload = handle_get(
+                "/target-evidence-graph",
+                {"benchmark_id": ["ipf_tnik"], "gene_symbol": ["TNIK"], "mode": ["strict"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("TNIK", payload["gene_symbol"])
+
     def test_target_audit_requires_benchmark_id_and_gene_symbol(self) -> None:
         status, payload = handle_get("/target-audit", {"benchmark_id": ["ipf_tnik"]})
         self.assertEqual(400, status)
@@ -215,6 +225,19 @@ class HttpApiTests(unittest.TestCase):
     def test_target_audit_validates_mode(self) -> None:
         status, payload = handle_get(
             "/target-audit",
+            {"benchmark_id": ["ipf_tnik"], "gene_symbol": ["TNIK"], "mode": ["bad"]},
+        )
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
+    def test_target_evidence_graph_requires_benchmark_id_and_gene_symbol(self) -> None:
+        status, payload = handle_get("/target-evidence-graph", {"benchmark_id": ["ipf_tnik"]})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
+    def test_target_evidence_graph_validates_mode(self) -> None:
+        status, payload = handle_get(
+            "/target-evidence-graph",
             {"benchmark_id": ["ipf_tnik"], "gene_symbol": ["TNIK"], "mode": ["bad"]},
         )
         self.assertEqual(400, status)
