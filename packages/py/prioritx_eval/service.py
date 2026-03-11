@@ -858,3 +858,74 @@ def summarize_benchmark_dashboard(*, top_n: int = 5) -> dict[str, Any]:
             "summary_kind": "benchmark_dashboard_summary",
         },
     }
+
+
+def summarize_benchmark_health(*, top_n: int = 10) -> dict[str, Any]:
+    dashboard = summarize_benchmark_dashboard(top_n=top_n)
+    items = []
+    improved_count = 0
+    worsened_count = 0
+    recovered_in_strict_top_n = 0
+    recovered_in_exploratory_top_n = 0
+
+    for item in dashboard["items"]:
+        positives = item["benchmark_positive_comparison"]
+        positive_count = len(positives)
+        strict_hits = sum(1 for positive in positives if positive["strict_recovered_in_top_n"])
+        exploratory_hits = sum(1 for positive in positives if positive["exploratory_recovered_in_top_n"])
+        improved = sum(1 for positive in positives if positive["movement"] == "improved_in_exploratory")
+        worsened = sum(1 for positive in positives if positive["movement"] == "worsened_in_exploratory")
+        unchanged = sum(1 for positive in positives if positive["movement"] == "unchanged")
+        recovered_any = sum(
+            1
+            for positive in positives
+            if positive["strict_rank"] is not None or positive["exploratory_rank"] is not None
+        )
+
+        improved_count += improved
+        worsened_count += worsened
+        recovered_in_strict_top_n += strict_hits
+        recovered_in_exploratory_top_n += exploratory_hits
+
+        if exploratory_hits > 0:
+            readiness = "exploratory_positive_in_top_n"
+        elif strict_hits > 0:
+            readiness = "strict_positive_in_top_n"
+        elif recovered_any > 0:
+            readiness = "positive_recovered_outside_top_n"
+        else:
+            readiness = "positive_not_recovered"
+
+        items.append(
+            {
+                "benchmark_id": item["benchmark_id"],
+                "indication_name": item["indication_name"],
+                "positive_target_count": positive_count,
+                "strict_recovered_in_top_n_count": strict_hits,
+                "exploratory_recovered_in_top_n_count": exploratory_hits,
+                "recovered_anywhere_count": recovered_any,
+                "improved_in_exploratory_count": improved,
+                "worsened_in_exploratory_count": worsened,
+                "unchanged_count": unchanged,
+                "readiness_flag": readiness,
+                "strict_leader": item["strict_top_targets"][0] if item["strict_top_targets"] else None,
+                "exploratory_leader": item["exploratory_top_targets"][0] if item["exploratory_top_targets"] else None,
+            }
+        )
+
+    return {
+        "benchmark_count": dashboard["benchmark_count"],
+        "top_n": top_n,
+        "totals": {
+            "positive_target_count": sum(item["positive_target_count"] for item in items),
+            "strict_recovered_in_top_n_count": recovered_in_strict_top_n,
+            "exploratory_recovered_in_top_n_count": recovered_in_exploratory_top_n,
+            "improved_in_exploratory_count": improved_count,
+            "worsened_in_exploratory_count": worsened_count,
+        },
+        "items": items,
+        "provenance": {
+            "summary_kind": "benchmark_health_summary",
+            "source_summary": "benchmark_dashboard_summary",
+        },
+    }

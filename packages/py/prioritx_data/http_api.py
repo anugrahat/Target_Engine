@@ -27,6 +27,7 @@ from prioritx_eval.service import (
     evaluate_fused_benchmark,
     explain_target_evidence,
     explain_target_shortlist,
+    summarize_benchmark_health,
     summarize_benchmark_dashboard,
     target_evidence_graph,
 )
@@ -55,6 +56,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
                 "/health",
                 "/benchmarks",
                 "/benchmark-dashboard-summary",
+                "/benchmark-health-summary",
                 "/subsets",
                 "/subsets/{subset_id}",
                 "/dataset-manifests",
@@ -91,6 +93,14 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
         except ValueError:
             return 400, {"error": "top_n must be an integer"}
         return 200, summarize_benchmark_dashboard(top_n=top_n)
+
+    if path == "/benchmark-health-summary":
+        top_n_raw = _single(query, "top_n")
+        try:
+            top_n = int(top_n_raw) if top_n_raw else 10
+        except ValueError:
+            return 400, {"error": "top_n must be an integer"}
+        return 200, summarize_benchmark_health(top_n=top_n)
 
     if path == "/subsets":
         benchmark_id = _single(query, "benchmark_id")

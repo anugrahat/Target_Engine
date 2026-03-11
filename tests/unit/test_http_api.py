@@ -24,6 +24,13 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(200, status)
         self.assertEqual(2, payload["benchmark_count"])
 
+    def test_benchmark_health_summary_route(self) -> None:
+        mocked_result = {"benchmark_count": 2, "items": [{"benchmark_id": "ipf_tnik"}]}
+        with patch("prioritx_data.http_api.summarize_benchmark_health", return_value=mocked_result):
+            status, payload = handle_get("/benchmark-health-summary", {"top_n": ["10"]})
+        self.assertEqual(200, status)
+        self.assertEqual(2, payload["benchmark_count"])
+
     def test_subset_detail_route(self) -> None:
         status, payload = handle_get("/subsets/ipf_lung_core", {})
         self.assertEqual(200, status)
@@ -181,6 +188,11 @@ class HttpApiTests(unittest.TestCase):
 
     def test_benchmark_dashboard_summary_validates_top_n(self) -> None:
         status, payload = handle_get("/benchmark-dashboard-summary", {"top_n": ["bad"]})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
+    def test_benchmark_health_summary_validates_top_n(self) -> None:
+        status, payload = handle_get("/benchmark-health-summary", {"top_n": ["bad"]})
         self.assertEqual(400, status)
         self.assertIn("error", payload)
 
