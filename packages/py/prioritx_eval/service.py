@@ -12,7 +12,7 @@ from prioritx_data.service import (
     reactome_pathway_scores,
     transcriptomics_real_scores,
 )
-from prioritx_eval.assertions import load_benchmark_assertion
+from prioritx_eval.assertions import list_benchmark_assertion_ids, load_benchmark_assertion
 from prioritx_eval.policy import benchmark_integrity_review, benchmark_mode_config
 from prioritx_features.transcriptomics import REAL_SUPPORT_MAX_ADJUSTED_P, REAL_SUPPORT_MIN_ABS_LOG2_FC
 
@@ -830,5 +830,31 @@ def compare_benchmark_modes(
         },
         "provenance": {
             "comparison_kind": "strict_vs_exploratory_benchmark_overlay",
+        },
+    }
+
+
+def summarize_benchmark_dashboard(*, top_n: int = 5) -> dict[str, Any]:
+    items = []
+    for benchmark_id in list_benchmark_assertion_ids():
+        comparison = compare_benchmark_modes(benchmark_id, top_n=top_n)
+        items.append(
+            {
+                "benchmark_id": benchmark_id,
+                "indication_name": comparison["indication_name"],
+                "strict_subset_id": comparison["strict"]["subset_id"],
+                "exploratory_subset_id": comparison["exploratory"]["subset_id"],
+                "strict_top_targets": comparison["strict"]["top_targets"],
+                "exploratory_top_targets": comparison["exploratory"]["top_targets"],
+                "benchmark_positive_comparison": comparison["benchmark_positive_comparison"],
+            }
+        )
+
+    return {
+        "benchmark_count": len(items),
+        "top_n": top_n,
+        "items": items,
+        "provenance": {
+            "summary_kind": "benchmark_dashboard_summary",
         },
     }

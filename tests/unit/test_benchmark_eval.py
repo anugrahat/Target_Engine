@@ -9,6 +9,7 @@ from prioritx_eval.service import (
     evaluate_fused_benchmark,
     explain_target_evidence,
     explain_target_shortlist,
+    summarize_benchmark_dashboard,
     target_evidence_graph,
 )
 
@@ -285,6 +286,25 @@ class BenchmarkEvalTests(unittest.TestCase):
         self.assertEqual(3993, result["benchmark_positive_comparison"][0]["rank_delta"])
         self.assertEqual("ipf_lung_core", result["strict"]["subset_id"])
         self.assertEqual("ipf_lung_extended", result["exploratory"]["subset_id"])
+
+    def test_summarizes_benchmark_dashboard(self) -> None:
+        comparison = {
+            "benchmark_id": "ipf_tnik",
+            "indication_name": "idiopathic pulmonary fibrosis",
+            "strict": {"subset_id": "ipf_lung_core", "top_targets": [{"gene_symbol": "MUC5B", "rank": 1, "score": 0.9}]},
+            "exploratory": {"subset_id": "ipf_lung_extended", "top_targets": [{"gene_symbol": "MUC5B", "rank": 1, "score": 0.92}]},
+            "benchmark_positive_comparison": [{"gene_symbol": "TNIK", "movement": "improved_in_exploratory"}],
+        }
+        with patch("prioritx_eval.service.list_benchmark_assertion_ids", return_value=["ipf_tnik"]), patch(
+            "prioritx_eval.service.compare_benchmark_modes",
+            return_value=comparison,
+        ):
+            result = summarize_benchmark_dashboard(top_n=3)
+
+        self.assertEqual(1, result["benchmark_count"])
+        self.assertEqual(3, result["top_n"])
+        self.assertEqual("ipf_tnik", result["items"][0]["benchmark_id"])
+        self.assertEqual("ipf_lung_core", result["items"][0]["strict_subset_id"])
 
 
 if __name__ == "__main__":
