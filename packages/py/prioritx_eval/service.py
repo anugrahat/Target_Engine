@@ -21,6 +21,7 @@ def evaluate_fused_benchmark(
     min_transcriptomics_support: int = 1,
     genetics_size: int = 0,
     tractability_top_n: int = 100,
+    pathway_top_n: int = 40,
     network_top_n: int = 50,
 ) -> dict[str, Any]:
     assertion = load_benchmark_assertion(benchmark_id)
@@ -31,6 +32,7 @@ def evaluate_fused_benchmark(
         min_transcriptomics_support=min_transcriptomics_support,
         genetics_size=genetics_size,
         tractability_top_n=tractability_top_n,
+        pathway_top_n=pathway_top_n,
         network_top_n=network_top_n,
     )
 
@@ -119,6 +121,7 @@ def evaluate_fused_benchmark(
             "min_transcriptomics_support": min_transcriptomics_support,
             "genetics_size": genetics_size,
             "tractability_top_n": tractability_top_n,
+            "pathway_top_n": pathway_top_n,
             "network_top_n": network_top_n,
         },
         "notes": assertion["notes"],
@@ -132,6 +135,7 @@ def audit_target_evidence(
     subset_id: str | None = None,
     genetics_size: int = 0,
     tractability_top_n: int = 200,
+    pathway_top_n: int = 40,
     network_top_n: int = 100,
 ) -> dict[str, Any]:
     assertion = load_benchmark_assertion(benchmark_id)
@@ -186,6 +190,7 @@ def audit_target_evidence(
                 subset_id=chosen_subset_id,
                 genetics_size=genetics_size,
                 tractability_top_n=tractability_top_n,
+                pathway_top_n=pathway_top_n,
                 network_top_n=network_top_n,
             )
             if item.get("gene_symbol") == gene_symbol

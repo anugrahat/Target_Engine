@@ -11,6 +11,7 @@ from prioritx_data.open_targets import (
     load_open_targets_genetics,
     load_open_targets_tractability,
 )
+from prioritx_data.reactome import load_reactome_gene_pathways, load_reactome_pathway_enrichment
 from prioritx_data.real_transcriptomics import list_real_contrast_ids, load_real_geo_gene_statistics
 from prioritx_data.registry import RegistryArtifact, list_dataset_manifests, list_study_contrasts, repo_root
 from prioritx_data.string_network import load_string_id_map, load_string_network_edges
@@ -18,6 +19,7 @@ from prioritx_data.transcriptomics import list_fixture_contrast_ids, load_transc
 from prioritx_features.fusion import derive_fused_target_evidence_features
 from prioritx_features.genetics import derive_open_targets_genetics_features
 from prioritx_features.network import derive_string_network_features
+from prioritx_features.pathway import derive_reactome_pathway_features
 from prioritx_features.tractability import derive_open_targets_tractability_features
 from prioritx_features.transcriptomics import (
     derive_contrast_quality_features,
@@ -29,6 +31,7 @@ from prioritx_rank.baseline import (
     score_fused_target_evidence,
     score_open_targets_genetics,
     score_open_targets_tractability,
+    score_reactome_pathway_support,
     score_cross_contrast_transcriptomics_evidence,
     score_contrast_readiness,
     score_gene_transcriptomics,
@@ -343,6 +346,71 @@ def transcriptomics_indication_evidence(
     return scored
 
 
+def reactome_pathway_scores(
+    *,
+    benchmark_id: str,
+    subset_id: str | None = None,
+    min_support: int = 1,
+    enrichment_gene_limit: int = 300,
+    candidate_top_n: int = 200,
+    enrichment_fdr_max: float = 0.05,
+) -> list[dict[str, Any]]:
+    """Return Reactome pathway-overlap support for the top candidate slice."""
+    transcriptomics_items = transcriptomics_indication_evidence(
+        benchmark_id=benchmark_id,
+        subset_id=subset_id,
+        min_support=min_support,
+    )
+    if not transcriptomics_items:
+        return []
+
+    enrichment_gene_symbols = tuple(
+        item["gene_symbol"]
+        for item in transcriptomics_items[: max(enrichment_gene_limit, 0)]
+        if item.get("gene_symbol")
+    )
+    enriched_pathways = [
+        item
+        for item in load_reactome_pathway_enrichment(enrichment_gene_symbols)
+        if item["pathway"].get("species_name") == "Homo sapiens"
+        and float(item["statistics"]["fdr"]) <= enrichment_fdr_max
+    ]
+    if not enriched_pathways:
+        return []
+
+    genetics_items = open_targets_genetics_scores(benchmark_id, size=candidate_top_n)
+    candidate_gene_map: dict[str, str] = {}
+    for item in transcriptomics_items[: max(candidate_top_n, 0)]:
+        if item.get("gene_symbol") and item.get("ensembl_gene_id"):
+            candidate_gene_map[item["gene_symbol"]] = item["ensembl_gene_id"]
+    for item in genetics_items[: max(candidate_top_n, 0)]:
+        if item.get("gene_symbol") and item.get("ensembl_gene_id"):
+            candidate_gene_map.setdefault(item["gene_symbol"], item["ensembl_gene_id"])
+
+    scored = []
+    for gene_symbol, ensembl_gene_id in sorted(candidate_gene_map.items()):
+        gene_pathways = load_reactome_gene_pathways(gene_symbol)
+        features = derive_reactome_pathway_features(
+            benchmark_id=benchmark_id,
+            subset_id=subset_id,
+            gene={"ensembl_gene_id": ensembl_gene_id, "gene_symbol": gene_symbol},
+            enriched_pathways=enriched_pathways,
+            gene_pathways=gene_pathways,
+            enrichment_gene_count=len(enrichment_gene_symbols),
+            enrichment_fdr_max=enrichment_fdr_max,
+        )
+        item = score_reactome_pathway_support(features)
+        item["provenance"] = {
+            "source_kind": "reactome_analysis_service",
+            "api_url": "https://reactome.org/AnalysisService/identifiers/projection",
+            "candidate_identifier": gene_symbol,
+        }
+        scored.append(item)
+
+    scored.sort(key=lambda item: (item["score"], item["overlap_count"]), reverse=True)
+    return scored
+
+
 def fused_target_evidence(
     *,
     benchmark_id: str,
@@ -350,6 +418,7 @@ def fused_target_evidence(
     min_transcriptomics_support: int = 1,
     genetics_size: int = 200,
     tractability_top_n: int = 500,
+    pathway_top_n: int = 200,
     network_top_n: int = 100,
 ) -> list[dict[str, Any]]:
     """Fuse transcriptomics and Open Targets genetics evidence by Ensembl gene."""
@@ -372,6 +441,7 @@ def fused_target_evidence(
             transcriptomics=transcriptomics_by_gene.get(gene_id),
             genetics=genetics_by_gene.get(gene_id),
             tractability=None,
+            pathway=None,
             network=None,
         )
         base_scored.append(score_fused_target_evidence(features))
@@ -386,6 +456,15 @@ def fused_target_evidence(
     )
     tractability_gene_ids = [item["ensembl_gene_id"] for item in base_scored[: max(tractability_top_n, 0)]]
     tractability_by_gene = {item["ensembl_gene_id"]: item for item in open_targets_tractability_scores(tractability_gene_ids)}
+    pathway_by_gene = {
+        item["ensembl_gene_id"]: item
+        for item in reactome_pathway_scores(
+            benchmark_id=benchmark_id,
+            subset_id=subset_id,
+            min_support=min_transcriptomics_support,
+            candidate_top_n=pathway_top_n,
+        )
+    }
     network_candidates = base_scored[: max(network_top_n, 0)]
     network_by_gene = {
         item["gene_symbol"]: item
@@ -413,6 +492,7 @@ def fused_target_evidence(
             transcriptomics=transcriptomics_item,
             genetics=genetics_item,
             tractability=tractability_item,
+            pathway=pathway_by_gene.get(gene_id),
             network=network_by_gene.get(symbol) if symbol else None,
         )
         scored.append(score_fused_target_evidence(features))

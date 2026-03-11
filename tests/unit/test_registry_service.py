@@ -9,6 +9,7 @@ from prioritx_data.service import (
     get_subset,
     fused_target_evidence,
     list_benchmark_subsets,
+    reactome_pathway_scores,
     query_dataset_manifests,
     query_study_contrasts,
     open_targets_genetics_scores,
@@ -243,6 +244,56 @@ class RegistryServiceTests(unittest.TestCase):
         self.assertEqual(1, len(items))
         self.assertEqual("open_targets_tractability_score", items[0]["score_name"])
 
+    def test_returns_reactome_pathway_scores(self) -> None:
+        transcriptomics_items = [
+            {
+                "benchmark_id": "hcc_cdk20",
+                "subset_id": "hcc_adult_extended",
+                "ensembl_gene_id": "ENSG000001",
+                "gene_symbol": "GENE1",
+                "score": 0.7,
+                "supporting_contrast_count": 2,
+                "direction_conflict": False,
+                "evidence_kind": "cross_contrast_real_transcriptomics",
+                "source_contrast_ids": ["a", "b"],
+                "support_rule": {"max_adjusted_p_value": 0.05, "min_absolute_log2_fold_change": 0.5},
+            }
+        ]
+        genetics_items = [
+            {
+                "ensembl_gene_id": "ENSG000002",
+                "gene_symbol": "GENE2",
+                "score": 0.3,
+                "evidence_kind": "open_targets_genetics",
+            }
+        ]
+        enriched = [
+            {
+                "pathway": {"st_id": "R-HSA-1", "name": "Cell Cycle", "species_name": "Homo sapiens"},
+                "statistics": {"fdr": 1e-4},
+            }
+        ]
+        gene_pathways = [
+            {
+                "pathway": {"st_id": "R-HSA-1", "name": "Cell Cycle"},
+                "statistics": {"fdr": 0.02},
+            }
+        ]
+        with patch("prioritx_data.service.transcriptomics_indication_evidence", return_value=transcriptomics_items), patch(
+            "prioritx_data.service.open_targets_genetics_scores",
+            return_value=genetics_items,
+        ), patch(
+            "prioritx_data.service.load_reactome_pathway_enrichment",
+            return_value=enriched,
+        ), patch(
+            "prioritx_data.service.load_reactome_gene_pathways",
+            return_value=gene_pathways,
+        ):
+            items = reactome_pathway_scores(benchmark_id="hcc_cdk20", subset_id="hcc_adult_extended")
+
+        self.assertEqual(2, len(items))
+        self.assertEqual("reactome_pathway_support_score", items[0]["score_name"])
+
     def test_fuses_transcriptomics_and_genetics(self) -> None:
         transcriptomics_items = [
             {
@@ -280,12 +331,27 @@ class RegistryServiceTests(unittest.TestCase):
                 "evidence_kind": "open_targets_tractability",
             }
         ]
+        pathway_items = [
+            {
+                "ensembl_gene_id": "ENSG000001",
+                "gene_symbol": "GENE1",
+                "score": 0.5,
+                "overlap_count": 2,
+                "top_overlap_pathways": [{"st_id": "R-HSA-1", "name": "Cell Cycle", "fdr": 1e-4}],
+                "enrichment_gene_count": 120,
+                "enrichment_fdr_max": 0.05,
+                "evidence_kind": "reactome_pathway_support",
+            }
+        ]
         with patch("prioritx_data.service.transcriptomics_indication_evidence", return_value=transcriptomics_items), patch(
             "prioritx_data.service.open_targets_genetics_scores",
             return_value=genetics_items,
         ), patch(
             "prioritx_data.service.open_targets_tractability_scores",
             return_value=tractability_items,
+        ), patch(
+            "prioritx_data.service.reactome_pathway_scores",
+            return_value=pathway_items,
         ), patch(
             "prioritx_data.service.string_network_scores",
             return_value=[],
@@ -297,6 +363,7 @@ class RegistryServiceTests(unittest.TestCase):
         self.assertTrue(items[0]["transcriptomics_available"])
         self.assertTrue(items[0]["genetics_available"])
         self.assertTrue(items[0]["tractability_available"])
+        self.assertTrue(items[0]["pathway_available"])
 
 
 if __name__ == "__main__":

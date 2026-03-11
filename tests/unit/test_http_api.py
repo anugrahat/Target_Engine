@@ -102,6 +102,21 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(400, status)
         self.assertIn("error", payload)
 
+    def test_reactome_pathway_route(self) -> None:
+        mocked_items = [{"ensembl_gene_id": "ENSG000001", "score_name": "reactome_pathway_support_score"}]
+        with patch("prioritx_data.http_api.reactome_pathway_scores", return_value=mocked_items):
+            status, payload = handle_get(
+                "/reactome-pathway-support",
+                {"benchmark_id": ["ipf_tnik"], "subset_id": ["ipf_lung_extended"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("reactome_pathway_support_score", payload["items"][0]["score_name"])
+
+    def test_reactome_pathway_requires_benchmark_id(self) -> None:
+        status, payload = handle_get("/reactome-pathway-support", {})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
     def test_fused_target_evidence_route(self) -> None:
         mocked_items = [{"ensembl_gene_id": "ENSG000001", "score_name": "fused_target_evidence_score"}]
         with patch("prioritx_data.http_api.fused_target_evidence", return_value=mocked_items):

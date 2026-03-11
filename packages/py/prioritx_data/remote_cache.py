@@ -57,3 +57,28 @@ def load_json_post_with_cache(url: str, *, namespace: str, payload: dict[str, ob
         with urlopen(request, timeout=60) as response:
             cache_path.write_bytes(response.read())
     return json.loads(cache_path.read_text())
+
+
+def load_json_text_post_with_cache(
+    url: str,
+    *,
+    namespace: str,
+    payload: str,
+    content_type: str = "text/plain",
+    accept: str = "application/json",
+) -> object:
+    """POST a text payload once, then reuse the cached JSON response."""
+    digest = hashlib.sha256(f"{url}\n{content_type}\n{payload}".encode("utf-8")).hexdigest()[:16]
+    cache_path = cache_dir(namespace) / f"{digest}.json"
+    if not cache_path.exists():
+        request = Request(
+            url,
+            data=payload.encode("utf-8"),
+            headers={
+                "Content-Type": content_type,
+                "Accept": accept,
+            },
+        )
+        with urlopen(request, timeout=60) as response:
+            cache_path.write_bytes(response.read())
+    return json.loads(cache_path.read_text())

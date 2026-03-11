@@ -13,6 +13,7 @@ from prioritx_data.service import (
     query_dataset_manifests,
     query_study_contrasts,
     open_targets_genetics_scores,
+    reactome_pathway_scores,
     open_targets_tractability_scores,
     transcriptomics_indication_evidence,
     transcriptomics_fixture_scores,
@@ -41,6 +42,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
                 "/contrast-readiness",
                 "/open-targets-genetics",
                 "/open-targets-tractability",
+                "/reactome-pathway-support",
                 "/fused-target-evidence",
                 "/benchmark-evaluation",
                 "/target-audit",
@@ -121,6 +123,17 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
             return 400, {"error": "at least one ensembl_gene_id query parameter is required"}
         return 200, {"items": open_targets_tractability_scores(gene_ids)}
 
+    if path == "/reactome-pathway-support":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        return 200, {
+            "items": reactome_pathway_scores(
+                benchmark_id=benchmark_id,
+                subset_id=_single(query, "subset_id"),
+            )
+        }
+
     if path == "/fused-target-evidence":
         benchmark_id = _single(query, "benchmark_id")
         if not benchmark_id:
@@ -129,14 +142,16 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
         min_support_raw = _single(query, "min_transcriptomics_support")
         genetics_size_raw = _single(query, "genetics_size")
         tractability_top_n_raw = _single(query, "tractability_top_n")
+        pathway_top_n_raw = _single(query, "pathway_top_n")
         network_top_n_raw = _single(query, "network_top_n")
         try:
             min_transcriptomics_support = int(min_support_raw) if min_support_raw else 1
             genetics_size = int(genetics_size_raw) if genetics_size_raw else 200
             tractability_top_n = int(tractability_top_n_raw) if tractability_top_n_raw else 500
+            pathway_top_n = int(pathway_top_n_raw) if pathway_top_n_raw else 200
             network_top_n = int(network_top_n_raw) if network_top_n_raw else 100
         except ValueError:
-            return 400, {"error": "min_transcriptomics_support, genetics_size, tractability_top_n, and network_top_n must be integers"}
+            return 400, {"error": "min_transcriptomics_support, genetics_size, tractability_top_n, pathway_top_n, and network_top_n must be integers"}
         return 200, {
             "items": fused_target_evidence(
                 benchmark_id=benchmark_id,
@@ -144,6 +159,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
                 min_transcriptomics_support=min_transcriptomics_support,
                 genetics_size=genetics_size,
                 tractability_top_n=tractability_top_n,
+                pathway_top_n=pathway_top_n,
                 network_top_n=network_top_n,
             )
         }
@@ -156,20 +172,23 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
         min_support_raw = _single(query, "min_transcriptomics_support")
         genetics_size_raw = _single(query, "genetics_size")
         tractability_top_n_raw = _single(query, "tractability_top_n")
+        pathway_top_n_raw = _single(query, "pathway_top_n")
         network_top_n_raw = _single(query, "network_top_n")
         try:
             min_transcriptomics_support = int(min_support_raw) if min_support_raw else 1
             genetics_size = int(genetics_size_raw) if genetics_size_raw else 0
             tractability_top_n = int(tractability_top_n_raw) if tractability_top_n_raw else 100
+            pathway_top_n = int(pathway_top_n_raw) if pathway_top_n_raw else 40
             network_top_n = int(network_top_n_raw) if network_top_n_raw else 50
         except ValueError:
-            return 400, {"error": "min_transcriptomics_support, genetics_size, tractability_top_n, and network_top_n must be integers"}
+            return 400, {"error": "min_transcriptomics_support, genetics_size, tractability_top_n, pathway_top_n, and network_top_n must be integers"}
         return 200, evaluate_fused_benchmark(
             benchmark_id,
             subset_id=_single(query, "subset_id"),
             min_transcriptomics_support=min_transcriptomics_support,
             genetics_size=genetics_size,
             tractability_top_n=tractability_top_n,
+            pathway_top_n=pathway_top_n,
             network_top_n=network_top_n,
         )
 
@@ -181,19 +200,22 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
 
         genetics_size_raw = _single(query, "genetics_size")
         tractability_top_n_raw = _single(query, "tractability_top_n")
+        pathway_top_n_raw = _single(query, "pathway_top_n")
         network_top_n_raw = _single(query, "network_top_n")
         try:
             genetics_size = int(genetics_size_raw) if genetics_size_raw else 0
             tractability_top_n = int(tractability_top_n_raw) if tractability_top_n_raw else 200
+            pathway_top_n = int(pathway_top_n_raw) if pathway_top_n_raw else 40
             network_top_n = int(network_top_n_raw) if network_top_n_raw else 100
         except ValueError:
-            return 400, {"error": "genetics_size, tractability_top_n, and network_top_n must be integers"}
+            return 400, {"error": "genetics_size, tractability_top_n, pathway_top_n, and network_top_n must be integers"}
         return 200, audit_target_evidence(
             benchmark_id,
             gene_symbol=gene_symbol,
             subset_id=_single(query, "subset_id"),
             genetics_size=genetics_size,
             tractability_top_n=tractability_top_n,
+            pathway_top_n=pathway_top_n,
             network_top_n=network_top_n,
         )
 

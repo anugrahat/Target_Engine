@@ -183,13 +183,14 @@ def score_open_targets_genetics(features: dict[str, Any]) -> dict[str, Any]:
 def score_fused_target_evidence(features: dict[str, Any]) -> dict[str, Any]:
     """Score a target from transcriptomics plus genetics evidence."""
     transcriptomics_component = 0.42 * min(float(features["transcriptomics_score"]), 1.0)
-    genetics_component = 0.25 * min(float(features["genetics_score"]), 1.0)
-    tractability_component = 0.13 * min(float(features["tractability_score"]), 1.0)
-    network_component = 0.15 * min(float(features["network_score"]), 1.0)
+    genetics_component = 0.23 * min(float(features["genetics_score"]), 1.0)
+    tractability_component = 0.10 * min(float(features["tractability_score"]), 1.0)
+    pathway_component = 0.10 * min(float(features["pathway_score"]), 1.0)
+    network_component = 0.10 * min(float(features["network_score"]), 1.0)
     consistency_penalty = -0.1 if features["transcriptomics_direction_conflict"] else 0.0
     dual_evidence_bonus = 0.05 if features["transcriptomics_available"] and features["genetics_available"] else 0.0
 
-    score = transcriptomics_component + genetics_component + tractability_component + network_component + consistency_penalty + dual_evidence_bonus
+    score = transcriptomics_component + genetics_component + tractability_component + pathway_component + network_component + consistency_penalty + dual_evidence_bonus
     return {
         "benchmark_id": features["benchmark_id"],
         "subset_id": features["subset_id"],
@@ -201,6 +202,7 @@ def score_fused_target_evidence(features: dict[str, Any]) -> dict[str, Any]:
             "transcriptomics_component": round(transcriptomics_component, 4),
             "genetics_component": round(genetics_component, 4),
             "tractability_component": round(tractability_component, 4),
+            "pathway_component": round(pathway_component, 4),
             "network_component": round(network_component, 4),
             "consistency_penalty": round(consistency_penalty, 4),
             "dual_evidence_bonus": round(dual_evidence_bonus, 4),
@@ -208,17 +210,48 @@ def score_fused_target_evidence(features: dict[str, Any]) -> dict[str, Any]:
         "transcriptomics_available": features["transcriptomics_available"],
         "genetics_available": features["genetics_available"],
         "tractability_available": features["tractability_available"],
+        "pathway_available": features["pathway_available"],
         "network_available": features["network_available"],
         "transcriptomics_supporting_contrasts": features["transcriptomics_supporting_contrasts"],
         "transcriptomics_direction_conflict": features["transcriptomics_direction_conflict"],
         "transcriptomics_evidence_kind": features["transcriptomics_evidence_kind"],
         "genetics_evidence_kind": features["genetics_evidence_kind"],
         "tractability_evidence_kind": features["tractability_evidence_kind"],
+        "pathway_evidence_kind": features["pathway_evidence_kind"],
         "network_evidence_kind": features["network_evidence_kind"],
         "transcriptomics_provenance": features["transcriptomics_provenance"],
         "genetics_provenance": features["genetics_provenance"],
         "tractability_provenance": features["tractability_provenance"],
+        "pathway_provenance": features["pathway_provenance"],
         "network_provenance": features["network_provenance"],
+    }
+
+
+def score_reactome_pathway_support(features: dict[str, Any]) -> dict[str, Any]:
+    """Score Reactome pathway overlap for one candidate gene."""
+    overlap_component = min(features["overlap_count"] / 5.0, 1.0)
+    score = (
+        0.55 * float(features["weighted_overlap_strength"])
+        + 0.25 * float(features["best_overlap_strength"])
+        + 0.20 * overlap_component
+    )
+    return {
+        "benchmark_id": features["benchmark_id"],
+        "subset_id": features["subset_id"],
+        "ensembl_gene_id": features["ensembl_gene_id"],
+        "gene_symbol": features["gene_symbol"],
+        "score_name": "reactome_pathway_support_score",
+        "score": round(score, 4),
+        "components": {
+            "weighted_overlap_component": round(0.55 * float(features["weighted_overlap_strength"]), 4),
+            "best_pathway_component": round(0.25 * float(features["best_overlap_strength"]), 4),
+            "overlap_count_component": round(0.20 * overlap_component, 4),
+        },
+        "overlap_count": features["overlap_count"],
+        "top_overlap_pathways": features["top_overlap_pathways"],
+        "enrichment_gene_count": features["enrichment_gene_count"],
+        "enrichment_fdr_max": features["enrichment_fdr_max"],
+        "evidence_kind": features["evidence_kind"],
     }
 
 
