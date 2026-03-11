@@ -75,7 +75,8 @@ PYTHONPATH=packages/py python3 -m unittest discover -s tests/unit -p 'test_*.py'
 PYTHONPATH=packages/py python3 apps/api/server.py
 PYTHONPATH=packages/py python3 -m prioritx_rank.cli
 PYTHONPATH=packages/py python3 -m prioritx_eval.cli
+PYTHONPATH=packages/py python3 -m prioritx_eval.cli --modes strict --integrity-only
 python3 scripts/save_verification_report.py
 ```
 
-Saved verification reports are written locally under `tmp/verification_reports/`.
+Saved verification reports are written locally under `tmp/verification_reports/`. The report runner uses the bounded `--modes strict --integrity-only` eval path so routine verification stays fast while full dual-mode evaluation remains available on demand.

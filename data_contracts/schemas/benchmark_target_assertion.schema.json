@@ -20,6 +20,7 @@
     },
     "benchmark_id": { "type": "string" },
     "default_subset_id": { "type": "string" },
+    "exploratory_subset_id": { "type": ["string", "null"] },
     "indication_name": { "type": "string" },
     "target_assertions": {
       "type": "array",

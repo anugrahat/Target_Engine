@@ -18,7 +18,7 @@ COMMANDS = [
     "ruby scripts/validate_transcriptomics_fixtures.rb",
     "ruby scripts/validate_benchmark_assertions.rb",
     "PYTHONPATH=packages/py python3 -m unittest discover -s tests/unit -p 'test_*.py'",
-    "PYTHONPATH=packages/py python3 -m prioritx_eval.cli",
+    "PYTHONPATH=packages/py python3 -m prioritx_eval.cli --modes strict --integrity-only",
 ]
 
 
