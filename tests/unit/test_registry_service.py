@@ -12,6 +12,7 @@ from prioritx_data.service import (
     query_dataset_manifests,
     query_study_contrasts,
     open_targets_genetics_scores,
+    open_targets_tractability_scores,
     transcriptomics_indication_evidence,
     transcriptomics_fixture_scores,
     transcriptomics_real_scores,
@@ -224,6 +225,21 @@ class RegistryServiceTests(unittest.TestCase):
         self.assertEqual(1, len(items))
         self.assertEqual("open_targets_genetics_evidence_score", items[0]["score_name"])
 
+    def test_returns_open_targets_tractability_scores(self) -> None:
+        mocked_records = [
+            {
+                "gene": {"ensembl_gene_id": "ENSG000001", "symbol": "GENE1", "approved_name": "Gene one"},
+                "tractability": [{"label": "High-Quality Ligand", "modality": "SM", "value": True}],
+                "provenance": {"source_kind": "open_targets_graphql"},
+                "evidence_kind": "open_targets_tractability",
+            }
+        ]
+        with patch("prioritx_data.service.load_open_targets_tractability", return_value=mocked_records):
+            items = open_targets_tractability_scores(["ENSG000001"])
+
+        self.assertEqual(1, len(items))
+        self.assertEqual("open_targets_tractability_score", items[0]["score_name"])
+
     def test_fuses_transcriptomics_and_genetics(self) -> None:
         transcriptomics_items = [
             {
@@ -250,9 +266,23 @@ class RegistryServiceTests(unittest.TestCase):
                 "statistics": {"genetic_association_score": 0.95},
             }
         ]
+        tractability_items = [
+            {
+                "ensembl_gene_id": "ENSG000001",
+                "gene_symbol": "GENE1",
+                "score": 0.6,
+                "positive_modalities": ["SM"],
+                "positive_bucket_count": 1,
+                "positive_buckets": [{"modality": "SM", "label": "High-Quality Ligand", "weight": 0.65}],
+                "evidence_kind": "open_targets_tractability",
+            }
+        ]
         with patch("prioritx_data.service.transcriptomics_indication_evidence", return_value=transcriptomics_items), patch(
             "prioritx_data.service.open_targets_genetics_scores",
             return_value=genetics_items,
+        ), patch(
+            "prioritx_data.service.open_targets_tractability_scores",
+            return_value=tractability_items,
         ):
             items = fused_target_evidence(benchmark_id="ipf_tnik", subset_id="ipf_lung_core", genetics_size=25)
 
@@ -260,6 +290,7 @@ class RegistryServiceTests(unittest.TestCase):
         self.assertEqual("fused_target_evidence_score", items[0]["score_name"])
         self.assertTrue(items[0]["transcriptomics_available"])
         self.assertTrue(items[0]["genetics_available"])
+        self.assertTrue(items[0]["tractability_available"])
 
 
 if __name__ == "__main__":

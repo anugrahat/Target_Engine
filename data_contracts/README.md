@@ -23,6 +23,8 @@ Current contract layers:
   - one source-backed Open Targets genetics evidence record for a benchmark disease
 - `schemas/fused_target_evidence_record.schema.json`
   - one merged target-evidence record combining transcriptomics and genetics by Ensembl gene
+- `schemas/open_targets_tractability_record.schema.json`
+  - one source-backed Open Targets tractability evidence record for a set of gene targets
 - `registries/`
   - generated first-wave dataset-manifest and study-contrast fixtures
 - `fixtures/transcriptomics/`

@@ -182,12 +182,13 @@ def score_open_targets_genetics(features: dict[str, Any]) -> dict[str, Any]:
 
 def score_fused_target_evidence(features: dict[str, Any]) -> dict[str, Any]:
     """Score a target from transcriptomics plus genetics evidence."""
-    transcriptomics_component = 0.6 * min(float(features["transcriptomics_score"]), 1.0)
-    genetics_component = 0.35 * min(float(features["genetics_score"]), 1.0)
+    transcriptomics_component = 0.5 * min(float(features["transcriptomics_score"]), 1.0)
+    genetics_component = 0.3 * min(float(features["genetics_score"]), 1.0)
+    tractability_component = 0.15 * min(float(features["tractability_score"]), 1.0)
     consistency_penalty = -0.1 if features["transcriptomics_direction_conflict"] else 0.0
     dual_evidence_bonus = 0.05 if features["transcriptomics_available"] and features["genetics_available"] else 0.0
 
-    score = transcriptomics_component + genetics_component + consistency_penalty + dual_evidence_bonus
+    score = transcriptomics_component + genetics_component + tractability_component + consistency_penalty + dual_evidence_bonus
     return {
         "benchmark_id": features["benchmark_id"],
         "subset_id": features["subset_id"],
@@ -198,15 +199,41 @@ def score_fused_target_evidence(features: dict[str, Any]) -> dict[str, Any]:
         "components": {
             "transcriptomics_component": round(transcriptomics_component, 4),
             "genetics_component": round(genetics_component, 4),
+            "tractability_component": round(tractability_component, 4),
             "consistency_penalty": round(consistency_penalty, 4),
             "dual_evidence_bonus": round(dual_evidence_bonus, 4),
         },
         "transcriptomics_available": features["transcriptomics_available"],
         "genetics_available": features["genetics_available"],
+        "tractability_available": features["tractability_available"],
         "transcriptomics_supporting_contrasts": features["transcriptomics_supporting_contrasts"],
         "transcriptomics_direction_conflict": features["transcriptomics_direction_conflict"],
         "transcriptomics_evidence_kind": features["transcriptomics_evidence_kind"],
         "genetics_evidence_kind": features["genetics_evidence_kind"],
+        "tractability_evidence_kind": features["tractability_evidence_kind"],
         "transcriptomics_provenance": features["transcriptomics_provenance"],
         "genetics_provenance": features["genetics_provenance"],
+        "tractability_provenance": features["tractability_provenance"],
+    }
+
+
+def score_open_targets_tractability(features: dict[str, Any]) -> dict[str, Any]:
+    """Score modality-aware Open Targets tractability evidence."""
+    best_modality_score = max(features["modality_scores"].values(), default=0.0)
+    breadth_component = min(len(features["positive_modalities"]) / 4.0, 1.0)
+    score = (0.75 * best_modality_score) + (0.25 * breadth_component)
+    return {
+        "ensembl_gene_id": features["ensembl_gene_id"],
+        "gene_symbol": features["gene_symbol"],
+        "approved_name": features["approved_name"],
+        "score_name": "open_targets_tractability_score",
+        "score": round(score, 4),
+        "components": {
+            "best_modality_component": round(0.75 * best_modality_score, 4),
+            "breadth_component": round(0.25 * breadth_component, 4),
+        },
+        "positive_modalities": features["positive_modalities"],
+        "positive_bucket_count": features["positive_bucket_count"],
+        "positive_buckets": features["positive_buckets"],
+        "evidence_kind": features["evidence_kind"],
     }

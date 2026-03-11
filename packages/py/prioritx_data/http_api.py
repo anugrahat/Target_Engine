@@ -13,6 +13,7 @@ from prioritx_data.service import (
     query_dataset_manifests,
     query_study_contrasts,
     open_targets_genetics_scores,
+    open_targets_tractability_scores,
     transcriptomics_indication_evidence,
     transcriptomics_fixture_scores,
     transcriptomics_real_scores,
@@ -38,6 +39,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
                 "/study-contrasts",
                 "/contrast-readiness",
                 "/open-targets-genetics",
+                "/open-targets-tractability",
                 "/fused-target-evidence",
                 "/transcriptomics-evidence",
                 "/transcriptomics-real-scores",
@@ -110,6 +112,12 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
             size = 200
         return 200, {"items": open_targets_genetics_scores(benchmark_id, size=size)}
 
+    if path == "/open-targets-tractability":
+        gene_ids = query.get("ensembl_gene_id") or []
+        if not gene_ids:
+            return 400, {"error": "at least one ensembl_gene_id query parameter is required"}
+        return 200, {"items": open_targets_tractability_scores(gene_ids)}
+
     if path == "/fused-target-evidence":
         benchmark_id = _single(query, "benchmark_id")
         if not benchmark_id:
@@ -117,17 +125,20 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
 
         min_support_raw = _single(query, "min_transcriptomics_support")
         genetics_size_raw = _single(query, "genetics_size")
+        tractability_top_n_raw = _single(query, "tractability_top_n")
         try:
             min_transcriptomics_support = int(min_support_raw) if min_support_raw else 1
             genetics_size = int(genetics_size_raw) if genetics_size_raw else 200
+            tractability_top_n = int(tractability_top_n_raw) if tractability_top_n_raw else 500
         except ValueError:
-            return 400, {"error": "min_transcriptomics_support and genetics_size must be integers"}
+            return 400, {"error": "min_transcriptomics_support, genetics_size, and tractability_top_n must be integers"}
         return 200, {
             "items": fused_target_evidence(
                 benchmark_id=benchmark_id,
                 subset_id=_single(query, "subset_id"),
                 min_transcriptomics_support=min_transcriptomics_support,
                 genetics_size=genetics_size,
+                tractability_top_n=tractability_top_n,
             )
         }
 

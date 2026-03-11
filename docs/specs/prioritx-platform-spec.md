@@ -145,6 +145,17 @@ Scientific constraints:
 - returned target records must keep the benchmark disease id, Ensembl gene id, and datatype-level scores
 - genetics scoring should weight `genetic_association` above the aggregate association score
 
+### First Real Tractability Connector
+
+The first tractability connector admitted into implementation is:
+
+- Open Targets target tractability via the official GraphQL API
+
+Scientific constraints:
+
+- tractability should be derived from explicit modality-level buckets, not inferred from target class names
+- fused ranking may use a transparent candidate preselection step before tractability reranking to keep remote calls bounded
+
 ## Ranking Spec
 
 ### Baseline Ranker

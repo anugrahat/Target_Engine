@@ -43,7 +43,8 @@ Current benchmark ordering after source verification:
   - `hcc_adult_core_gse45267` via unpaired GEO series-matrix microarray values plus `GPL570.annot.gz`
 - all real-data paths expose inferential statistics, BH-adjusted p-values, and HGNC-backed identifiers where recoverable
 - Open Targets genetics evidence is now available for benchmark diseases through the official GraphQL API
-- a first fused target-evidence layer now combines transcriptomics and genetics by Ensembl gene
+- Open Targets tractability evidence is now available for target genes through the official GraphQL API
+- a first fused target-evidence layer now combines transcriptomics, genetics, and tractability by Ensembl gene
 - illustrative transcriptomics gene-stat fixtures remain isolated for test scaffolding only
 
 ## Validation

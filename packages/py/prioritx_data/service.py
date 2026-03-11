@@ -6,12 +6,17 @@ import json
 from pathlib import Path
 from typing import Any
 
-from prioritx_data.open_targets import list_open_targets_benchmark_ids, load_open_targets_genetics
+from prioritx_data.open_targets import (
+    list_open_targets_benchmark_ids,
+    load_open_targets_genetics,
+    load_open_targets_tractability,
+)
 from prioritx_data.real_transcriptomics import list_real_contrast_ids, load_real_geo_gene_statistics
 from prioritx_data.registry import RegistryArtifact, list_dataset_manifests, list_study_contrasts, repo_root
 from prioritx_data.transcriptomics import list_fixture_contrast_ids, load_transcriptomics_fixture
 from prioritx_features.fusion import derive_fused_target_evidence_features
 from prioritx_features.genetics import derive_open_targets_genetics_features
+from prioritx_features.tractability import derive_open_targets_tractability_features
 from prioritx_features.transcriptomics import (
     derive_contrast_quality_features,
     derive_gene_transcriptomics_features,
@@ -21,6 +26,7 @@ from prioritx_features.transcriptomics import (
 from prioritx_rank.baseline import (
     score_fused_target_evidence,
     score_open_targets_genetics,
+    score_open_targets_tractability,
     score_cross_contrast_transcriptomics_evidence,
     score_contrast_readiness,
     score_gene_transcriptomics,
@@ -188,6 +194,20 @@ def open_targets_genetics_scores(benchmark_id: str, *, size: int = 200) -> list[
     return scored
 
 
+def open_targets_tractability_scores(ensembl_gene_ids: list[str]) -> list[dict[str, Any]]:
+    """Return scored Open Targets tractability evidence for a set of genes."""
+    records = load_open_targets_tractability(ensembl_gene_ids)
+    scored = [
+        {
+            **score_open_targets_tractability(derive_open_targets_tractability_features(record)),
+            "provenance": record["provenance"],
+        }
+        for record in records
+    ]
+    scored.sort(key=lambda item: item["score"], reverse=True)
+    return scored
+
+
 def _filtered_real_contrast_ids(
     *,
     benchmark_id: str | None = None,
@@ -270,6 +290,7 @@ def fused_target_evidence(
     subset_id: str | None = None,
     min_transcriptomics_support: int = 1,
     genetics_size: int = 200,
+    tractability_top_n: int = 500,
 ) -> list[dict[str, Any]]:
     """Fuse transcriptomics and Open Targets genetics evidence by Ensembl gene."""
     transcriptomics_items = transcriptomics_indication_evidence(
@@ -283,6 +304,28 @@ def fused_target_evidence(
     genetics_by_gene = {item["ensembl_gene_id"]: item for item in genetics_items}
     gene_ids = sorted(set(transcriptomics_by_gene) | set(genetics_by_gene))
 
+    base_scored = []
+    for gene_id in gene_ids:
+        features = derive_fused_target_evidence_features(
+            benchmark_id=benchmark_id,
+            subset_id=subset_id,
+            transcriptomics=transcriptomics_by_gene.get(gene_id),
+            genetics=genetics_by_gene.get(gene_id),
+            tractability=None,
+        )
+        base_scored.append(score_fused_target_evidence(features))
+
+    base_scored.sort(
+        key=lambda item: (
+            item["score"],
+            item["transcriptomics_supporting_contrasts"],
+            item["genetics_available"],
+        ),
+        reverse=True,
+    )
+    tractability_gene_ids = [item["ensembl_gene_id"] for item in base_scored[: max(tractability_top_n, 0)]]
+    tractability_by_gene = {item["ensembl_gene_id"]: item for item in open_targets_tractability_scores(tractability_gene_ids)}
+
     scored = []
     for gene_id in gene_ids:
         features = derive_fused_target_evidence_features(
@@ -290,6 +333,7 @@ def fused_target_evidence(
             subset_id=subset_id,
             transcriptomics=transcriptomics_by_gene.get(gene_id),
             genetics=genetics_by_gene.get(gene_id),
+            tractability=tractability_by_gene.get(gene_id),
         )
         scored.append(score_fused_target_evidence(features))
 

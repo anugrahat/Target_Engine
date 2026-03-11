@@ -87,6 +87,21 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(400, status)
         self.assertIn("error", payload)
 
+    def test_open_targets_tractability_route(self) -> None:
+        mocked_items = [{"ensembl_gene_id": "ENSG000001", "score_name": "open_targets_tractability_score"}]
+        with patch("prioritx_data.http_api.open_targets_tractability_scores", return_value=mocked_items):
+            status, payload = handle_get(
+                "/open-targets-tractability",
+                {"ensembl_gene_id": ["ENSG000001", "ENSG000002"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("open_targets_tractability_score", payload["items"][0]["score_name"])
+
+    def test_open_targets_tractability_requires_gene_ids(self) -> None:
+        status, payload = handle_get("/open-targets-tractability", {})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
     def test_fused_target_evidence_route(self) -> None:
         mocked_items = [{"ensembl_gene_id": "ENSG000001", "score_name": "fused_target_evidence_score"}]
         with patch("prioritx_data.http_api.fused_target_evidence", return_value=mocked_items):

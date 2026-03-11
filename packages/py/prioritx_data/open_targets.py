@@ -53,6 +53,25 @@ query DiseaseAssociations($diseaseId: String!, $size: Int!) {
 """
 
 
+def _tractability_query(ensembl_gene_ids: list[str]) -> str:
+    body = []
+    for index, gene_id in enumerate(ensembl_gene_ids):
+        body.append(
+            f"""
+  t{index}: target(ensemblId: "{gene_id}") {{
+    id
+    approvedSymbol
+    approvedName
+    tractability {{
+      label
+      modality
+      value
+    }}
+  }}"""
+        )
+    return "query TargetTractability {" + "".join(body) + "\n}"
+
+
 def list_open_targets_benchmark_ids() -> list[str]:
     """List benchmarks that have a configured Open Targets disease identifier."""
     return sorted(OPEN_TARGETS_DISEASES)
@@ -71,6 +90,10 @@ def _graphql_payload(disease_id: str, size: int) -> dict[str, object]:
         "query": _ASSOCIATIONS_QUERY,
         "variables": {"diseaseId": disease_id, "size": size},
     }
+
+
+def _tractability_payload(ensembl_gene_ids: list[str]) -> dict[str, object]:
+    return {"query": _tractability_query(ensembl_gene_ids)}
 
 
 @functools.lru_cache(maxsize=16)
@@ -123,4 +146,41 @@ def load_open_targets_genetics(benchmark_id: str, *, size: int = 200) -> list[di
                 },
             }
         )
+    return items
+
+
+def load_open_targets_tractability(ensembl_gene_ids: list[str], *, chunk_size: int = 50) -> list[dict[str, Any]]:
+    """Load Open Targets tractability records for a set of Ensembl gene identifiers."""
+    items: list[dict[str, Any]] = []
+    unique_gene_ids = sorted({gene_id for gene_id in ensembl_gene_ids if gene_id})
+    for start in range(0, len(unique_gene_ids), chunk_size):
+        chunk = unique_gene_ids[start : start + chunk_size]
+        payload = load_json_post_with_cache(
+            OPEN_TARGETS_API_URL,
+            namespace="open_targets_cache",
+            payload=_tractability_payload(chunk),
+        )
+        data = (payload or {}).get("data") or {}
+        for index, gene_id in enumerate(chunk):
+            target = data.get(f"t{index}")
+            if not target:
+                continue
+            items.append(
+                {
+                    "schema_version": "0.1.0",
+                    "evidence_kind": "open_targets_tractability",
+                    "gene": {
+                        "ensembl_gene_id": target.get("id"),
+                        "symbol": target.get("approvedSymbol"),
+                        "approved_name": target.get("approvedName"),
+                    },
+                    "tractability": target.get("tractability") or [],
+                    "provenance": {
+                        "source_kind": "open_targets_graphql",
+                        "api_url": OPEN_TARGETS_API_URL,
+                        "query_name": "TargetTractability",
+                        "requested_gene_ids": chunk,
+                    },
+                }
+            )
     return items

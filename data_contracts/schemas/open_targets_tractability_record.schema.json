@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prioritx.local/schemas/open_targets_tractability_record.schema.json",
+  "title": "OpenTargetsTractabilityRecord",
+  "type": "object",
+  "required": [
+    "ensembl_gene_id",
+    "score_name",
+    "score",
+    "positive_modalities",
+    "positive_bucket_count",
+    "positive_buckets",
+    "evidence_kind"
+  ],
+  "properties": {
+    "ensembl_gene_id": { "type": "string" },
+    "gene_symbol": { "type": ["string", "null"] },
+    "approved_name": { "type": ["string", "null"] },
+    "score_name": { "const": "open_targets_tractability_score" },
+    "score": { "type": "number" },
+    "positive_modalities": { "type": "array", "items": { "type": "string" } },
+    "positive_bucket_count": { "type": "integer", "minimum": 0 },
+    "positive_buckets": { "type": "array", "items": { "type": "object" } },
+    "evidence_kind": { "const": "open_targets_tractability" },
+    "components": { "type": "object" }
+  }
+}
