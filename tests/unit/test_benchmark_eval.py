@@ -213,6 +213,7 @@ class BenchmarkEvalTests(unittest.TestCase):
     def test_explains_target_shortlist(self) -> None:
         ranked = [
             {"gene_symbol": "MUC5B", "ensembl_gene_id": "ENSG1", "score": 0.9},
+            {"gene_symbol": "TNIK", "ensembl_gene_id": "ENSG9", "score": 0.85},
             {"gene_symbol": "SFTPA2", "ensembl_gene_id": "ENSG2", "score": 0.8},
         ]
         explanation = {
@@ -226,12 +227,17 @@ class BenchmarkEvalTests(unittest.TestCase):
             "prioritx_eval.service.explain_target_evidence",
             return_value=explanation,
         ):
-            result = explain_target_shortlist("ipf_tnik", top_n=1)
+            result = explain_target_shortlist("ipf_tnik", top_n=2)
 
         self.assertEqual("ipf_tnik", result["benchmark_id"])
-        self.assertEqual(1, len(result["items"]))
+        self.assertEqual(2, len(result["items"]))
         self.assertEqual("MUC5B", result["items"][0]["gene_symbol"])
         self.assertEqual("summary", result["items"][0]["overview"])
+        self.assertFalse(result["items"][0]["benchmark_positive_overlay"]["is_source_backed_positive"])
+        self.assertTrue(result["items"][1]["benchmark_positive_overlay"]["is_source_backed_positive"])
+        self.assertEqual(1, result["benchmark_positive_overlay"]["recovered_in_top_n_count"])
+        self.assertEqual("TNIK", result["benchmark_positive_overlay"]["items"][0]["gene_symbol"])
+        self.assertEqual(2, result["benchmark_positive_overlay"]["items"][0]["rank"])
 
 
 if __name__ == "__main__":

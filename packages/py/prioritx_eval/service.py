@@ -667,6 +667,13 @@ def explain_target_shortlist(
         pathway_top_n=resolved_pathway_top_n,
         network_top_n=resolved_network_top_n,
     )
+    positive_targets = assertion["target_assertions"]
+    positive_by_symbol = {item["gene_symbol"]: item for item in positive_targets}
+    positive_ranks = {
+        item["gene_symbol"]: index
+        for index, item in enumerate(ranked, start=1)
+        if item.get("gene_symbol") in positive_by_symbol
+    }
 
     items = []
     for ranked_item in ranked[: max(top_n, 0)]:
@@ -686,6 +693,18 @@ def explain_target_shortlist(
                 "gene_symbol": ranked_item["gene_symbol"],
                 "ensembl_gene_id": ranked_item.get("ensembl_gene_id"),
                 "score": ranked_item["score"],
+                "benchmark_positive_overlay": (
+                    {
+                        "is_source_backed_positive": True,
+                        "label_tier": positive_by_symbol[ranked_item["gene_symbol"]]["label_tier"],
+                        "assertion_kind": positive_by_symbol[ranked_item["gene_symbol"]]["assertion_kind"],
+                        "source": positive_by_symbol[ranked_item["gene_symbol"]]["source"],
+                    }
+                    if ranked_item["gene_symbol"] in positive_by_symbol
+                    else {
+                        "is_source_backed_positive": False,
+                    }
+                ),
                 "overview": explanation["overview"],
                 "rationale": explanation["rationale"],
                 "caveats": explanation["caveats"],
@@ -701,6 +720,25 @@ def explain_target_shortlist(
         "subset_id": chosen_subset_id,
         "top_n": top_n,
         "items": items,
+        "benchmark_positive_overlay": {
+            "positive_target_count": len(positive_targets),
+            "recovered_in_top_n_count": sum(
+                1 for gene_symbol, rank in positive_ranks.items() if rank <= max(top_n, 0)
+            ),
+            "items": [
+                {
+                    "gene_symbol": target["gene_symbol"],
+                    "ensembl_gene_id": target["ensembl_gene_id"],
+                    "label_tier": target["label_tier"],
+                    "assertion_kind": target["assertion_kind"],
+                    "recovered_in_ranking": target["gene_symbol"] in positive_ranks,
+                    "recovered_in_top_n": positive_ranks.get(target["gene_symbol"], top_n + 1) <= max(top_n, 0),
+                    "rank": positive_ranks.get(target["gene_symbol"]),
+                    "source": target["source"],
+                }
+                for target in positive_targets
+            ],
+        },
         "integrity_review": benchmark_integrity_review(benchmark_id, mode=mode),
         "provenance": {
             "explanation_kind": "deterministic_target_shortlist_summary",
