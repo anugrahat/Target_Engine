@@ -7,6 +7,7 @@ from prioritx_eval.service import (
     audit_target_evidence,
     compare_benchmark_modes,
     evaluate_fused_benchmark,
+    export_benchmark_health_rows,
     explain_target_evidence,
     explain_target_shortlist,
     summarize_benchmark_health,
@@ -336,6 +337,58 @@ class BenchmarkEvalTests(unittest.TestCase):
         self.assertEqual(1, result["totals"]["positive_target_count"])
         self.assertEqual(1, result["totals"]["improved_in_exploratory_count"])
         self.assertEqual("positive_recovered_outside_top_n", result["items"][0]["readiness_flag"])
+
+    def test_exports_benchmark_health_rows(self) -> None:
+        health = {
+            "top_n": 10,
+            "items": [
+                {
+                    "benchmark_id": "ipf_tnik",
+                    "indication_name": "idiopathic pulmonary fibrosis",
+                    "readiness_flag": "positive_recovered_outside_top_n",
+                    "positive_target_count": 1,
+                    "strict_recovered_in_top_n_count": 0,
+                    "exploratory_recovered_in_top_n_count": 0,
+                    "recovered_anywhere_count": 1,
+                    "improved_in_exploratory_count": 1,
+                    "worsened_in_exploratory_count": 0,
+                    "unchanged_count": 0,
+                    "strict_leader": {"gene_symbol": "MMP1", "rank": 1, "score": 0.6},
+                    "exploratory_leader": {"gene_symbol": "MUC5B", "rank": 1, "score": 0.59},
+                }
+            ],
+        }
+        dashboard = {
+            "items": [
+                {
+                    "benchmark_id": "ipf_tnik",
+                    "strict_subset_id": "ipf_lung_core",
+                    "exploratory_subset_id": "ipf_lung_extended",
+                    "benchmark_positive_comparison": [
+                        {
+                            "gene_symbol": "TNIK",
+                            "label_tier": "tier1_mechanistic_support",
+                            "strict_rank": 4633,
+                            "exploratory_rank": 1176,
+                            "rank_delta": 3457,
+                            "movement": "improved_in_exploratory",
+                            "strict_recovered_in_top_n": False,
+                            "exploratory_recovered_in_top_n": False,
+                        }
+                    ],
+                }
+            ],
+        }
+        with patch("prioritx_eval.service.summarize_benchmark_health", return_value=health), patch(
+            "prioritx_eval.service.summarize_benchmark_dashboard",
+            return_value=dashboard,
+        ):
+            result = export_benchmark_health_rows(top_n=10)
+
+        self.assertEqual(1, result["row_count"])
+        self.assertEqual("ipf_tnik", result["rows"][0]["benchmark_id"])
+        self.assertEqual("TNIK", result["rows"][0]["positive_gene_symbol"])
+        self.assertEqual("MMP1", result["rows"][0]["strict_leader_gene_symbol"])
 
 
 if __name__ == "__main__":
