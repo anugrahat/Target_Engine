@@ -13,9 +13,11 @@ from prioritx_data.open_targets import (
 )
 from prioritx_data.real_transcriptomics import list_real_contrast_ids, load_real_geo_gene_statistics
 from prioritx_data.registry import RegistryArtifact, list_dataset_manifests, list_study_contrasts, repo_root
+from prioritx_data.string_network import load_string_id_map, load_string_network_edges
 from prioritx_data.transcriptomics import list_fixture_contrast_ids, load_transcriptomics_fixture
 from prioritx_features.fusion import derive_fused_target_evidence_features
 from prioritx_features.genetics import derive_open_targets_genetics_features
+from prioritx_features.network import derive_string_network_features
 from prioritx_features.tractability import derive_open_targets_tractability_features
 from prioritx_features.transcriptomics import (
     derive_contrast_quality_features,
@@ -31,6 +33,7 @@ from prioritx_rank.baseline import (
     score_contrast_readiness,
     score_gene_transcriptomics,
     score_real_gene_transcriptomics,
+    score_string_network_support,
 )
 
 
@@ -208,6 +211,62 @@ def open_targets_tractability_scores(ensembl_gene_ids: list[str]) -> list[dict[s
     return scored
 
 
+def string_network_scores(
+    *,
+    benchmark_id: str,
+    subset_id: str | None = None,
+    candidate_gene_map: dict[str, str],
+    seed_symbols: list[str],
+    partner_limit: int = 50,
+) -> list[dict[str, Any]]:
+    """Return STRING network support scores for a candidate symbol slice."""
+    candidate_symbols = list(candidate_gene_map)
+    symbol_map = load_string_id_map(candidate_symbols)
+    string_id_to_symbol = {payload["string_id"]: symbol for symbol, payload in symbol_map.items()}
+    edges = load_string_network_edges([payload["string_id"] for payload in symbol_map.values()], limit=partner_limit)
+
+    filtered_edges: dict[str, list[dict[str, Any]]] = {symbol: [] for symbol in symbol_map}
+    candidate_set = set(candidate_symbols)
+    seed_set = set(seed_symbols)
+    for edge in edges:
+        source_symbol = string_id_to_symbol.get(edge.get("stringId_A"))
+        partner_symbol = string_id_to_symbol.get(edge.get("stringId_B")) or edge.get("preferredName_B")
+        if source_symbol is None or partner_symbol not in candidate_set:
+            continue
+        filtered_edges[source_symbol].append(
+            {
+                "partner_symbol": partner_symbol,
+                "score": float(edge.get("score") or 0.0),
+                "preferredName_A": source_symbol,
+                "preferredName_B": partner_symbol,
+            }
+        )
+
+    scored = []
+    for symbol in candidate_symbols:
+        if symbol not in symbol_map:
+            continue
+        features = derive_string_network_features(
+            benchmark_id=benchmark_id,
+            subset_id=subset_id,
+            gene={
+                "ensembl_gene_id": candidate_gene_map[symbol],
+                "gene_symbol": symbol,
+            },
+            edges=filtered_edges.get(symbol, []),
+            seed_gene_symbols=seed_set,
+        )
+        item = score_string_network_support(features)
+        item["provenance"] = {
+            "source_kind": "string_api_v12",
+            "api_base": "https://version-12-0.string-db.org/api/json",
+            "partner_limit": partner_limit,
+        }
+        scored.append(item)
+    scored.sort(key=lambda item: item["score"], reverse=True)
+    return scored
+
+
 def _filtered_real_contrast_ids(
     *,
     benchmark_id: str | None = None,
@@ -291,6 +350,7 @@ def fused_target_evidence(
     min_transcriptomics_support: int = 1,
     genetics_size: int = 200,
     tractability_top_n: int = 500,
+    network_top_n: int = 100,
 ) -> list[dict[str, Any]]:
     """Fuse transcriptomics and Open Targets genetics evidence by Ensembl gene."""
     transcriptomics_items = transcriptomics_indication_evidence(
@@ -312,6 +372,7 @@ def fused_target_evidence(
             transcriptomics=transcriptomics_by_gene.get(gene_id),
             genetics=genetics_by_gene.get(gene_id),
             tractability=None,
+            network=None,
         )
         base_scored.append(score_fused_target_evidence(features))
 
@@ -325,15 +386,34 @@ def fused_target_evidence(
     )
     tractability_gene_ids = [item["ensembl_gene_id"] for item in base_scored[: max(tractability_top_n, 0)]]
     tractability_by_gene = {item["ensembl_gene_id"]: item for item in open_targets_tractability_scores(tractability_gene_ids)}
+    network_candidates = base_scored[: max(network_top_n, 0)]
+    network_by_gene = {
+        item["gene_symbol"]: item
+        for item in string_network_scores(
+            benchmark_id=benchmark_id,
+            subset_id=subset_id,
+            candidate_gene_map={
+                item["gene_symbol"]: item["ensembl_gene_id"]
+                for item in network_candidates
+                if item.get("gene_symbol")
+            },
+            seed_symbols=[item["gene_symbol"] for item in base_scored[:20] if item.get("gene_symbol")],
+        )
+    }
 
     scored = []
     for gene_id in gene_ids:
+        transcriptomics_item = transcriptomics_by_gene.get(gene_id)
+        genetics_item = genetics_by_gene.get(gene_id)
+        tractability_item = tractability_by_gene.get(gene_id)
+        symbol = (transcriptomics_item or genetics_item or tractability_item or {}).get("gene_symbol")
         features = derive_fused_target_evidence_features(
             benchmark_id=benchmark_id,
             subset_id=subset_id,
-            transcriptomics=transcriptomics_by_gene.get(gene_id),
-            genetics=genetics_by_gene.get(gene_id),
-            tractability=tractability_by_gene.get(gene_id),
+            transcriptomics=transcriptomics_item,
+            genetics=genetics_item,
+            tractability=tractability_item,
+            network=network_by_gene.get(symbol) if symbol else None,
         )
         scored.append(score_fused_target_evidence(features))
 

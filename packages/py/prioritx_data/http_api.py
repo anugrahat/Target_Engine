@@ -126,12 +126,14 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
         min_support_raw = _single(query, "min_transcriptomics_support")
         genetics_size_raw = _single(query, "genetics_size")
         tractability_top_n_raw = _single(query, "tractability_top_n")
+        network_top_n_raw = _single(query, "network_top_n")
         try:
             min_transcriptomics_support = int(min_support_raw) if min_support_raw else 1
             genetics_size = int(genetics_size_raw) if genetics_size_raw else 200
             tractability_top_n = int(tractability_top_n_raw) if tractability_top_n_raw else 500
+            network_top_n = int(network_top_n_raw) if network_top_n_raw else 100
         except ValueError:
-            return 400, {"error": "min_transcriptomics_support, genetics_size, and tractability_top_n must be integers"}
+            return 400, {"error": "min_transcriptomics_support, genetics_size, tractability_top_n, and network_top_n must be integers"}
         return 200, {
             "items": fused_target_evidence(
                 benchmark_id=benchmark_id,
@@ -139,6 +141,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
                 min_transcriptomics_support=min_transcriptomics_support,
                 genetics_size=genetics_size,
                 tractability_top_n=tractability_top_n,
+                network_top_n=network_top_n,
             )
         }
 

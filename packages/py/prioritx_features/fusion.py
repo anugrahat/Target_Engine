@@ -12,9 +12,10 @@ def derive_fused_target_evidence_features(
     transcriptomics: dict[str, Any] | None,
     genetics: dict[str, Any] | None,
     tractability: dict[str, Any] | None,
+    network: dict[str, Any] | None,
 ) -> dict[str, Any]:
-    """Merge transcriptomics, genetics, and tractability evidence into one target feature record."""
-    reference = transcriptomics or genetics or tractability
+    """Merge transcriptomics, genetics, tractability, and network evidence into one target feature record."""
+    reference = transcriptomics or genetics or tractability or network
     if reference is None:
         raise ValueError("at least one evidence record is required")
 
@@ -26,14 +27,17 @@ def derive_fused_target_evidence_features(
         "transcriptomics_score": float(transcriptomics["score"]) if transcriptomics else 0.0,
         "genetics_score": float(genetics["score"]) if genetics else 0.0,
         "tractability_score": float(tractability["score"]) if tractability else 0.0,
+        "network_score": float(network["score"]) if network else 0.0,
         "transcriptomics_supporting_contrasts": int(transcriptomics["supporting_contrast_count"]) if transcriptomics else 0,
         "transcriptomics_direction_conflict": bool(transcriptomics["direction_conflict"]) if transcriptomics else False,
         "genetics_available": genetics is not None,
         "transcriptomics_available": transcriptomics is not None,
         "tractability_available": tractability is not None,
+        "network_available": network is not None,
         "transcriptomics_evidence_kind": transcriptomics["evidence_kind"] if transcriptomics else None,
         "genetics_evidence_kind": genetics["evidence_kind"] if genetics else None,
         "tractability_evidence_kind": tractability["evidence_kind"] if tractability else None,
+        "network_evidence_kind": network["evidence_kind"] if network else None,
         "transcriptomics_provenance": {
             "source_contrast_ids": transcriptomics["source_contrast_ids"],
             "support_rule": transcriptomics["support_rule"],
@@ -47,4 +51,9 @@ def derive_fused_target_evidence_features(
             "positive_bucket_count": tractability["positive_bucket_count"],
             "positive_buckets": tractability["positive_buckets"],
         } if tractability else None,
+        "network_provenance": {
+            "partner_count": network["partner_count"],
+            "seed_partner_count": network["seed_partner_count"],
+            "top_partners": network["top_partners"],
+        } if network else None,
     }

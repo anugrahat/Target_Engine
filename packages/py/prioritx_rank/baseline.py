@@ -182,13 +182,14 @@ def score_open_targets_genetics(features: dict[str, Any]) -> dict[str, Any]:
 
 def score_fused_target_evidence(features: dict[str, Any]) -> dict[str, Any]:
     """Score a target from transcriptomics plus genetics evidence."""
-    transcriptomics_component = 0.5 * min(float(features["transcriptomics_score"]), 1.0)
-    genetics_component = 0.3 * min(float(features["genetics_score"]), 1.0)
-    tractability_component = 0.15 * min(float(features["tractability_score"]), 1.0)
+    transcriptomics_component = 0.42 * min(float(features["transcriptomics_score"]), 1.0)
+    genetics_component = 0.25 * min(float(features["genetics_score"]), 1.0)
+    tractability_component = 0.13 * min(float(features["tractability_score"]), 1.0)
+    network_component = 0.15 * min(float(features["network_score"]), 1.0)
     consistency_penalty = -0.1 if features["transcriptomics_direction_conflict"] else 0.0
     dual_evidence_bonus = 0.05 if features["transcriptomics_available"] and features["genetics_available"] else 0.0
 
-    score = transcriptomics_component + genetics_component + tractability_component + consistency_penalty + dual_evidence_bonus
+    score = transcriptomics_component + genetics_component + tractability_component + network_component + consistency_penalty + dual_evidence_bonus
     return {
         "benchmark_id": features["benchmark_id"],
         "subset_id": features["subset_id"],
@@ -200,20 +201,24 @@ def score_fused_target_evidence(features: dict[str, Any]) -> dict[str, Any]:
             "transcriptomics_component": round(transcriptomics_component, 4),
             "genetics_component": round(genetics_component, 4),
             "tractability_component": round(tractability_component, 4),
+            "network_component": round(network_component, 4),
             "consistency_penalty": round(consistency_penalty, 4),
             "dual_evidence_bonus": round(dual_evidence_bonus, 4),
         },
         "transcriptomics_available": features["transcriptomics_available"],
         "genetics_available": features["genetics_available"],
         "tractability_available": features["tractability_available"],
+        "network_available": features["network_available"],
         "transcriptomics_supporting_contrasts": features["transcriptomics_supporting_contrasts"],
         "transcriptomics_direction_conflict": features["transcriptomics_direction_conflict"],
         "transcriptomics_evidence_kind": features["transcriptomics_evidence_kind"],
         "genetics_evidence_kind": features["genetics_evidence_kind"],
         "tractability_evidence_kind": features["tractability_evidence_kind"],
+        "network_evidence_kind": features["network_evidence_kind"],
         "transcriptomics_provenance": features["transcriptomics_provenance"],
         "genetics_provenance": features["genetics_provenance"],
         "tractability_provenance": features["tractability_provenance"],
+        "network_provenance": features["network_provenance"],
     }
 
 
@@ -235,5 +240,30 @@ def score_open_targets_tractability(features: dict[str, Any]) -> dict[str, Any]:
         "positive_modalities": features["positive_modalities"],
         "positive_bucket_count": features["positive_bucket_count"],
         "positive_buckets": features["positive_buckets"],
+        "evidence_kind": features["evidence_kind"],
+    }
+
+
+def score_string_network_support(features: dict[str, Any]) -> dict[str, Any]:
+    """Score STRING network support within a disease-specific candidate slice."""
+    seed_component = 0.6 * min(float(features["mean_seed_score"]), 1.0)
+    degree_component = 0.25 * min(float(features["weighted_degree"]) / 10.0, 1.0)
+    partner_component = 0.15 * min(float(features["partner_count"]) / 10.0, 1.0)
+    score = seed_component + degree_component + partner_component
+    return {
+        "benchmark_id": features["benchmark_id"],
+        "subset_id": features["subset_id"],
+        "ensembl_gene_id": features["ensembl_gene_id"],
+        "gene_symbol": features["gene_symbol"],
+        "score_name": "string_network_support_score",
+        "score": round(score, 4),
+        "components": {
+            "seed_component": round(seed_component, 4),
+            "degree_component": round(degree_component, 4),
+            "partner_component": round(partner_component, 4),
+        },
+        "partner_count": features["partner_count"],
+        "seed_partner_count": features["seed_partner_count"],
+        "top_partners": features["top_partners"],
         "evidence_kind": features["evidence_kind"],
     }

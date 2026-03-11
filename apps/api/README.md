@@ -32,7 +32,7 @@ Important:
 - `transcriptomics-real-scores` fetches accession-backed GEO inputs on demand, caches GEO and HGNC resources under `tmp/`, and returns Ensembl-primary records with HGNC-backed symbols when available
 - `open-targets-genetics` fetches benchmark-disease associations from the official Open Targets GraphQL API, caches the responses under `tmp/`, and scores genetics evidence with an explicit weighting toward the `genetic_association` datatype score
 - `open-targets-tractability` fetches target tractability buckets from the official Open Targets GraphQL API and summarizes modality-level tractability evidence
-- `fused-target-evidence` now applies a transparent two-stage rerank: transcriptomics plus genetics define the candidate set, then Open Targets tractability enriches the top candidate slice
+- `fused-target-evidence` now applies a transparent three-stage rerank: transcriptomics plus genetics define the candidate set, Open Targets tractability enriches a larger top slice, and STRING network support reranks a smaller top slice
 - `transcriptomics-evidence` aggregates accession-backed transcriptomics outputs across the real contrasts admitted for a benchmark slice and applies an explicit support rule (`adjusted_p_value <= 0.05` and `|log2_fold_change| >= 0.5`)
 - current live real-data contrast IDs are `ipf_lung_core_gse52463`, `ipf_lung_core_gse24206`, `hcc_adult_core_gse60502`, and `hcc_adult_core_gse45267`
 - current inferential statistics use transparent t-statistics, Student t distribution p-values, BH correction, and explicit degrees of freedom

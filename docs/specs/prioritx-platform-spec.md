@@ -156,6 +156,17 @@ Scientific constraints:
 - tractability should be derived from explicit modality-level buckets, not inferred from target class names
 - fused ranking may use a transparent candidate preselection step before tractability reranking to keep remote calls bounded
 
+### First Real Network Connector
+
+The first network connector admitted into implementation is:
+
+- STRING v12 interaction partners over the top disease-specific candidate slice
+
+Scientific constraints:
+
+- network evidence should be computed inside a disease-specific candidate slice, not as a global degree score
+- seed connections must remain explicit so the rerank can be audited
+
 ## Ranking Spec
 
 ### Baseline Ranker

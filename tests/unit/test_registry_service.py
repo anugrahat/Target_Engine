@@ -283,6 +283,9 @@ class RegistryServiceTests(unittest.TestCase):
         ), patch(
             "prioritx_data.service.open_targets_tractability_scores",
             return_value=tractability_items,
+        ), patch(
+            "prioritx_data.service.string_network_scores",
+            return_value=[],
         ):
             items = fused_target_evidence(benchmark_id="ipf_tnik", subset_id="ipf_lung_core", genetics_size=25)
 
