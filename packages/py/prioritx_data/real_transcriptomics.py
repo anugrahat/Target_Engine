@@ -44,6 +44,17 @@ REAL_CONTRASTS: dict[str, dict[str, str]] = {
         "control_label": "control",
         "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE92nnn/GSE92592/suppl/GSE92592_gene.counts.txt.gz",
     },
+    "ipf_lung_extended_gse150910": {
+        "source_type": "geo_rnaseq_matrix_counts",
+        "series_accession": "GSE150910",
+        "benchmark_id": "ipf_tnik",
+        "dataset_id": "GSE150910",
+        "case_label": "ipf",
+        "control_label": "control",
+        "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE150nnn/GSE150910/suppl/GSE150910_gene-level_count_file.csv.gz",
+        "delimiter": ",",
+        "has_gene_header": True,
+    },
     "hcc_adult_core_gse60502": {
         "source_type": "geo_microarray_series",
         "series_accession": "GSE60502",
@@ -179,18 +190,28 @@ def parse_gene_count_text(gene_count_text: str) -> dict[str, int]:
     return counts
 
 
-def parse_gene_count_matrix_text(gene_count_text: str) -> tuple[list[str], dict[str, list[int]]]:
-    """Parse a GEO count matrix keyed by gene label with per-sample columns."""
-    lines = [line for line in gene_count_text.splitlines() if line.strip()]
-    if not lines:
+def parse_gene_count_matrix_text(
+    gene_count_text: str,
+    *,
+    delimiter: str = "\t",
+    has_gene_header: bool = False,
+) -> tuple[list[str], dict[str, list[int]]]:
+    """Parse a sample-by-gene count matrix keyed by gene label."""
+    reader = csv.reader(
+        [line for line in gene_count_text.splitlines() if line.strip()],
+        delimiter=delimiter,
+        quotechar='"',
+    )
+    rows = list(reader)
+    if not rows:
         return [], {}
 
-    header = lines[0].split("\t")
-    sample_titles = header
+    header = rows[0]
+    sample_titles = header[1:] if has_gene_header else header
     matrix: dict[str, list[int]] = {}
-    for line in lines[1:]:
-        cells = line.split("\t")
-        if len(cells) != len(sample_titles) + 1:
+    for cells in rows[1:]:
+        expected_length = len(sample_titles) + 1
+        if len(cells) != expected_length:
             continue
         matrix[cells[0]] = [int(value) for value in cells[1:]]
     return sample_titles, matrix
@@ -840,7 +861,11 @@ def _load_rnaseq_matrix_count_contrast(config: dict[str, str], contrast_id: str)
         raise ValueError(f"Failed to recover case/control samples for {contrast_id}")
 
     matrix_text = load_text_with_cache(config["supplementary_url"], namespace="geo_cache")
-    sample_titles, matrix = parse_gene_count_matrix_text(matrix_text)
+    sample_titles, matrix = parse_gene_count_matrix_text(
+        matrix_text,
+        delimiter=config.get("delimiter", "\t"),
+        has_gene_header=config.get("has_gene_header") == True,
+    )
     symbol_to_gene = load_hgnc_symbol_reverse_map()
 
     sample_counts = {sample.geo_accession: {} for sample in case_samples + control_samples}

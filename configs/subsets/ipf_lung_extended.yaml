@@ -1,0 +1,73 @@
+schema_version: "0.1.0"
+subset_id: ipf_lung_extended
+benchmark_id: ipf_tnik
+mode: curated_prioritx_subset
+objective: Extended IPF lung evidence subset that keeps live accession-backed transcriptomics cohorts and admits explicit IPF/control subsetting for mixed-diagnosis studies.
+readiness: candidate
+inclusion_principles:
+  - Prefer lung-tissue IPF versus control cohorts with live accession-backed loaders.
+  - Allow mixed-diagnosis cohorts only when the public sample metadata exposes an explicit IPF versus control split.
+  - Keep this subset separate from the first-wave benchmark core so broader evidence does not silently change benchmark claims.
+included_datasets:
+  - id: GSE52463
+    source: GEO
+    selection_mode: direct
+    case_definition: Idiopathic pulmonary fibrosis lung tissue
+    control_definition: Healthy control lung tissue
+    sample_counts:
+      case: 8
+      control: 7
+    reason: Direct lung case-control RNA-seq cohort with explicit counts and a live accession-backed loader.
+  - id: GSE92592
+    source: GEO
+    selection_mode: direct
+    case_definition: Idiopathic pulmonary fibrosis lung tissue
+    control_definition: Control lung tissue
+    sample_counts:
+      case: 20
+      control: 19
+    reason: Direct IPF versus control lung RNA-seq cohort from LTRC with a live matrix-backed loader.
+  - id: GSE24206
+    source: GEO
+    selection_mode: direct
+    case_definition: Idiopathic pulmonary fibrosis lung tissue
+    control_definition: Healthy donor lungs collected at transplantation
+    sample_counts:
+      case: 17
+      control: 6
+    reason: Direct IPF versus healthy-donor lung comparison with a live accession-backed microarray loader.
+  - id: GSE150910
+    source: GEO
+    selection_mode: requires_subsetting
+    case_definition: Idiopathic pulmonary fibrosis lung tissue
+    control_definition: Unaffected control lung tissue
+    sample_counts:
+      case: 103
+      control: 103
+    reason: Public count matrix and sample metadata expose an explicit IPF versus control split inside a broader CHP/IPF/control cohort.
+excluded_datasets:
+  - id: GSE72073
+    reason: Included in the first-wave benchmark core, but current platform mapping remains unresolved for a live loader.
+  - id: GSE138283
+    reason: Included in the first-wave benchmark core, but its public supplements are virus-focused rather than a straightforward human gene-count matrix.
+  - id: GSE93606
+    reason: Blood cohort with longitudinal follow-up rather than a lung-tissue subset.
+  - id: GSE38958
+    reason: Blood PBMC case-control cohort kept separate from the lung-focused extended subset.
+  - id: GSE28042
+    reason: Replication cohort without a clean control arm in the accession-level design text.
+  - id: GSE33566
+    reason: Blood transcriptome cohort kept separate from lung-focused evidence.
+  - id: GSE101286
+    reason: Chronic fibrosing IIP cohort rather than a clean IPF-only case-control series.
+  - id: GSE83717
+    reason: Case-count discrepancy between GEO summary and overall design remains unresolved.
+  - id: GSE21369
+    reason: Mixed ILD cohort with only a UIP/IPF subset.
+  - id: GSE15197
+    reason: IPF with secondary pulmonary hypertension plus a separate PAH arm.
+  - id: GSE99621
+    reason: Affected, unaffected, and healthy-control regions are mixed without subgroup counts in the accession text.
+  - id: GSE136831
+    reason: Single-cell follow-up dataset reserved for mechanistic localization, not bulk discovery benchmarking.
+notes: This is an exploratory PrioriTx subset for broader live transcriptomics evidence and is not the same as the stricter first-wave benchmark core.

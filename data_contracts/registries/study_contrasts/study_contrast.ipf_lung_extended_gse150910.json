@@ -1,0 +1,28 @@
+{
+  "schema_version": "0.1.0",
+  "contrast_id": "ipf_lung_extended_gse150910",
+  "benchmark_id": "ipf_tnik",
+  "dataset_ids": [
+    "GSE150910"
+  ],
+  "modality": "transcriptomics",
+  "tissue": "lung",
+  "case_definition": "Idiopathic pulmonary fibrosis lung tissue",
+  "control_definition": "Unaffected control lung tissue",
+  "analysis_unit": "bulk_rna",
+  "comparison_label": "GSE150910 curated first-wave contrast",
+  "sample_counts": {
+    "case": 103,
+    "control": 103
+  },
+  "inclusion_rule_summary": "Included in curated subset ipf_lung_extended because public count matrix and sample metadata expose an explicit ipf versus control split inside a broader chp/ipf/control cohort.",
+  "exclusion_rule_summary": "Restrict the contrast to the curated case and control arms defined in configs/subsets/ipf_lung_extended.yaml.",
+  "leakage_risks": [
+    "Do not use downstream validation outcomes as discovery-time features."
+  ],
+  "status": "partial",
+  "provenance": {
+    "primary_source_url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE150910",
+    "notes": "Generated from curated subset ipf_lung_extended."
+  }
+}

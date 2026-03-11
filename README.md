@@ -44,6 +44,7 @@ Current benchmark ordering after source verification:
   - `hcc_adult_core_gse60502` via paired GEO series-matrix microarray values plus `GPL96.annot.gz`
   - `hcc_adult_core_gse45267` via unpaired GEO series-matrix microarray values plus `GPL570.annot.gz`
   - `hcc_adult_core_gse77314` via GEO supplementary expression workbook parsed directly from the official `.xlsx` package
+  - `ipf_lung_extended_gse150910` via explicit IPF/control subsetting from a public mixed-diagnosis gene-count matrix
 - all real-data paths expose inferential statistics, BH-adjusted p-values, and HGNC-backed identifiers where recoverable
 - Open Targets genetics evidence is now available for benchmark diseases through the official GraphQL API
 - Open Targets tractability evidence is now available for target genes through the official GraphQL API

@@ -51,6 +51,22 @@ class RealTranscriptomicsTests(unittest.TestCase):
         self.assertEqual(["s_1", "s_2"], sample_titles)
         self.assertEqual([10, 20], matrix["GENEA.chr1"])
 
+    def test_parses_gene_count_matrix_text_with_csv_header(self) -> None:
+        text = "\n".join(
+            [
+                "symbol,s_1,s_2",
+                "TNIK,11,12",
+                "A2M,20,25",
+            ]
+        )
+        sample_titles, matrix = parse_gene_count_matrix_text(
+            text,
+            delimiter=",",
+            has_gene_header=True,
+        )
+        self.assertEqual(["s_1", "s_2"], sample_titles)
+        self.assertEqual([11, 12], matrix["TNIK"])
+
     def test_builds_inferential_rnaseq_gene_statistics(self) -> None:
         case_samples = [
             GeoSample("GSMI1", "IPF1", "Idiopathic pulmonary fibrosis", "fixture://ipf1"),
@@ -333,6 +349,52 @@ class RealTranscriptomicsTests(unittest.TestCase):
         self.assertEqual({"case": 2, "control": 2}, cdk20["sample_counts"])
         self.assertEqual("geo_expression_workbook", cdk20["provenance"]["source_kind"])
         self.assertTrue(cdk20["provenance"]["paired_design"])
+
+    def test_loads_real_ipf_extended_matrix_statistics_with_patched_downloads(self) -> None:
+        matrix_text = "\n".join(
+            [
+                '!Sample_title\t"ipf_1"\t"ipf_2"\t"control_1"\t"control_2"\t"chp_1"',
+                '!Sample_geo_accession\t"GSM1"\t"GSM2"\t"GSM3"\t"GSM4"\t"GSM5"',
+                '!Sample_characteristics_ch1\t"diagnosis: ipf"\t"diagnosis: ipf"\t"diagnosis: control"\t"diagnosis: control"\t"diagnosis: chp"',
+            ]
+        )
+        counts_text = "\n".join(
+            [
+                "symbol,ipf_1,ipf_2,control_1,control_2,chp_1",
+                "TNIK,100,90,40,35,20",
+                "A2M,500,520,100,120,95",
+            ]
+        )
+        reverse_map = {
+            "TNIK": {"ensembl_gene_id": "ENSG00000154310", "hgnc_id": "HGNC:11576"},
+            "A2M": {"ensembl_gene_id": "ENSG00000175899", "hgnc_id": "HGNC:7"},
+        }
+        symbol_map = {
+            "ENSG00000154310": {"symbol": "TNIK", "hgnc_id": "HGNC:11576"},
+            "ENSG00000175899": {"symbol": "A2M", "hgnc_id": "HGNC:7"},
+        }
+
+        def fake_load_text(url: str, namespace: str) -> str:
+            if url.endswith("GSE150910_series_matrix.txt.gz"):
+                return matrix_text
+            if url.endswith("GSE150910_gene-level_count_file.csv.gz"):
+                return counts_text
+            raise AssertionError(url)
+
+        load_real_geo_gene_statistics.cache_clear()
+        with patch("prioritx_data.real_transcriptomics.load_text_with_cache", side_effect=fake_load_text), patch(
+            "prioritx_data.real_transcriptomics.load_hgnc_symbol_reverse_map",
+            return_value=reverse_map,
+        ), patch(
+            "prioritx_data.real_transcriptomics.load_hgnc_symbol_map",
+            return_value=symbol_map,
+        ):
+            records = load_real_geo_gene_statistics("ipf_lung_extended_gse150910")
+
+        self.assertEqual(2, len(records))
+        tnik = next(record for record in records if record["gene"]["symbol"] == "TNIK")
+        self.assertEqual({"case": 2, "control": 2}, tnik["sample_counts"])
+        self.assertEqual("geo_series_supplement_counts_matrix", tnik["provenance"]["source_kind"])
 
 
 if __name__ == "__main__":
