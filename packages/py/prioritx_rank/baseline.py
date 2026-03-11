@@ -178,3 +178,35 @@ def score_open_targets_genetics(features: dict[str, Any]) -> dict[str, Any]:
         },
         "evidence_kind": features["evidence_kind"],
     }
+
+
+def score_fused_target_evidence(features: dict[str, Any]) -> dict[str, Any]:
+    """Score a target from transcriptomics plus genetics evidence."""
+    transcriptomics_component = 0.6 * min(float(features["transcriptomics_score"]), 1.0)
+    genetics_component = 0.35 * min(float(features["genetics_score"]), 1.0)
+    consistency_penalty = -0.1 if features["transcriptomics_direction_conflict"] else 0.0
+    dual_evidence_bonus = 0.05 if features["transcriptomics_available"] and features["genetics_available"] else 0.0
+
+    score = transcriptomics_component + genetics_component + consistency_penalty + dual_evidence_bonus
+    return {
+        "benchmark_id": features["benchmark_id"],
+        "subset_id": features["subset_id"],
+        "ensembl_gene_id": features["ensembl_gene_id"],
+        "gene_symbol": features["gene_symbol"],
+        "score_name": "fused_target_evidence_score",
+        "score": round(score, 4),
+        "components": {
+            "transcriptomics_component": round(transcriptomics_component, 4),
+            "genetics_component": round(genetics_component, 4),
+            "consistency_penalty": round(consistency_penalty, 4),
+            "dual_evidence_bonus": round(dual_evidence_bonus, 4),
+        },
+        "transcriptomics_available": features["transcriptomics_available"],
+        "genetics_available": features["genetics_available"],
+        "transcriptomics_supporting_contrasts": features["transcriptomics_supporting_contrasts"],
+        "transcriptomics_direction_conflict": features["transcriptomics_direction_conflict"],
+        "transcriptomics_evidence_kind": features["transcriptomics_evidence_kind"],
+        "genetics_evidence_kind": features["genetics_evidence_kind"],
+        "transcriptomics_provenance": features["transcriptomics_provenance"],
+        "genetics_provenance": features["genetics_provenance"],
+    }

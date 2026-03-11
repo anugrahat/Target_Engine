@@ -31,7 +31,7 @@ class RegistryRequestHandler(BaseHTTPRequestHandler):
 def main() -> int:
     server = ThreadingHTTPServer(("127.0.0.1", 8000), RegistryRequestHandler)
     print("PrioriTx registry API listening on http://127.0.0.1:8000")
-    print("Routes: /health, /benchmarks, /subsets, /dataset-manifests, /study-contrasts, /contrast-readiness, /open-targets-genetics, /transcriptomics-evidence, /transcriptomics-real-scores, /transcriptomics-fixture-scores")
+    print("Routes: /health, /benchmarks, /subsets, /dataset-manifests, /study-contrasts, /contrast-readiness, /open-targets-genetics, /fused-target-evidence, /transcriptomics-evidence, /transcriptomics-real-scores, /transcriptomics-fixture-scores")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

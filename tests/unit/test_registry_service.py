@@ -7,6 +7,7 @@ from prioritx_data.service import (
     benchmark_index,
     contrast_readiness_scores,
     get_subset,
+    fused_target_evidence,
     list_benchmark_subsets,
     query_dataset_manifests,
     query_study_contrasts,
@@ -222,6 +223,43 @@ class RegistryServiceTests(unittest.TestCase):
 
         self.assertEqual(1, len(items))
         self.assertEqual("open_targets_genetics_evidence_score", items[0]["score_name"])
+
+    def test_fuses_transcriptomics_and_genetics(self) -> None:
+        transcriptomics_items = [
+            {
+                "benchmark_id": "ipf_tnik",
+                "subset_id": "ipf_lung_core",
+                "ensembl_gene_id": "ENSG000001",
+                "gene_symbol": "GENE1",
+                "score": 0.8,
+                "supporting_contrast_count": 2,
+                "direction_conflict": False,
+                "evidence_kind": "cross_contrast_real_transcriptomics",
+                "source_contrast_ids": ["ipf_lung_core_gse52463", "ipf_lung_core_gse24206"],
+                "support_rule": {"max_adjusted_p_value": 0.05, "min_absolute_log2_fold_change": 0.5},
+            }
+        ]
+        genetics_items = [
+            {
+                "benchmark_id": "ipf_tnik",
+                "disease_id": "EFO_0000768",
+                "ensembl_gene_id": "ENSG000001",
+                "gene_symbol": "GENE1",
+                "score": 0.9,
+                "evidence_kind": "open_targets_genetics",
+                "statistics": {"genetic_association_score": 0.95},
+            }
+        ]
+        with patch("prioritx_data.service.transcriptomics_indication_evidence", return_value=transcriptomics_items), patch(
+            "prioritx_data.service.open_targets_genetics_scores",
+            return_value=genetics_items,
+        ):
+            items = fused_target_evidence(benchmark_id="ipf_tnik", subset_id="ipf_lung_core", genetics_size=25)
+
+        self.assertEqual(1, len(items))
+        self.assertEqual("fused_target_evidence_score", items[0]["score_name"])
+        self.assertTrue(items[0]["transcriptomics_available"])
+        self.assertTrue(items[0]["genetics_available"])
 
 
 if __name__ == "__main__":

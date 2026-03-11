@@ -87,6 +87,26 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(400, status)
         self.assertIn("error", payload)
 
+    def test_fused_target_evidence_route(self) -> None:
+        mocked_items = [{"ensembl_gene_id": "ENSG000001", "score_name": "fused_target_evidence_score"}]
+        with patch("prioritx_data.http_api.fused_target_evidence", return_value=mocked_items):
+            status, payload = handle_get(
+                "/fused-target-evidence",
+                {"benchmark_id": ["ipf_tnik"], "subset_id": ["ipf_lung_core"], "genetics_size": ["25"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("fused_target_evidence_score", payload["items"][0]["score_name"])
+
+    def test_fused_target_evidence_requires_benchmark_id(self) -> None:
+        status, payload = handle_get("/fused-target-evidence", {})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
+    def test_fused_target_evidence_validates_int_params(self) -> None:
+        status, payload = handle_get("/fused-target-evidence", {"benchmark_id": ["ipf_tnik"], "genetics_size": ["abc"]})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
     def test_transcriptomics_evidence_requires_scope(self) -> None:
         status, payload = handle_get("/transcriptomics-evidence", {})
         self.assertEqual(400, status)

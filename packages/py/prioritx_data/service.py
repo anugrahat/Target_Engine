@@ -10,6 +10,7 @@ from prioritx_data.open_targets import list_open_targets_benchmark_ids, load_ope
 from prioritx_data.real_transcriptomics import list_real_contrast_ids, load_real_geo_gene_statistics
 from prioritx_data.registry import RegistryArtifact, list_dataset_manifests, list_study_contrasts, repo_root
 from prioritx_data.transcriptomics import list_fixture_contrast_ids, load_transcriptomics_fixture
+from prioritx_features.fusion import derive_fused_target_evidence_features
 from prioritx_features.genetics import derive_open_targets_genetics_features
 from prioritx_features.transcriptomics import (
     derive_contrast_quality_features,
@@ -18,6 +19,7 @@ from prioritx_features.transcriptomics import (
     derive_real_gene_transcriptomics_features,
 )
 from prioritx_rank.baseline import (
+    score_fused_target_evidence,
     score_open_targets_genetics,
     score_cross_contrast_transcriptomics_evidence,
     score_contrast_readiness,
@@ -256,6 +258,46 @@ def transcriptomics_indication_evidence(
             item["score"],
             item["supporting_contrast_count"],
             -item["best_adjusted_p_value"],
+        ),
+        reverse=True,
+    )
+    return scored
+
+
+def fused_target_evidence(
+    *,
+    benchmark_id: str,
+    subset_id: str | None = None,
+    min_transcriptomics_support: int = 1,
+    genetics_size: int = 200,
+) -> list[dict[str, Any]]:
+    """Fuse transcriptomics and Open Targets genetics evidence by Ensembl gene."""
+    transcriptomics_items = transcriptomics_indication_evidence(
+        benchmark_id=benchmark_id,
+        subset_id=subset_id,
+        min_support=min_transcriptomics_support,
+    )
+    genetics_items = open_targets_genetics_scores(benchmark_id, size=genetics_size)
+
+    transcriptomics_by_gene = {item["ensembl_gene_id"]: item for item in transcriptomics_items}
+    genetics_by_gene = {item["ensembl_gene_id"]: item for item in genetics_items}
+    gene_ids = sorted(set(transcriptomics_by_gene) | set(genetics_by_gene))
+
+    scored = []
+    for gene_id in gene_ids:
+        features = derive_fused_target_evidence_features(
+            benchmark_id=benchmark_id,
+            subset_id=subset_id,
+            transcriptomics=transcriptomics_by_gene.get(gene_id),
+            genetics=genetics_by_gene.get(gene_id),
+        )
+        scored.append(score_fused_target_evidence(features))
+
+    scored.sort(
+        key=lambda item: (
+            item["score"],
+            item["transcriptomics_supporting_contrasts"],
+            item["genetics_available"],
         ),
         reverse=True,
     )

@@ -158,6 +158,12 @@ Recommended approach:
 - weighted additive or gradient-boosted ranking model
 - full feature attribution output
 
+Current first-pass fused layer:
+
+- merge cross-contrast transcriptomics and Open Targets genetics by Ensembl gene
+- keep component scores explicit and separately inspectable
+- penalize transcriptomic direction conflict instead of hiding it in a latent model
+
 ### Advanced Ranker
 
 Only after the baseline is stable:
