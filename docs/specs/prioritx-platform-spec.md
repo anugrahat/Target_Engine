@@ -130,6 +130,7 @@ Scientific constraints:
 - primary gene key remains Ensembl gene ID even after adding HGNC-backed symbol mapping
 - approved gene symbols should come from the HGNC complete set and be cached locally for reproducibility
 - the current inferential layer uses transparent t-statistics plus BH correction, with Student t distribution p-values and explicit degrees of freedom
+- indication-level transcriptomics evidence must aggregate real contrast outputs by Ensembl gene with an explicit support rule, cross-study direction tracking, and per-contrast provenance
 
 ## Ranking Spec
 

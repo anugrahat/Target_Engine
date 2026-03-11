@@ -103,3 +103,51 @@ def score_real_gene_transcriptomics(features: dict[str, Any]) -> dict[str, Any]:
         },
         "evidence_kind": features["evidence_kind"],
     }
+
+
+def score_cross_contrast_transcriptomics_evidence(features: dict[str, Any]) -> dict[str, Any]:
+    """Score aggregated transcriptomics evidence across real contrasts."""
+    support_component = 0.3 * min(float(features["support_fraction"]), 1.0)
+    significance = min(-math.log10(max(float(features["geometric_supported_adjusted_p_value"]), 1e-300)), 20.0)
+    significance_component = 0.3 * min(significance / 10.0, 1.0)
+    effect_component = 0.2 * min(abs(float(features["weighted_mean_log2_fold_change"])) / 3.0, 1.0)
+    standardized_component = 0.1 * min(float(features["mean_absolute_standardized_mean_difference"]) / 3.0, 1.0)
+    consistency_component = 0.1 * float(features["direction_consistency"])
+
+    score = (
+        support_component
+        + significance_component
+        + effect_component
+        + standardized_component
+        + consistency_component
+    )
+    return {
+        "benchmark_id": features["benchmark_id"],
+        "subset_id": features["subset_id"],
+        "ensembl_gene_id": features["ensembl_gene_id"],
+        "gene_symbol": features["gene_symbol"],
+        "hgnc_id": features["hgnc_id"],
+        "score_name": "cross_contrast_transcriptomics_evidence_score",
+        "score": round(score, 4),
+        "components": {
+            "support_component": round(support_component, 4),
+            "significance_component": round(significance_component, 4),
+            "effect_component": round(effect_component, 4),
+            "standardized_component": round(standardized_component, 4),
+            "consistency_component": round(consistency_component, 4),
+        },
+        "supporting_contrast_count": features["supporting_contrast_count"],
+        "observed_contrast_count": features["observed_contrast_count"],
+        "total_real_contrasts": features["total_real_contrasts"],
+        "support_fraction": features["support_fraction"],
+        "direction_conflict": features["direction_conflict"],
+        "weighted_mean_log2_fold_change": features["weighted_mean_log2_fold_change"],
+        "mean_absolute_standardized_mean_difference": features["mean_absolute_standardized_mean_difference"],
+        "best_adjusted_p_value": features["best_adjusted_p_value"],
+        "geometric_supported_adjusted_p_value": features["geometric_supported_adjusted_p_value"],
+        "evidence_kind": features["evidence_kind"],
+        "support_rule": features["support_rule"],
+        "source_contrast_ids": features["source_contrast_ids"],
+        "source_dataset_ids": features["source_dataset_ids"],
+        "per_contrast_evidence": features["per_contrast_evidence"],
+    }

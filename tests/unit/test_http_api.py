@@ -57,6 +57,26 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(200, status)
         self.assertEqual("real_transcriptomics_inferential_score", payload["items"][0]["score_name"])
 
+    def test_transcriptomics_evidence_route(self) -> None:
+        mocked_items = [{"ensembl_gene_id": "ENSG000001", "score_name": "cross_contrast_transcriptomics_evidence_score"}]
+        with patch("prioritx_data.http_api.transcriptomics_indication_evidence", return_value=mocked_items):
+            status, payload = handle_get(
+                "/transcriptomics-evidence",
+                {"subset_id": ["hcc_adult_core"], "min_support": ["2"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("cross_contrast_transcriptomics_evidence_score", payload["items"][0]["score_name"])
+
+    def test_transcriptomics_evidence_requires_scope(self) -> None:
+        status, payload = handle_get("/transcriptomics-evidence", {})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
+    def test_transcriptomics_evidence_validates_min_support(self) -> None:
+        status, payload = handle_get("/transcriptomics-evidence", {"subset_id": ["hcc_adult_core"], "min_support": ["abc"]})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
     def test_transcriptomics_real_scores_requires_contrast_id(self) -> None:
         status, payload = handle_get("/transcriptomics-real-scores", {})
         self.assertEqual(400, status)

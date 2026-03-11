@@ -11,6 +11,7 @@ from prioritx_data.service import (
     list_benchmark_subsets,
     query_dataset_manifests,
     query_study_contrasts,
+    transcriptomics_indication_evidence,
     transcriptomics_fixture_scores,
     transcriptomics_real_scores,
 )
@@ -34,6 +35,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
                 "/dataset-manifests",
                 "/study-contrasts",
                 "/contrast-readiness",
+                "/transcriptomics-evidence",
                 "/transcriptomics-real-scores",
                 "/transcriptomics-fixture-scores",
             ],
@@ -86,6 +88,30 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
                 subset_id=_single(query, "subset_id"),
                 tissue=_single(query, "tissue"),
                 modality=_single(query, "modality"),
+            )
+        }
+
+    if path == "/transcriptomics-evidence":
+        benchmark_id = _single(query, "benchmark_id")
+        subset_id = _single(query, "subset_id")
+        if not benchmark_id and not subset_id:
+            return 400, {"error": "benchmark_id or subset_id query parameter is required"}
+
+        min_support_raw = _single(query, "min_support")
+        if min_support_raw:
+            try:
+                min_support = int(min_support_raw)
+            except ValueError:
+                return 400, {"error": "min_support must be an integer"}
+        else:
+            min_support = 1
+        return 200, {
+            "items": transcriptomics_indication_evidence(
+                benchmark_id=benchmark_id,
+                subset_id=subset_id,
+                tissue=_single(query, "tissue"),
+                modality=_single(query, "modality"),
+                min_support=min_support,
             )
         }
 

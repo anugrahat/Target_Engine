@@ -10,6 +10,7 @@ from prioritx_data.service import (
     list_benchmark_subsets,
     query_dataset_manifests,
     query_study_contrasts,
+    transcriptomics_indication_evidence,
     transcriptomics_fixture_scores,
     transcriptomics_real_scores,
 )
@@ -72,6 +73,128 @@ class RegistryServiceTests(unittest.TestCase):
             items = transcriptomics_real_scores("ipf_lung_core_gse52463")
         self.assertEqual(1, len(items))
         self.assertEqual("real_transcriptomics_inferential_score", items[0]["score_name"])
+
+    def test_aggregates_cross_contrast_evidence(self) -> None:
+        contrast_records = {
+            "hcc_adult_core_gse60502": [
+                {
+                    "contrast_id": "hcc_adult_core_gse60502",
+                    "benchmark_id": "hcc_cdk20",
+                    "dataset_id": "GSE60502",
+                    "gene": {"ensembl_gene_id": "ENSG000001", "symbol": "GENE1", "hgnc_id": "HGNC:1"},
+                    "statistics": {
+                        "log2_fold_change": 1.2,
+                        "adjusted_p_value": 0.001,
+                        "standardized_mean_difference": 1.5,
+                    },
+                    "sample_counts": {"case": 18, "control": 18},
+                },
+                {
+                    "contrast_id": "hcc_adult_core_gse60502",
+                    "benchmark_id": "hcc_cdk20",
+                    "dataset_id": "GSE60502",
+                    "gene": {"ensembl_gene_id": "ENSG000002", "symbol": "GENE2", "hgnc_id": "HGNC:2"},
+                    "statistics": {
+                        "log2_fold_change": 0.9,
+                        "adjusted_p_value": 0.01,
+                        "standardized_mean_difference": 1.2,
+                    },
+                    "sample_counts": {"case": 18, "control": 18},
+                },
+            ],
+            "hcc_adult_core_gse45267": [
+                {
+                    "contrast_id": "hcc_adult_core_gse45267",
+                    "benchmark_id": "hcc_cdk20",
+                    "dataset_id": "GSE45267",
+                    "gene": {"ensembl_gene_id": "ENSG000001", "symbol": "GENE1", "hgnc_id": "HGNC:1"},
+                    "statistics": {
+                        "log2_fold_change": 1.0,
+                        "adjusted_p_value": 0.003,
+                        "standardized_mean_difference": 1.3,
+                    },
+                    "sample_counts": {"case": 48, "control": 39},
+                },
+                {
+                    "contrast_id": "hcc_adult_core_gse45267",
+                    "benchmark_id": "hcc_cdk20",
+                    "dataset_id": "GSE45267",
+                    "gene": {"ensembl_gene_id": "ENSG000002", "symbol": "GENE2", "hgnc_id": "HGNC:2"},
+                    "statistics": {
+                        "log2_fold_change": -0.8,
+                        "adjusted_p_value": 0.02,
+                        "standardized_mean_difference": 1.1,
+                    },
+                    "sample_counts": {"case": 48, "control": 39},
+                },
+                {
+                    "contrast_id": "hcc_adult_core_gse45267",
+                    "benchmark_id": "hcc_cdk20",
+                    "dataset_id": "GSE45267",
+                    "gene": {"ensembl_gene_id": "ENSG000003", "symbol": "GENE3", "hgnc_id": "HGNC:3"},
+                    "statistics": {
+                        "log2_fold_change": 0.3,
+                        "adjusted_p_value": 0.2,
+                        "standardized_mean_difference": 0.2,
+                    },
+                    "sample_counts": {"case": 48, "control": 39},
+                },
+            ],
+        }
+
+        def fake_load(contrast_id: str) -> list[dict[str, object]]:
+            return contrast_records.get(contrast_id, [])
+
+        with patch("prioritx_data.service.load_real_geo_gene_statistics", side_effect=fake_load):
+            items = transcriptomics_indication_evidence(subset_id="hcc_adult_core")
+
+        self.assertEqual(2, len(items))
+        self.assertEqual("cross_contrast_transcriptomics_evidence_score", items[0]["score_name"])
+        self.assertEqual("ENSG000001", items[0]["ensembl_gene_id"])
+        self.assertEqual(2, items[0]["supporting_contrast_count"])
+        self.assertFalse(items[0]["direction_conflict"])
+        self.assertTrue(items[1]["direction_conflict"])
+
+    def test_cross_contrast_evidence_respects_min_support(self) -> None:
+        contrast_records = {
+            "hcc_adult_core_gse60502": [
+                {
+                    "contrast_id": "hcc_adult_core_gse60502",
+                    "benchmark_id": "hcc_cdk20",
+                    "dataset_id": "GSE60502",
+                    "gene": {"ensembl_gene_id": "ENSG000001", "symbol": "GENE1", "hgnc_id": "HGNC:1"},
+                    "statistics": {
+                        "log2_fold_change": 1.2,
+                        "adjusted_p_value": 0.001,
+                        "standardized_mean_difference": 1.5,
+                    },
+                    "sample_counts": {"case": 18, "control": 18},
+                }
+            ],
+            "hcc_adult_core_gse45267": [
+                {
+                    "contrast_id": "hcc_adult_core_gse45267",
+                    "benchmark_id": "hcc_cdk20",
+                    "dataset_id": "GSE45267",
+                    "gene": {"ensembl_gene_id": "ENSG000001", "symbol": "GENE1", "hgnc_id": "HGNC:1"},
+                    "statistics": {
+                        "log2_fold_change": 1.0,
+                        "adjusted_p_value": 0.003,
+                        "standardized_mean_difference": 1.3,
+                    },
+                    "sample_counts": {"case": 48, "control": 39},
+                }
+            ],
+        }
+
+        def fake_load(contrast_id: str) -> list[dict[str, object]]:
+            return contrast_records.get(contrast_id, [])
+
+        with patch("prioritx_data.service.load_real_geo_gene_statistics", side_effect=fake_load):
+            items = transcriptomics_indication_evidence(subset_id="hcc_adult_core", min_support=2)
+
+        self.assertEqual(1, len(items))
+        self.assertEqual(2, items[0]["supporting_contrast_count"])
 
 
 if __name__ == "__main__":

@@ -17,6 +17,8 @@ Current contract layers:
   - one PrioriTx-curated admissible benchmark subset definition
 - `schemas/transcriptomics_gene_stat.schema.json`
   - one illustrative local gene-level transcriptomics record for scaffolded DE-style inputs
+- `schemas/gene_evidence_aggregate.schema.json`
+  - one cross-contrast transcriptomics evidence record aggregated at the indication slice level
 - `registries/`
   - generated first-wave dataset-manifest and study-contrast fixtures
 - `fixtures/transcriptomics/`

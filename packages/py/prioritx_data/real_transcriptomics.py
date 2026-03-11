@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import functools
 import math
 import re
 from dataclasses import dataclass
@@ -646,6 +647,7 @@ def _load_microarray_series_contrast(config: dict[str, str], contrast_id: str) -
     )
 
 
+@functools.lru_cache(maxsize=16)
 def load_real_geo_gene_statistics(contrast_id: str) -> list[dict[str, Any]]:
     """Load real accession-backed gene statistics for a supported contrast."""
     config = REAL_CONTRASTS.get(contrast_id)

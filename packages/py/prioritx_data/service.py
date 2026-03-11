@@ -12,9 +12,11 @@ from prioritx_data.transcriptomics import list_fixture_contrast_ids, load_transc
 from prioritx_features.transcriptomics import (
     derive_contrast_quality_features,
     derive_gene_transcriptomics_features,
+    derive_real_gene_evidence_features,
     derive_real_gene_transcriptomics_features,
 )
 from prioritx_rank.baseline import (
+    score_cross_contrast_transcriptomics_evidence,
     score_contrast_readiness,
     score_gene_transcriptomics,
     score_real_gene_transcriptomics,
@@ -160,4 +162,80 @@ def transcriptomics_real_scores(contrast_id: str) -> list[dict[str, Any]]:
         for record in records
     ]
     scored.sort(key=lambda item: item["score"], reverse=True)
+    return scored
+
+
+def _filtered_real_contrast_ids(
+    *,
+    benchmark_id: str | None = None,
+    subset_id: str | None = None,
+    tissue: str | None = None,
+    modality: str | None = None,
+) -> list[str]:
+    real_contrast_ids = set(list_real_contrast_ids())
+    filtered = query_study_contrasts(
+        benchmark_id=benchmark_id,
+        subset_id=subset_id,
+        tissue=tissue,
+        modality=modality,
+    )
+    return sorted(
+        contrast["contrast_id"]
+        for contrast in filtered
+        if contrast["contrast_id"] in real_contrast_ids
+    )
+
+
+def transcriptomics_indication_evidence(
+    *,
+    benchmark_id: str | None = None,
+    subset_id: str | None = None,
+    tissue: str | None = None,
+    modality: str | None = None,
+    min_support: int = 1,
+) -> list[dict[str, Any]]:
+    """Aggregate real transcriptomics evidence across contrasts for one indication slice."""
+    contrast_ids = _filtered_real_contrast_ids(
+        benchmark_id=benchmark_id,
+        subset_id=subset_id,
+        tissue=tissue,
+        modality=modality,
+    )
+    if not contrast_ids:
+        return []
+
+    resolved_benchmark_id = benchmark_id
+    if resolved_benchmark_id is None:
+        contrasts = query_study_contrasts(subset_id=subset_id, tissue=tissue, modality=modality)
+        benchmark_ids = {contrast["benchmark_id"] for contrast in contrasts if contrast["contrast_id"] in set(contrast_ids)}
+        resolved_benchmark_id = sorted(benchmark_ids)[0] if benchmark_ids else None
+
+    grouped_records: dict[str, list[dict[str, Any]]] = {}
+    for contrast_id in contrast_ids:
+        for record in load_real_geo_gene_statistics(contrast_id):
+            gene_id = record["gene"].get("ensembl_gene_id")
+            if not gene_id:
+                continue
+            grouped_records.setdefault(gene_id, []).append(record)
+
+    scored = []
+    for records in grouped_records.values():
+        features = derive_real_gene_evidence_features(
+            benchmark_id=resolved_benchmark_id or records[0]["benchmark_id"],
+            subset_id=subset_id,
+            total_real_contrasts=len(contrast_ids),
+            records=records,
+        )
+        if int(features["supporting_contrast_count"]) < max(min_support, 1):
+            continue
+        scored.append(score_cross_contrast_transcriptomics_evidence(features))
+
+    scored.sort(
+        key=lambda item: (
+            item["score"],
+            item["supporting_contrast_count"],
+            -item["best_adjusted_p_value"],
+        ),
+        reverse=True,
+    )
     return scored
