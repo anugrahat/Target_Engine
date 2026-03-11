@@ -37,6 +37,9 @@ Each benchmark case must declare:
 - forbidden evidence sources
 - known-positive targets if and only if they are source-backed
 
+The current implementation materializes source-backed positives as JSON
+assertion files under `data_contracts/assertions/`.
+
 ## Label Tiers
 
 PrioriTx should not use a single binary target-success label across all cases.

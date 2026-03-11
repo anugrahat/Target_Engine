@@ -17,6 +17,7 @@ dependencies = []
 [project.scripts]
 prioritx-registry-summary = "prioritx_data.cli:main"
 prioritx-contrast-readiness = "prioritx_rank.cli:main"
+prioritx-benchmark-eval = "prioritx_eval.cli:main"
 
 [tool.setuptools]
 include-package-data = true
@@ -26,7 +27,7 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["packages/py"]
-include = ["prioritx_core", "prioritx_data", "prioritx_features", "prioritx_rank"]
+include = ["prioritx_core", "prioritx_data", "prioritx_eval", "prioritx_features", "prioritx_rank"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

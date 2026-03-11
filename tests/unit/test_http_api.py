@@ -122,6 +122,26 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(400, status)
         self.assertIn("error", payload)
 
+    def test_benchmark_evaluation_route(self) -> None:
+        mocked_result = {"benchmark_id": "ipf_tnik", "metrics": {"best_rank": 4}}
+        with patch("prioritx_data.http_api.evaluate_fused_benchmark", return_value=mocked_result):
+            status, payload = handle_get(
+                "/benchmark-evaluation",
+                {"benchmark_id": ["ipf_tnik"], "subset_id": ["ipf_lung_core"], "network_top_n": ["25"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("ipf_tnik", payload["benchmark_id"])
+
+    def test_benchmark_evaluation_requires_benchmark_id(self) -> None:
+        status, payload = handle_get("/benchmark-evaluation", {})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
+    def test_benchmark_evaluation_validates_int_params(self) -> None:
+        status, payload = handle_get("/benchmark-evaluation", {"benchmark_id": ["ipf_tnik"], "network_top_n": ["abc"]})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
     def test_transcriptomics_evidence_requires_scope(self) -> None:
         status, payload = handle_get("/transcriptomics-evidence", {})
         self.assertEqual(400, status)

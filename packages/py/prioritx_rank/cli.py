@@ -13,6 +13,7 @@ from prioritx_data.service import (
 )
 from prioritx_features.transcriptomics import derive_contrast_quality_features, derive_gene_transcriptomics_features
 from prioritx_rank.baseline import score_contrast_readiness, score_gene_transcriptomics
+from prioritx_eval.service import evaluate_fused_benchmark
 
 
 def main() -> int:
@@ -76,6 +77,14 @@ def main() -> int:
         top = items[0]
         label = top["gene_symbol"] or top["ensembl_gene_id"]
         print(f"- {benchmark_id}: top {label} ({top['score']})")
+
+    print("Benchmark target evaluation:")
+    for benchmark_id in ("ipf_tnik", "hcc_cdk20"):
+        result = evaluate_fused_benchmark(benchmark_id)
+        print(
+            f"- {benchmark_id}: found {result['positive_targets_found']}/{result['positive_target_count']} "
+            f"positives, best_rank={result['metrics']['best_rank']}, hit@10={result['metrics']['hit_at_10']}"
+        )
     return 0
 
 

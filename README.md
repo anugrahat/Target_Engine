@@ -46,6 +46,7 @@ Current benchmark ordering after source verification:
 - Open Targets tractability evidence is now available for target genes through the official GraphQL API
 - STRING-based network support is now available over the top disease-specific candidate slice
 - a first fused target-evidence layer now combines transcriptomics, genetics, tractability, and STRING network support by Ensembl gene
+- source-backed benchmark target assertions now evaluate whether the live fused ranking recovers paper-backed positives such as `TNIK` and `CDK20`
 - illustrative transcriptomics gene-stat fixtures remain isolated for test scaffolding only
 
 ## Validation
@@ -61,7 +62,9 @@ ruby scripts/validate_contract_examples.rb
 ruby scripts/validate_transcriptomics_fixtures.rb
 ruby scripts/generate_first_wave_registry.rb
 ruby scripts/validate_registry_artifacts.rb
+ruby scripts/validate_benchmark_assertions.rb
 PYTHONPATH=packages/py python3 -m unittest discover -s tests/unit -p 'test_*.py'
 PYTHONPATH=packages/py python3 apps/api/server.py
 PYTHONPATH=packages/py python3 -m prioritx_rank.cli
+PYTHONPATH=packages/py python3 -m prioritx_eval.cli
 ```
