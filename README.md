@@ -36,15 +36,15 @@ Current benchmark ordering after source verification:
 - research, architecture, benchmark packs, curated subsets, generated registry fixtures, and a minimal read-only registry API are in place
 - a first metadata-derived transcriptomics readiness layer is in place over curated study contrasts
 - the read-only API also exposes metadata-derived contrast readiness scores
-- four accession-backed transcriptomics evidence paths are now live:
-- six accession-backed transcriptomics evidence paths are now live:
-  - `ipf_lung_core_gse52463` via GEO RNA-seq sample-level gene-count tables
-  - `ipf_lung_core_gse24206` via unpaired GEO series-matrix microarray values plus `GPL570.annot.gz`
-  - `ipf_lung_core_gse92592` via GEO series-level RNA-seq count matrix plus HGNC-backed symbol-to-Ensembl mapping
-  - `hcc_adult_core_gse60502` via paired GEO series-matrix microarray values plus `GPL96.annot.gz`
-  - `hcc_adult_core_gse45267` via unpaired GEO series-matrix microarray values plus `GPL570.annot.gz`
-  - `hcc_adult_core_gse77314` via GEO supplementary expression workbook parsed directly from the official `.xlsx` package
-  - `ipf_lung_extended_gse150910` via explicit IPF/control subsetting from a public mixed-diagnosis gene-count matrix
+- fourteen accession-backed transcriptomics contrast IDs are now live across strict and extended benchmark subsets, covering:
+  - `GSE52463` via GEO RNA-seq sample-level gene-count tables
+  - `GSE24206` via unpaired GEO series-matrix microarray values plus `GPL570.annot.gz`
+  - `GSE92592` via GEO series-level RNA-seq count matrix plus HGNC-backed symbol-to-Ensembl mapping
+  - `GSE150910` via explicit IPF/control subsetting from a public mixed-diagnosis gene-count matrix
+  - `GSE60502` via paired GEO series-matrix microarray values plus `GPL96.annot.gz`
+  - `GSE45267` via unpaired GEO series-matrix microarray values plus `GPL570.annot.gz`
+  - `GSE77314` via GEO supplementary expression workbook parsed directly from the official `.xlsx` package
+  - `GSE36376` via GEO series-matrix microarray values plus the official `GPL10558` Illumina supplementary platform table
 - all real-data paths expose inferential statistics, BH-adjusted p-values, and HGNC-backed identifiers where recoverable
 - Open Targets genetics evidence is now available for benchmark diseases through the official GraphQL API
 - Open Targets tractability evidence is now available for target genes through the official GraphQL API

@@ -18,6 +18,29 @@ class HgncMaps:
     symbol_to_gene: dict[str, dict[str, str]]
 
 
+def _split_hgnc_symbol_field(value: str) -> list[str]:
+    cleaned = value.strip().strip('"')
+    if not cleaned:
+        return []
+    return [token.strip() for token in cleaned.split("|") if token.strip()]
+
+
+def _register_symbol(
+    mapping: dict[str, dict[str, str]],
+    *,
+    symbol: str,
+    gene: dict[str, str],
+    match_type: str,
+) -> None:
+    if not symbol or symbol in mapping:
+        return
+    mapping[symbol] = {
+        **gene,
+        "match_type": match_type,
+        "matched_symbol": symbol,
+    }
+
+
 def parse_hgnc_complete_set(text: str) -> HgncMaps:
     """Parse approved HGNC rows into Ensembl- and symbol-keyed maps."""
     reader = csv.DictReader(text.splitlines(), delimiter="\t")
@@ -38,7 +61,11 @@ def parse_hgnc_complete_set(text: str) -> HgncMaps:
             "ensembl_gene_id": ensembl_gene_id,
         }
         ensembl_to_gene[ensembl_gene_id] = gene
-        symbol_to_gene[symbol] = gene
+        _register_symbol(symbol_to_gene, symbol=symbol, gene=gene, match_type="approved_symbol")
+        for prev_symbol in _split_hgnc_symbol_field(row.get("prev_symbol") or ""):
+            _register_symbol(symbol_to_gene, symbol=prev_symbol, gene=gene, match_type="prev_symbol")
+        for alias_symbol in _split_hgnc_symbol_field(row.get("alias_symbol") or ""):
+            _register_symbol(symbol_to_gene, symbol=alias_symbol, gene=gene, match_type="alias_symbol")
     return HgncMaps(ensembl_to_gene=ensembl_to_gene, symbol_to_gene=symbol_to_gene)
 
 

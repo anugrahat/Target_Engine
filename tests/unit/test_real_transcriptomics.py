@@ -132,6 +132,35 @@ class RealTranscriptomicsTests(unittest.TestCase):
         self.assertEqual(["GSMN1", "GSMT1"], sample_ids)
         self.assertEqual("1007_s_at", rows[0][0])
 
+    def test_series_matrix_parser_skips_rows_with_blank_values(self) -> None:
+        series_text = "\n".join(
+            [
+                "!series_matrix_table_begin",
+                '"ID_REF"\t"GSMN1"\t"GSMT1"',
+                '"1007_s_at"\t5.0\t8.0',
+                '"117_at"\t3.0\t',
+                "!series_matrix_table_end",
+            ]
+        )
+        sample_ids, rows = parse_geo_series_matrix_table(series_text)
+        self.assertEqual(["GSMN1", "GSMT1"], sample_ids)
+        self.assertEqual([("1007_s_at", [5.0, 8.0])], rows)
+
+    def test_parses_illumina_platform_mapping_from_supplement(self) -> None:
+        platform_text = "\n".join(
+            [
+                "[Heading]",
+                "Date\t15/4/2010",
+                "[Probes]",
+                "Species\tProbe_Id\tSymbol",
+                "Homo sapiens\tILMN_00001\tGENEA",
+                "Homo sapiens\tILMN_00002\t---",
+                "Homo sapiens\tILMN_00003\tGENEB",
+            ]
+        )
+        mapping = parse_geo_platform_gene_symbols(platform_text)
+        self.assertEqual({"ILMN_00001": "GENEA", "ILMN_00003": "GENEB"}, mapping)
+
     def test_builds_paired_microarray_gene_statistics(self) -> None:
         samples = [
             GeoSample("GSMN1", "HCC001N", "adjacent non-tumorous liver", ""),
@@ -251,8 +280,8 @@ class RealTranscriptomicsTests(unittest.TestCase):
             ]
         )
         reverse_map = {
-            "GENEA": {"ensembl_gene_id": "ENSG000001", "hgnc_id": "HGNC:1"},
-            "GENEB": {"ensembl_gene_id": "ENSG000002", "hgnc_id": "HGNC:2"},
+            "GENEA": {"ensembl_gene_id": "ENSG000001", "hgnc_id": "HGNC:1", "symbol": "GENEA"},
+            "GENEB": {"ensembl_gene_id": "ENSG000002", "hgnc_id": "HGNC:2", "symbol": "GENEB"},
         }
 
         def fake_load_text(url: str, namespace: str) -> str:
@@ -292,8 +321,8 @@ class RealTranscriptomicsTests(unittest.TestCase):
             ]
         )
         reverse_map = {
-            "TNIK": {"ensembl_gene_id": "ENSG00000154310", "hgnc_id": "HGNC:11576"},
-            "A2M": {"ensembl_gene_id": "ENSG00000175899", "hgnc_id": "HGNC:7"},
+            "TNIK": {"ensembl_gene_id": "ENSG00000154310", "hgnc_id": "HGNC:11576", "symbol": "TNIK"},
+            "A2M": {"ensembl_gene_id": "ENSG00000175899", "hgnc_id": "HGNC:7", "symbol": "A2M"},
         }
         symbol_map = {
             "ENSG00000154310": {"symbol": "TNIK", "hgnc_id": "HGNC:11576"},
@@ -330,8 +359,8 @@ class RealTranscriptomicsTests(unittest.TestCase):
             {"symbol": "TP53", "values": [8.0, 9.0, 8.5, 9.4]},
         ]
         reverse_map = {
-            "CDK20": {"ensembl_gene_id": "ENSG00000156345", "hgnc_id": "HGNC:1778"},
-            "TP53": {"ensembl_gene_id": "ENSG00000141510", "hgnc_id": "HGNC:11998"},
+            "CDK20": {"ensembl_gene_id": "ENSG00000156345", "hgnc_id": "HGNC:1778", "symbol": "CDK20"},
+            "TP53": {"ensembl_gene_id": "ENSG00000141510", "hgnc_id": "HGNC:11998", "symbol": "TP53"},
         }
 
         load_real_geo_gene_statistics.cache_clear()
@@ -366,8 +395,8 @@ class RealTranscriptomicsTests(unittest.TestCase):
             ]
         )
         reverse_map = {
-            "TNIK": {"ensembl_gene_id": "ENSG00000154310", "hgnc_id": "HGNC:11576"},
-            "A2M": {"ensembl_gene_id": "ENSG00000175899", "hgnc_id": "HGNC:7"},
+            "TNIK": {"ensembl_gene_id": "ENSG00000154310", "hgnc_id": "HGNC:11576", "symbol": "TNIK"},
+            "A2M": {"ensembl_gene_id": "ENSG00000175899", "hgnc_id": "HGNC:7", "symbol": "A2M"},
         }
         symbol_map = {
             "ENSG00000154310": {"symbol": "TNIK", "hgnc_id": "HGNC:11576"},
@@ -395,6 +424,60 @@ class RealTranscriptomicsTests(unittest.TestCase):
         tnik = next(record for record in records if record["gene"]["symbol"] == "TNIK")
         self.assertEqual({"case": 2, "control": 2}, tnik["sample_counts"])
         self.assertEqual("geo_series_supplement_counts_matrix", tnik["provenance"]["source_kind"])
+
+    def test_loads_real_hcc_extended_microarray_statistics_with_patched_downloads(self) -> None:
+        matrix_text = "\n".join(
+            [
+                '!Sample_title\t"5617835061_H"\t"5617835061_J"\t"5617835104_C"\t"5617835176_L"',
+                '!Sample_geo_accession\t"GSMN1"\t"GSMN2"\t"GSMT1"\t"GSMT2"',
+                '!Sample_characteristics_ch1\t"tissue: adjacent non-tumor liver"\t"tissue: adjacent non-tumor liver"\t"tissue: liver tumor"\t"tissue: liver tumor"',
+                "!series_matrix_table_begin",
+                '"ID_REF"\t"GSMN1"\t"GSMN2"\t"GSMT1"\t"GSMT2"',
+                '"ILMN_00001"\t4.2\t4.4\t7.8\t8.0',
+                '"ILMN_00002"\t6.5\t6.7\t6.6\t6.8',
+                "!series_matrix_table_end",
+            ]
+        )
+        platform_text = "\n".join(
+            [
+                "[Heading]",
+                "Date\t15/4/2010",
+                "[Probes]",
+                "Species\tProbe_Id\tSymbol",
+                "Homo sapiens\tILMN_00001\tCCRK",
+                "Homo sapiens\tILMN_00002\tTP53",
+            ]
+        )
+        reverse_map = {
+            "CCRK": {
+                "ensembl_gene_id": "ENSG00000156345",
+                "hgnc_id": "HGNC:1778",
+                "symbol": "CDK20",
+                "match_type": "prev_symbol",
+            },
+            "TP53": {"ensembl_gene_id": "ENSG00000141510", "hgnc_id": "HGNC:11998", "symbol": "TP53"},
+        }
+
+        def fake_load_text(url: str, namespace: str) -> str:
+            if url.endswith("GSE36376_series_matrix.txt.gz"):
+                return matrix_text
+            if url.endswith("GPL10558_HumanHT-12_V4_0_R2_15002873_B.txt.gz"):
+                return platform_text
+            raise AssertionError(url)
+
+        load_real_geo_gene_statistics.cache_clear()
+        with patch("prioritx_data.real_transcriptomics.load_text_with_cache", side_effect=fake_load_text), patch(
+            "prioritx_data.real_transcriptomics.load_hgnc_symbol_reverse_map",
+            return_value=reverse_map,
+        ):
+            records = load_real_geo_gene_statistics("hcc_adult_extended_gse36376")
+
+        self.assertEqual(2, len(records))
+        cdk20 = next(record for record in records if record["gene"]["symbol"] == "CDK20")
+        self.assertEqual({"case": 2, "control": 2}, cdk20["sample_counts"])
+        self.assertFalse(cdk20["provenance"]["paired_design"])
+        self.assertEqual(["CCRK"], cdk20["provenance"]["source_gene_symbols"])
+        self.assertEqual("GSE36376", cdk20["dataset_id"])
 
 
 if __name__ == "__main__":

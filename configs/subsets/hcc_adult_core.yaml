@@ -47,11 +47,11 @@ included_datasets:
     reason: Public GDC project arms are explicit and can be curated separately from the paper's aggregated counts.
 excluded_datasets:
   - id: GSE36376
-    reason: Adult HCC cohort but per-arm counts remain unresolved in this pass.
+    reason: Adult HCC cohort with resolved 240 versus 193 tumor/adjacent counts, but kept outside the stricter first-wave core to preserve a smaller benchmark slice.
   - id: GSE107170
     reason: Mixed HDV-HCC, HCV-HCC, HBV-HCC, and cirrhosis cohort rather than a clean adult HCC benchmark.
   - id: GSE102079
-    reason: Public accession metadata was not sufficiently recovered in this pass to verify a clean comparator arm.
+    reason: Comparator arm is adjacent liver from colorectal liver metastasis cases rather than a clean adult-HCC adjacent or healthy liver control.
   - id: GSE133039
     reason: Hepatoblastoma, not adult HCC.
   - id: GSE104766

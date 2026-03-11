@@ -23,7 +23,10 @@ class RegistryServiceTests(unittest.TestCase):
     def test_lists_curated_subsets(self) -> None:
         subsets = list_benchmark_subsets()
         subset_ids = {subset["subset_id"] for subset in subsets}
-        self.assertEqual({"ipf_lung_core", "hcc_adult_core"}, subset_ids)
+        self.assertEqual(
+            {"ipf_lung_core", "ipf_lung_extended", "hcc_adult_core", "hcc_adult_extended"},
+            subset_ids,
+        )
 
     def test_filters_dataset_manifests_by_subset(self) -> None:
         items = query_dataset_manifests(subset_id="ipf_lung_core")
@@ -32,7 +35,7 @@ class RegistryServiceTests(unittest.TestCase):
 
     def test_filters_study_contrasts_by_benchmark_and_tissue(self) -> None:
         items = query_study_contrasts(benchmark_id="hcc_cdk20", tissue="liver")
-        self.assertEqual(4, len(items))
+        self.assertEqual(8, len(items))
 
     def test_returns_subset_definition(self) -> None:
         subset = get_subset("hcc_adult_core")
@@ -41,8 +44,8 @@ class RegistryServiceTests(unittest.TestCase):
 
     def test_builds_benchmark_index(self) -> None:
         rows = {row["benchmark_id"]: row for row in benchmark_index()}
-        self.assertEqual(["hcc_adult_core"], rows["hcc_cdk20"]["subset_ids"])
-        self.assertEqual(["ipf_lung_core"], rows["ipf_tnik"]["subset_ids"])
+        self.assertEqual(["hcc_adult_core", "hcc_adult_extended"], rows["hcc_cdk20"]["subset_ids"])
+        self.assertEqual(["ipf_lung_core", "ipf_lung_extended"], rows["ipf_tnik"]["subset_ids"])
 
     def test_returns_sorted_contrast_readiness_scores(self) -> None:
         items = contrast_readiness_scores(subset_id="hcc_adult_core")

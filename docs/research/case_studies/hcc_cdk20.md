@@ -44,6 +44,14 @@
   - paired design
 - `GSE77314`
   - `50` paired normal and tumor samples
+- `GSE36376`
+  - `240` liver tumor samples
+  - `193` adjacent non-tumor liver samples
+  - adult HCC microarray cohort on `GPL10558`
+- `GSE102079`
+  - `152` HCC tumor samples
+  - `14` adjacent liver samples from colorectal liver metastasis cases without chemotherapy
+  - comparator is publicly disclosed but is not a clean adult-HCC adjacent or healthy liver control arm
 - `GSE107170`
   - mixed liver-transplant cohort including HDV-HCC, HCV-HCC, HBV-HCC, and HDV cirrhosis without HCC
   - this is not a simple healthy-control comparison
@@ -84,9 +92,9 @@ Reason:
 
 - map the disease/control sample counts back to accession IDs
 - separate true HCC cohorts from hepatoblastoma cohorts and other mixed liver-disease cohorts
-- recover per-arm sample definitions for `E-MTAB-5905`, `TCGA-LIHC`, `GSE36376`, and `GSE102079`
+- recover per-arm sample definitions for `E-MTAB-5905` and `TCGA-LIHC`
 - separate target-ranking evidence from downstream structure-based chemistry steps
-- decide whether PrioriTx should benchmark the public list as-is, or build a curated HCC-only subset
+- decide whether PrioriTx should benchmark the public list as-is, or build curated strict and extended HCC-only subsets
 
 ## PrioriTx implication
 
@@ -96,3 +104,6 @@ Current implementation note:
 
 - `GSE60502` is now a real accession-backed PrioriTx transcriptomics path because the GEO series matrix is complete, the design is paired, and `GPL96.annot.gz` provides recoverable primary-source probe annotation
 - `GSE45267` is now a second real accession-backed HCC transcriptomics path because the GEO series matrix is complete and `GPL570.annot.gz` provides recoverable primary-source probe annotation for an unpaired tumor-versus-noncancerous comparison
+- `GSE36376` is now a third real accession-backed HCC microarray path for the extended subset because GEO exposes explicit tissue labels and the official `GPL10558` supplementary platform table contains recoverable `Probe_Id` to `Symbol` mappings
+- `GSE36376` labels the target with the historical symbol `CCRK`; PrioriTx now maps that source-backed previous symbol to approved HGNC symbol `CDK20` with provenance preserved as `source_gene_symbols`
+- even after the `CCRK` to `CDK20` identifier fix, `CDK20` remains weak in the extended HCC transcriptomics layer because the recovered effect size is small (`log2 fold change ~= 0.0945`), so it still fails the current support rule

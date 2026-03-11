@@ -15,6 +15,7 @@ Current curated candidates:
 - `ipf_lung_core.yaml`
 - `ipf_lung_extended.yaml`
 - `hcc_adult_core.yaml`
+- `hcc_adult_extended.yaml`
 
 Validate with:
 

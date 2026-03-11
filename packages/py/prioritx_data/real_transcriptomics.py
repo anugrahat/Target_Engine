@@ -25,6 +25,14 @@ REAL_CONTRASTS: dict[str, dict[str, str]] = {
         "case_label": "idiopathic pulmonary fibrosis",
         "control_label": "normal",
     },
+    "ipf_lung_extended_gse52463": {
+        "source_type": "geo_rnaseq_counts",
+        "series_accession": "GSE52463",
+        "benchmark_id": "ipf_tnik",
+        "dataset_id": "GSE52463",
+        "case_label": "idiopathic pulmonary fibrosis",
+        "control_label": "normal",
+    },
     "ipf_lung_core_gse24206": {
         "source_type": "geo_microarray_series",
         "series_accession": "GSE24206",
@@ -35,7 +43,26 @@ REAL_CONTRASTS: dict[str, dict[str, str]] = {
         "case_label": "idiopathic pulmonary fibrosis",
         "control_label": "healthy",
     },
+    "ipf_lung_extended_gse24206": {
+        "source_type": "geo_microarray_series",
+        "series_accession": "GSE24206",
+        "platform_accession": "GPL570",
+        "design": "unpaired",
+        "benchmark_id": "ipf_tnik",
+        "dataset_id": "GSE24206",
+        "case_label": "idiopathic pulmonary fibrosis",
+        "control_label": "healthy",
+    },
     "ipf_lung_core_gse92592": {
+        "source_type": "geo_rnaseq_matrix_counts",
+        "series_accession": "GSE92592",
+        "benchmark_id": "ipf_tnik",
+        "dataset_id": "GSE92592",
+        "case_label": "idiopathic pulmonary fibrosis",
+        "control_label": "control",
+        "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE92nnn/GSE92592/suppl/GSE92592_gene.counts.txt.gz",
+    },
+    "ipf_lung_extended_gse92592": {
         "source_type": "geo_rnaseq_matrix_counts",
         "series_accession": "GSE92592",
         "benchmark_id": "ipf_tnik",
@@ -65,7 +92,27 @@ REAL_CONTRASTS: dict[str, dict[str, str]] = {
         "case_label": "hepatocellular carcinoma",
         "control_label": "adjacent non-tumorous liver",
     },
+    "hcc_adult_extended_gse60502": {
+        "source_type": "geo_microarray_series",
+        "series_accession": "GSE60502",
+        "platform_accession": "GPL96",
+        "design": "paired",
+        "benchmark_id": "hcc_cdk20",
+        "dataset_id": "GSE60502",
+        "case_label": "hepatocellular carcinoma",
+        "control_label": "adjacent non-tumorous liver",
+    },
     "hcc_adult_core_gse45267": {
+        "source_type": "geo_microarray_series",
+        "series_accession": "GSE45267",
+        "platform_accession": "GPL570",
+        "design": "unpaired",
+        "benchmark_id": "hcc_cdk20",
+        "dataset_id": "GSE45267",
+        "case_label": "tumor",
+        "control_label": "normal",
+    },
+    "hcc_adult_extended_gse45267": {
         "source_type": "geo_microarray_series",
         "series_accession": "GSE45267",
         "platform_accession": "GPL570",
@@ -84,6 +131,27 @@ REAL_CONTRASTS: dict[str, dict[str, str]] = {
         "control_label": "normal",
         "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE77nnn/GSE77314/suppl/GSE77314_expression.xlsx",
         "sheet_path": "xl/worksheets/sheet5.xml",
+    },
+    "hcc_adult_extended_gse77314": {
+        "source_type": "geo_xlsx_expression_matrix",
+        "series_accession": "GSE77314",
+        "benchmark_id": "hcc_cdk20",
+        "dataset_id": "GSE77314",
+        "case_label": "tumor",
+        "control_label": "normal",
+        "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE77nnn/GSE77314/suppl/GSE77314_expression.xlsx",
+        "sheet_path": "xl/worksheets/sheet5.xml",
+    },
+    "hcc_adult_extended_gse36376": {
+        "source_type": "geo_microarray_series",
+        "series_accession": "GSE36376",
+        "platform_accession": "GPL10558",
+        "platform_supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/platforms/GPL10nnn/GPL10558/suppl/GPL10558_HumanHT-12_V4_0_R2_15002873_B.txt.gz",
+        "design": "unpaired",
+        "benchmark_id": "hcc_cdk20",
+        "dataset_id": "GSE36376",
+        "case_label": "liver tumor",
+        "control_label": "adjacent non-tumor liver",
     },
 }
 
@@ -236,15 +304,23 @@ def parse_geo_series_matrix_table(series_matrix_text: str) -> tuple[list[str], l
         if not sample_ids:
             sample_ids = cells[1:]
             continue
-        rows.append((cells[0], [float(value) for value in cells[1:]]))
+        try:
+            values = [float(value) for value in cells[1:]]
+        except ValueError:
+            continue
+        rows.append((cells[0], values))
     return sample_ids, rows
 
 
 def parse_geo_platform_gene_symbols(platform_text: str) -> dict[str, str]:
-    """Parse unambiguous probe-to-symbol mappings from a GEO annotation file."""
+    """Parse unambiguous probe-to-symbol mappings from a GEO platform text file."""
     lines = platform_text.splitlines()
     header: list[str] | None = None
     data_lines: list[str] = []
+    probe_header: list[str] | None = None
+    probe_rows: list[str] = []
+    in_probe_table = False
+
     for line in lines:
         if line.startswith("#ID ="):
             header = ["ID"]
@@ -253,22 +329,45 @@ def parse_geo_platform_gene_symbols(platform_text: str) -> dict[str, str]:
             label = line[1:].split(" = ", 1)[0]
             header.append(label)
             continue
+        if line.strip() == "[Probes]":
+            in_probe_table = True
+            probe_header = None
+            continue
+        if in_probe_table and probe_header is None:
+            probe_header = line.split("\t")
+            continue
+        if in_probe_table:
+            if line.strip():
+                probe_rows.append(line)
+            continue
         if line.startswith("^Annotation") or line.startswith("!"):
             continue
         if line.strip():
             data_lines.append(line)
 
-    if header is None:
-        return {}
-
-    reader = csv.DictReader(data_lines, delimiter="\t", fieldnames=header)
     mapping: dict[str, str] = {}
+
+    if header is not None:
+        reader = csv.DictReader(data_lines, delimiter="\t", fieldnames=header)
+        for row in reader:
+            probe_id = (row.get("ID") or "").strip()
+            gene_symbol = (row.get("Gene symbol") or "").strip()
+            if not probe_id or not gene_symbol or gene_symbol == "---":
+                continue
+            if "///" in gene_symbol:
+                continue
+            mapping[probe_id] = gene_symbol
+
+    if probe_header is None:
+        return mapping
+
+    reader = csv.DictReader(probe_rows, delimiter="\t", fieldnames=probe_header)
     for row in reader:
-        probe_id = (row.get("ID") or "").strip()
-        gene_symbol = (row.get("Gene symbol") or "").strip()
+        probe_id = (row.get("Probe_Id") or "").strip()
+        gene_symbol = (row.get("Symbol") or "").strip()
         if not probe_id or not gene_symbol or gene_symbol == "---":
             continue
-        if "///" in gene_symbol:
+        if "///" in gene_symbol or "," in gene_symbol or " " in gene_symbol:
             continue
         mapping[probe_id] = gene_symbol
     return mapping
@@ -532,14 +631,16 @@ def _aggregate_probe_rows_by_gene(
         bucket = grouped.setdefault(
             gene["ensembl_gene_id"],
             {
-                "symbol": symbol,
+                "symbol": gene["symbol"],
                 "hgnc_id": gene["hgnc_id"],
                 "probes": [],
                 "vectors": [],
+                "source_symbols": set(),
             },
         )
         bucket["probes"].append(probe_id)
         bucket["vectors"].append(values)
+        bucket["source_symbols"].add(symbol)
 
     aggregated: list[dict[str, Any]] = []
     for ensembl_gene_id, bucket in grouped.items():
@@ -555,6 +656,7 @@ def _aggregate_probe_rows_by_gene(
                 "hgnc_id": bucket["hgnc_id"],
                 "probe_ids": sorted(bucket["probes"]),
                 "probe_count": len(bucket["probes"]),
+                "source_symbols": sorted(bucket["source_symbols"]),
                 "values": averaged,
             }
         )
@@ -660,6 +762,7 @@ def build_microarray_gene_statistics(
                     "sample_geo_accessions": sample_ids,
                     "paired_design": paired_flag,
                     "source_probe_ids": gene_row["probe_ids"],
+                    "source_gene_symbols": gene_row.get("source_symbols", [gene_row["symbol"]]),
                     "analysis_notes": analysis_notes,
                     "p_value_method": p_value_method,
                 },
@@ -763,6 +866,7 @@ def build_expression_matrix_gene_statistics(
                     "series_accession": dataset_id,
                     "sample_geo_accessions": sample_ids,
                     "paired_design": paired_design,
+                    "source_gene_symbols": gene_row.get("source_symbols", [gene_row["symbol"]]),
                     "analysis_notes": analysis_notes,
                     "p_value_method": p_value_method,
                 },
@@ -930,8 +1034,9 @@ def _load_xlsx_expression_matrix_contrast(config: dict[str, str], contrast_id: s
         gene_rows.append(
             {
                 "ensembl_gene_id": gene["ensembl_gene_id"],
-                "symbol": row["symbol"],
+                "symbol": gene["symbol"],
                 "hgnc_id": gene["hgnc_id"],
+                "source_symbols": [row["symbol"]],
                 "values": row["values"],
             }
         )
@@ -954,7 +1059,8 @@ def _load_microarray_series_contrast(config: dict[str, str], contrast_id: str) -
     series_text = load_text_with_cache(_series_matrix_url(config["series_accession"]), namespace="geo_cache")
     samples = parse_geo_series_samples(series_text)
     sample_ids, rows = parse_geo_series_matrix_table(series_text)
-    platform_text = load_text_with_cache(_platform_annotation_url(config["platform_accession"]), namespace="geo_platform_cache")
+    platform_url = config.get("platform_supplementary_url") or _platform_annotation_url(config["platform_accession"])
+    platform_text = load_text_with_cache(platform_url, namespace="geo_platform_cache")
     probe_to_symbol = parse_geo_platform_gene_symbols(platform_text)
     symbol_to_gene = load_hgnc_symbol_reverse_map()
     gene_rows = _aggregate_probe_rows_by_gene(sample_ids, rows, probe_to_symbol, symbol_to_gene)
