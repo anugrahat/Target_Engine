@@ -25,6 +25,14 @@ def normalize_geo_url(url: str) -> str:
 
 def load_text_with_cache(url: str, *, namespace: str) -> str:
     """Load a text payload from cache or download it once."""
+    data = load_bytes_with_cache(url, namespace=namespace)
+    if normalize_geo_url(url).endswith(".gz"):
+        return gzip.decompress(data).decode("utf-8", "replace")
+    return data.decode("utf-8", "replace")
+
+
+def load_bytes_with_cache(url: str, *, namespace: str) -> bytes:
+    """Load a binary payload from cache or download it once."""
     normalized = normalize_geo_url(url)
     digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:16]
     basename = normalized.rsplit("/", 1)[-1] or "payload"
@@ -32,10 +40,7 @@ def load_text_with_cache(url: str, *, namespace: str) -> str:
     if not cache_path.exists():
         with urlopen(normalized, timeout=60) as response:
             cache_path.write_bytes(response.read())
-    data = cache_path.read_bytes()
-    if cache_path.suffix == ".gz":
-        return gzip.decompress(data).decode("utf-8", "replace")
-    return data.decode("utf-8", "replace")
+    return cache_path.read_bytes()
 
 
 def load_json_post_with_cache(url: str, *, namespace: str, payload: dict[str, object]) -> object:

@@ -15,6 +15,7 @@ from prioritx_data.real_transcriptomics import (
     parse_geo_platform_gene_symbols,
     parse_geo_series_matrix_table,
     parse_geo_series_samples,
+    parse_xlsx_expression_sheet,
 )
 from prioritx_features.transcriptomics import derive_real_gene_transcriptomics_features
 from prioritx_rank.baseline import score_real_gene_transcriptomics
@@ -305,6 +306,33 @@ class RealTranscriptomicsTests(unittest.TestCase):
         self.assertEqual({"case": 2, "control": 2}, tnik["sample_counts"])
         self.assertEqual("geo_series_supplement_counts_matrix", tnik["provenance"]["source_kind"])
         self.assertEqual("HGNC:11576", tnik["gene"]["hgnc_id"])
+
+    def test_loads_real_hcc_xlsx_expression_statistics_with_patched_downloads(self) -> None:
+        sample_ids = ["S1N", "S1T", "S2N", "S2T"]
+        sheet_rows = [
+            {"symbol": "CDK20", "values": [2.0, 4.0, 2.5, 4.5]},
+            {"symbol": "TP53", "values": [8.0, 9.0, 8.5, 9.4]},
+        ]
+        reverse_map = {
+            "CDK20": {"ensembl_gene_id": "ENSG00000156345", "hgnc_id": "HGNC:1778"},
+            "TP53": {"ensembl_gene_id": "ENSG00000141510", "hgnc_id": "HGNC:11998"},
+        }
+
+        load_real_geo_gene_statistics.cache_clear()
+        with patch("prioritx_data.real_transcriptomics.load_bytes_with_cache", return_value=b"fixture"), patch(
+            "prioritx_data.real_transcriptomics.parse_xlsx_expression_sheet",
+            return_value=(sample_ids, sheet_rows),
+        ), patch(
+            "prioritx_data.real_transcriptomics.load_hgnc_symbol_reverse_map",
+            return_value=reverse_map,
+        ):
+            records = load_real_geo_gene_statistics("hcc_adult_core_gse77314")
+
+        self.assertEqual(2, len(records))
+        cdk20 = next(record for record in records if record["gene"]["symbol"] == "CDK20")
+        self.assertEqual({"case": 2, "control": 2}, cdk20["sample_counts"])
+        self.assertEqual("geo_expression_workbook", cdk20["provenance"]["source_kind"])
+        self.assertTrue(cdk20["provenance"]["paired_design"])
 
 
 if __name__ == "__main__":
