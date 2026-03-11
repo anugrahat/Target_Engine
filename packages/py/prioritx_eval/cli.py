@@ -20,7 +20,9 @@ def main() -> int:
         support_hits = sum(1 for item in audit["transcriptomics"] if item["passes_support_rule"])
         print(
             f"  target audit {target}: transcriptomics_support_hits={support_hits}, "
-            f"genetics_found={audit['open_targets_genetics']['found']}, fused_found={audit['fused_target_evidence']['found']}"
+            f"genetics_found={audit['open_targets_genetics']['found']}, "
+            f"genetics_rank={audit['open_targets_genetics']['association_rank']}, "
+            f"fused_found={audit['fused_target_evidence']['found']}"
         )
     return 0
 

@@ -144,6 +144,7 @@ Scientific constraints:
 - benchmark diseases must use source-backed Open Targets disease identifiers
 - returned target records must keep the benchmark disease id, Ensembl gene id, and datatype-level scores
 - genetics scoring should weight `genetic_association` above the aggregate association score
+- benchmark evaluation should use paginated disease-target retrieval rather than a single top-`N` page, or it risks false negatives for lower-ranked but real disease associations
 
 ### First Real Tractability Connector
 

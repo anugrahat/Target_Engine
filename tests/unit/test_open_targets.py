@@ -44,6 +44,61 @@ class OpenTargetsTests(unittest.TestCase):
         self.assertEqual(1, len(records))
         self.assertEqual("ENSG000001", records[0]["gene"]["ensembl_gene_id"])
         self.assertEqual(0.91, records[0]["statistics"]["genetic_association_score"])
+        self.assertEqual(1, records[0]["provenance"]["association_rank"])
+
+    def test_loads_open_targets_genetics_across_pages(self) -> None:
+        page0 = {
+            "data": {
+                "disease": {
+                    "id": "EFO_0000768",
+                    "name": "idiopathic pulmonary fibrosis",
+                    "associatedTargets": {
+                        "count": 2,
+                        "rows": [
+                            {
+                                "score": 0.82,
+                                "target": {
+                                    "id": "ENSG000001",
+                                    "approvedSymbol": "GENE1",
+                                    "approvedName": "Gene one",
+                                },
+                                "datatypeScores": [],
+                            }
+                        ],
+                    },
+                }
+            }
+        }
+        page1 = {
+            "data": {
+                "disease": {
+                    "id": "EFO_0000768",
+                    "name": "idiopathic pulmonary fibrosis",
+                    "associatedTargets": {
+                        "count": 2,
+                        "rows": [
+                            {
+                                "score": 0.2,
+                                "target": {
+                                    "id": "ENSG000002",
+                                    "approvedSymbol": "GENE2",
+                                    "approvedName": "Gene two",
+                                },
+                                "datatypeScores": [],
+                            }
+                        ],
+                    },
+                }
+            }
+        }
+
+        load_open_targets_genetics.cache_clear()
+        with patch("prioritx_data.open_targets.load_json_post_with_cache", side_effect=[page0, page1]):
+            records = load_open_targets_genetics("ipf_tnik", size=0)
+
+        self.assertEqual(2, len(records))
+        self.assertEqual("GENE2", records[1]["gene"]["symbol"])
+        self.assertEqual(501, records[1]["provenance"]["association_rank"])
 
     def test_scores_open_targets_genetics(self) -> None:
         record = {

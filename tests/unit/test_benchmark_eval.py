@@ -49,7 +49,12 @@ class BenchmarkEvalTests(unittest.TestCase):
                 "statistics": {"log2_fold_change": 0.4, "adjusted_p_value": 0.07},
             }
         ]
-        genetics = [{"gene_symbol": "TNIK", "ensembl_gene_id": "ENSG000001", "score": 0.55}]
+        genetics = [{
+            "gene_symbol": "TNIK",
+            "ensembl_gene_id": "ENSG000001",
+            "score": 0.55,
+            "provenance": {"association_rank": 887},
+        }]
         fused = [{"gene_symbol": "TNIK", "ensembl_gene_id": "ENSG000001", "score": 0.4, "components": {"genetics_component": 0.2}}]
         contrasts = [{"contrast_id": "ipf_lung_core_gse52463"}]
         with patch("prioritx_eval.service.query_study_contrasts", return_value=contrasts), patch(
@@ -68,6 +73,7 @@ class BenchmarkEvalTests(unittest.TestCase):
         self.assertTrue(result["transcriptomics"][0]["found"])
         self.assertFalse(result["transcriptomics"][0]["passes_support_rule"])
         self.assertTrue(result["open_targets_genetics"]["found"])
+        self.assertEqual(887, result["open_targets_genetics"]["association_rank"])
         self.assertTrue(result["fused_target_evidence"]["found"])
 
 

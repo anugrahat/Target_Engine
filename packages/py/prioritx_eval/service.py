@@ -19,7 +19,7 @@ def evaluate_fused_benchmark(
     *,
     subset_id: str | None = None,
     min_transcriptomics_support: int = 1,
-    genetics_size: int = 50,
+    genetics_size: int = 0,
     tractability_top_n: int = 100,
     network_top_n: int = 50,
 ) -> dict[str, Any]:
@@ -130,7 +130,7 @@ def audit_target_evidence(
     *,
     gene_symbol: str,
     subset_id: str | None = None,
-    genetics_size: int = 500,
+    genetics_size: int = 0,
     tractability_top_n: int = 200,
     network_top_n: int = 100,
 ) -> dict[str, Any]:
@@ -206,6 +206,8 @@ def audit_target_evidence(
             "found": genetics is not None,
             "score": genetics.get("score") if genetics else None,
             "ensembl_gene_id": genetics.get("ensembl_gene_id") if genetics else None,
+            "association_rank": ((genetics.get("provenance") or {}).get("association_rank")) if genetics else None,
+            "provenance": genetics.get("provenance") if genetics else None,
         },
         "fused_target_evidence": {
             "found": fused is not None,

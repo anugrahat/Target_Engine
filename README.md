@@ -67,4 +67,7 @@ PYTHONPATH=packages/py python3 -m unittest discover -s tests/unit -p 'test_*.py'
 PYTHONPATH=packages/py python3 apps/api/server.py
 PYTHONPATH=packages/py python3 -m prioritx_rank.cli
 PYTHONPATH=packages/py python3 -m prioritx_eval.cli
+python3 scripts/save_verification_report.py
 ```
+
+Saved verification reports are written locally under `tmp/verification_reports/`.

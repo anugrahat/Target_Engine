@@ -159,7 +159,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
         network_top_n_raw = _single(query, "network_top_n")
         try:
             min_transcriptomics_support = int(min_support_raw) if min_support_raw else 1
-            genetics_size = int(genetics_size_raw) if genetics_size_raw else 50
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else 0
             tractability_top_n = int(tractability_top_n_raw) if tractability_top_n_raw else 100
             network_top_n = int(network_top_n_raw) if network_top_n_raw else 50
         except ValueError:
@@ -183,7 +183,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
         tractability_top_n_raw = _single(query, "tractability_top_n")
         network_top_n_raw = _single(query, "network_top_n")
         try:
-            genetics_size = int(genetics_size_raw) if genetics_size_raw else 500
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else 0
             tractability_top_n = int(tractability_top_n_raw) if tractability_top_n_raw else 200
             network_top_n = int(network_top_n_raw) if network_top_n_raw else 100
         except ValueError:
