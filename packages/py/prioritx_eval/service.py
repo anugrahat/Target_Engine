@@ -639,3 +639,71 @@ def explain_target_evidence(
             "graph_gene_node": gene_node["id"] if gene_node else None,
         },
     }
+
+
+def explain_target_shortlist(
+    benchmark_id: str,
+    *,
+    mode: str = "strict",
+    subset_id: str | None = None,
+    top_n: int = 10,
+    genetics_size: int | None = None,
+    tractability_top_n: int | None = None,
+    pathway_top_n: int | None = None,
+    network_top_n: int | None = None,
+) -> dict[str, Any]:
+    assertion = load_benchmark_assertion(benchmark_id)
+    mode_config = benchmark_mode_config(benchmark_id, mode=mode)
+    chosen_subset_id = subset_id or mode_config["subset_id"]
+    resolved_genetics_size = mode_config["genetics_size"] if genetics_size is None else genetics_size
+    resolved_tractability_top_n = mode_config["tractability_top_n"] if tractability_top_n is None else tractability_top_n
+    resolved_pathway_top_n = mode_config["pathway_top_n"] if pathway_top_n is None else pathway_top_n
+    resolved_network_top_n = mode_config["network_top_n"] if network_top_n is None else network_top_n
+    ranked = fused_target_evidence(
+        benchmark_id=benchmark_id,
+        subset_id=chosen_subset_id,
+        genetics_size=resolved_genetics_size,
+        tractability_top_n=resolved_tractability_top_n,
+        pathway_top_n=resolved_pathway_top_n,
+        network_top_n=resolved_network_top_n,
+    )
+
+    items = []
+    for ranked_item in ranked[: max(top_n, 0)]:
+        explanation = explain_target_evidence(
+            benchmark_id,
+            gene_symbol=ranked_item["gene_symbol"],
+            mode=mode,
+            subset_id=chosen_subset_id,
+            genetics_size=resolved_genetics_size,
+            tractability_top_n=resolved_tractability_top_n,
+            pathway_top_n=resolved_pathway_top_n,
+            network_top_n=resolved_network_top_n,
+        )
+        items.append(
+            {
+                "rank": explanation["evidence_summary"]["fused_rank"],
+                "gene_symbol": ranked_item["gene_symbol"],
+                "ensembl_gene_id": ranked_item.get("ensembl_gene_id"),
+                "score": ranked_item["score"],
+                "overview": explanation["overview"],
+                "rationale": explanation["rationale"],
+                "caveats": explanation["caveats"],
+                "fused_components": explanation["fused_components"],
+                "evidence_summary": explanation["evidence_summary"],
+            }
+        )
+
+    return {
+        "benchmark_id": benchmark_id,
+        "indication_name": assertion["indication_name"],
+        "mode": mode,
+        "subset_id": chosen_subset_id,
+        "top_n": top_n,
+        "items": items,
+        "integrity_review": benchmark_integrity_review(benchmark_id, mode=mode),
+        "provenance": {
+            "explanation_kind": "deterministic_target_shortlist_summary",
+            "source_ranking": "fused_target_evidence",
+        },
+    }

@@ -219,6 +219,16 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(200, status)
         self.assertEqual("TNIK", payload["gene_symbol"])
 
+    def test_target_shortlist_explanations_route(self) -> None:
+        mocked_result = {"benchmark_id": "ipf_tnik", "items": [{"gene_symbol": "MUC5B"}]}
+        with patch("prioritx_data.http_api.explain_target_shortlist", return_value=mocked_result):
+            status, payload = handle_get(
+                "/target-shortlist-explanations",
+                {"benchmark_id": ["ipf_tnik"], "top_n": ["5"], "mode": ["strict"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("MUC5B", payload["items"][0]["gene_symbol"])
+
     def test_target_audit_requires_benchmark_id_and_gene_symbol(self) -> None:
         status, payload = handle_get("/target-audit", {"benchmark_id": ["ipf_tnik"]})
         self.assertEqual(400, status)
@@ -262,6 +272,27 @@ class HttpApiTests(unittest.TestCase):
         status, payload = handle_get(
             "/target-explanation",
             {"benchmark_id": ["ipf_tnik"], "gene_symbol": ["TNIK"], "mode": ["bad"]},
+        )
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
+    def test_target_shortlist_explanations_requires_benchmark_id(self) -> None:
+        status, payload = handle_get("/target-shortlist-explanations", {})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
+    def test_target_shortlist_explanations_validates_mode(self) -> None:
+        status, payload = handle_get(
+            "/target-shortlist-explanations",
+            {"benchmark_id": ["ipf_tnik"], "mode": ["bad"]},
+        )
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
+    def test_target_shortlist_explanations_validates_int_params(self) -> None:
+        status, payload = handle_get(
+            "/target-shortlist-explanations",
+            {"benchmark_id": ["ipf_tnik"], "top_n": ["bad"]},
         )
         self.assertEqual(400, status)
         self.assertIn("error", payload)

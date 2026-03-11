@@ -3,7 +3,13 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
-from prioritx_eval.service import audit_target_evidence, evaluate_fused_benchmark, explain_target_evidence, target_evidence_graph
+from prioritx_eval.service import (
+    audit_target_evidence,
+    evaluate_fused_benchmark,
+    explain_target_evidence,
+    explain_target_shortlist,
+    target_evidence_graph,
+)
 
 
 class BenchmarkEvalTests(unittest.TestCase):
@@ -203,6 +209,29 @@ class BenchmarkEvalTests(unittest.TestCase):
         self.assertTrue(any("association rank 887" in item for item in result["rationale"]))
         self.assertTrue(any("low-ranked" in item for item in result["caveats"]))
         self.assertEqual({"genetics_component": 0.2}, result["fused_components"])
+
+    def test_explains_target_shortlist(self) -> None:
+        ranked = [
+            {"gene_symbol": "MUC5B", "ensembl_gene_id": "ENSG1", "score": 0.9},
+            {"gene_symbol": "SFTPA2", "ensembl_gene_id": "ENSG2", "score": 0.8},
+        ]
+        explanation = {
+            "overview": "summary",
+            "rationale": ["real support"],
+            "caveats": ["none"],
+            "fused_components": {"transcriptomics_component": 0.4},
+            "evidence_summary": {"fused_rank": 1},
+        }
+        with patch("prioritx_eval.service.fused_target_evidence", return_value=ranked), patch(
+            "prioritx_eval.service.explain_target_evidence",
+            return_value=explanation,
+        ):
+            result = explain_target_shortlist("ipf_tnik", top_n=1)
+
+        self.assertEqual("ipf_tnik", result["benchmark_id"])
+        self.assertEqual(1, len(result["items"]))
+        self.assertEqual("MUC5B", result["items"][0]["gene_symbol"])
+        self.assertEqual("summary", result["items"][0]["overview"])
 
 
 if __name__ == "__main__":
