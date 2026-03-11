@@ -51,6 +51,7 @@ Important:
 - `benchmark-dashboard-summary` aggregates the current benchmark set into one dashboard-friendly payload with strict and exploratory leaders plus source-backed positive-target movement per indication
 - `benchmark-health-summary` reduces the dashboard payload into benchmark health metrics such as recovered-in-top-N counts, improved versus worsened positives, and a simple readiness flag per indication
 - `benchmark-health-export` flattens benchmark health into row-oriented records so notebooks and frontend tables can consume leaders, movement, and readiness metrics without reconstructing nested benchmark objects
+- `scripts/materialize_benchmark_exports.py` writes timestamped benchmark dashboard, health, and row exports under `tmp/benchmark_exports/` and refreshes `tmp/benchmark_exports/latest/`
 - `benchmark-evaluation` and `target-audit` now accept `mode=strict|exploratory`; strict uses the benchmark core subset, while exploratory uses the broader curated subset when one exists
 - `benchmark-integrity` reports the subset, evidence-family leakage review, and benchmark-specific forbidden leakage items without running a full rank
 - `benchmark-mode-comparison` compares strict and exploratory shortlist behavior, including how source-backed positive targets move in rank when the broader curated subset is enabled
