@@ -1,0 +1,55 @@
+{
+  "schema_version": "0.1.0",
+  "dataset_id": "ipf_lung_extended_gse92592",
+  "benchmark_id": "ipf_tnik",
+  "accession": {
+    "database": "GEO",
+    "id": "GSE92592",
+    "url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE92592"
+  },
+  "source_publication_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11738990/",
+  "disease_context": {
+    "name": "idiopathic pulmonary fibrosis",
+    "ontology_ids": {
+      "efo": "EFO_0000768",
+      "mesh": null,
+      "doid": null,
+      "open_targets": "EFO_0000768"
+    }
+  },
+  "modality": "transcriptomics",
+  "tissue": "lung",
+  "platform": null,
+  "species": "Homo sapiens",
+  "role": "discovery",
+  "sample_units": "bulk_sample",
+  "cohorts": [
+    {
+      "cohort_id": "case",
+      "label": "Idiopathic pulmonary fibrosis lung tissue",
+      "case_control_status": "case",
+      "disease_subtype": null,
+      "sample_count": 20,
+      "status": "verified",
+      "notes": "Direct IPF versus control lung RNA-seq cohort from LTRC with a live matrix-backed loader."
+    },
+    {
+      "cohort_id": "control",
+      "label": "Control lung tissue",
+      "case_control_status": "control",
+      "disease_subtype": null,
+      "sample_count": 19,
+      "status": "verified",
+      "notes": null
+    }
+  ],
+  "manifest_status": "verified",
+  "provenance": {
+    "primary_source_url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE92592",
+    "extraction_method": "generated_from_curated_subset_config",
+    "extracted_from_section": "configs/subsets/ipf_lung_extended.yaml"
+  },
+  "open_questions": [
+    "Cross-check the generated registry record against the benchmark-pack note: GEO summary reports 20 IPF and 19 control lung samples from the LTRC."
+  ]
+}

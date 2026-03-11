@@ -36,11 +36,25 @@ Current benchmark ordering after source verification:
 - research, architecture, benchmark packs, curated subsets, generated registry fixtures, and a minimal read-only registry API are in place
 - a first metadata-derived transcriptomics readiness layer is in place over curated study contrasts
 - the read-only API also exposes metadata-derived contrast readiness scores
-- three accession-backed transcriptomics evidence paths are now live:
-  - `ipf_lung_core_gse52463` via GEO RNA-seq sample-level gene-count tables
-  - `hcc_adult_core_gse60502` via paired GEO series-matrix microarray values plus `GPL96.annot.gz`
-  - `hcc_adult_core_gse45267` via unpaired GEO series-matrix microarray values plus `GPL570.annot.gz`
+- fourteen accession-backed transcriptomics contrast IDs are now live across strict and extended benchmark subsets, covering:
+  - `GSE52463` via GEO RNA-seq sample-level gene-count tables
+  - `GSE24206` via unpaired GEO series-matrix microarray values plus `GPL570.annot.gz`
+  - `GSE92592` via GEO series-level RNA-seq count matrix plus HGNC-backed symbol-to-Ensembl mapping
+  - `GSE150910` via explicit IPF/control subsetting from a public mixed-diagnosis gene-count matrix
+  - `GSE60502` via paired GEO series-matrix microarray values plus `GPL96.annot.gz`
+  - `GSE45267` via unpaired GEO series-matrix microarray values plus `GPL570.annot.gz`
+  - `GSE77314` via GEO supplementary expression workbook parsed directly from the official `.xlsx` package
+  - `GSE36376` via GEO series-matrix microarray values plus the official `GPL10558` Illumina supplementary platform table
 - all real-data paths expose inferential statistics, BH-adjusted p-values, and HGNC-backed identifiers where recoverable
+- Open Targets genetics evidence is now available for benchmark diseases through the official GraphQL API
+- Open Targets tractability evidence is now available for target genes through the official GraphQL API
+- PubMed literature support is now available through the official NCBI E-utilities APIs as a provenance-heavy disease-gene inspection layer
+- Reactome pathway support is now available through the official Reactome Analysis Service by intersecting disease-enriched pathways with per-gene Reactome memberships
+- STRING-based network support is now available over the top disease-specific candidate slice
+- a first fused target-evidence layer now combines transcriptomics, genetics, tractability, Reactome pathway support, and STRING network support by Ensembl gene
+- PubMed literature support is intentionally kept outside the fused rank for now so benchmark papers and broad literature popularity do not silently dominate discovery-time scoring
+- benchmark evaluation now supports explicit `strict` and `exploratory` modes, with a leakage review that spells out which evidence families are active and which ones are higher-risk for honest benchmarking
+- source-backed benchmark target assertions now evaluate whether the live fused ranking recovers paper-backed positives such as `TNIK` and `CDK20`
 - illustrative transcriptomics gene-stat fixtures remain isolated for test scaffolding only
 
 ## Validation
@@ -56,7 +70,13 @@ ruby scripts/validate_contract_examples.rb
 ruby scripts/validate_transcriptomics_fixtures.rb
 ruby scripts/generate_first_wave_registry.rb
 ruby scripts/validate_registry_artifacts.rb
+ruby scripts/validate_benchmark_assertions.rb
 PYTHONPATH=packages/py python3 -m unittest discover -s tests/unit -p 'test_*.py'
 PYTHONPATH=packages/py python3 apps/api/server.py
 PYTHONPATH=packages/py python3 -m prioritx_rank.cli
+PYTHONPATH=packages/py python3 -m prioritx_eval.cli
+PYTHONPATH=packages/py python3 -m prioritx_eval.cli --modes strict --integrity-only
+python3 scripts/save_verification_report.py
 ```
+
+Saved verification reports are written locally under `tmp/verification_reports/`. The report runner uses the bounded `--modes strict --integrity-only` eval path so routine verification stays fast while full dual-mode evaluation remains available on demand.

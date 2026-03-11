@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prioritx.local/schemas/gene_evidence_aggregate.schema.json",
+  "title": "GeneEvidenceAggregate",
+  "type": "object",
+  "required": [
+    "benchmark_id",
+    "ensembl_gene_id",
+    "score_name",
+    "score",
+    "supporting_contrast_count",
+    "observed_contrast_count",
+    "total_real_contrasts",
+    "support_fraction",
+    "direction_conflict",
+    "weighted_mean_log2_fold_change",
+    "mean_absolute_standardized_mean_difference",
+    "best_adjusted_p_value",
+    "geometric_supported_adjusted_p_value",
+    "evidence_kind",
+    "support_rule",
+    "source_contrast_ids",
+    "source_dataset_ids",
+    "per_contrast_evidence"
+  ],
+  "properties": {
+    "benchmark_id": {
+      "type": "string"
+    },
+    "subset_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "ensembl_gene_id": {
+      "type": "string"
+    },
+    "gene_symbol": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "hgnc_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "score_name": {
+      "const": "cross_contrast_transcriptomics_evidence_score"
+    },
+    "score": {
+      "type": "number"
+    },
+    "supporting_contrast_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "observed_contrast_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "total_real_contrasts": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "support_fraction": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "direction_conflict": {
+      "type": "boolean"
+    },
+    "weighted_mean_log2_fold_change": {
+      "type": "number"
+    },
+    "mean_absolute_standardized_mean_difference": {
+      "type": "number",
+      "minimum": 0.0
+    },
+    "best_adjusted_p_value": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "geometric_supported_adjusted_p_value": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "evidence_kind": {
+      "const": "cross_contrast_real_transcriptomics"
+    },
+    "support_rule": {
+      "type": "object",
+      "required": [
+        "max_adjusted_p_value",
+        "min_absolute_log2_fold_change"
+      ],
+      "properties": {
+        "max_adjusted_p_value": {
+          "type": "number"
+        },
+        "min_absolute_log2_fold_change": {
+          "type": "number"
+        }
+      }
+    },
+    "source_contrast_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source_dataset_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "per_contrast_evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "contrast_id",
+          "dataset_id",
+          "adjusted_p_value",
+          "log2_fold_change",
+          "direction",
+          "supports_signal",
+          "sample_counts"
+        ],
+        "properties": {
+          "contrast_id": {
+            "type": "string"
+          },
+          "dataset_id": {
+            "type": "string"
+          },
+          "adjusted_p_value": {
+            "type": "number"
+          },
+          "log2_fold_change": {
+            "type": "number"
+          },
+          "direction": {
+            "enum": [
+              "up",
+              "down"
+            ]
+          },
+          "supports_signal": {
+            "type": "boolean"
+          },
+          "sample_counts": {
+            "type": "object",
+            "required": [
+              "case",
+              "control"
+            ],
+            "properties": {
+              "case": {
+                "type": "integer"
+              },
+              "control": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "type": "object"
+    }
+  }
+}

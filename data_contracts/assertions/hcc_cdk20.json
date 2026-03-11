@@ -1,0 +1,27 @@
+{
+  "schema_version": "0.1.0",
+  "assertion_status": "source_backed",
+  "benchmark_id": "hcc_cdk20",
+  "default_subset_id": "hcc_adult_core",
+  "exploratory_subset_id": "hcc_adult_extended",
+  "indication_name": "hepatocellular carcinoma",
+  "target_assertions": [
+    {
+      "gene_symbol": "CDK20",
+      "ensembl_gene_id": null,
+      "label_tier": "tier1_mechanistic_support",
+      "assertion_kind": "source_backed_positive_target",
+      "source": {
+        "title": "AlphaFold Accelerates Artificial Intelligence Powered Drug Discovery Efficient Discovery of a Novel CDK20 Small Molecule Inhibitor",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9906638/",
+        "note": "CDK20 is the nominated target in the HCC case study; AlphaFold targetability and chemistry outcomes must stay out of discovery-time features."
+      },
+      "forbidden_feature_leakage": [
+        "AlphaFold targetability assessment",
+        "Chemistry42 generation success",
+        "downstream medicinal chemistry validation"
+      ]
+    }
+  ],
+  "notes": "Use CDK20 as a source-backed positive target for discovery-time evaluation only."
+}

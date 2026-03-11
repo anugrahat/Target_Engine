@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prioritx.local/schemas/fused_target_evidence_record.schema.json",
+  "title": "FusedTargetEvidenceRecord",
+  "type": "object",
+  "required": [
+    "benchmark_id",
+    "ensembl_gene_id",
+    "score_name",
+    "score",
+    "transcriptomics_available",
+    "genetics_available",
+    "transcriptomics_supporting_contrasts"
+  ],
+  "properties": {
+    "benchmark_id": { "type": "string" },
+    "subset_id": { "type": ["string", "null"] },
+    "ensembl_gene_id": { "type": "string" },
+    "gene_symbol": { "type": ["string", "null"] },
+    "score_name": { "const": "fused_target_evidence_score" },
+    "score": { "type": "number" },
+    "transcriptomics_available": { "type": "boolean" },
+    "genetics_available": { "type": "boolean" },
+    "tractability_available": { "type": "boolean" },
+    "network_available": { "type": "boolean" },
+    "transcriptomics_supporting_contrasts": { "type": "integer", "minimum": 0 },
+    "transcriptomics_direction_conflict": { "type": "boolean" },
+    "transcriptomics_evidence_kind": { "type": ["string", "null"] },
+    "genetics_evidence_kind": { "type": ["string", "null"] },
+    "tractability_evidence_kind": { "type": ["string", "null"] },
+    "network_evidence_kind": { "type": ["string", "null"] },
+    "transcriptomics_provenance": { "type": ["object", "null"] },
+    "genetics_provenance": { "type": ["object", "null"] },
+    "tractability_provenance": { "type": ["object", "null"] },
+    "network_provenance": { "type": ["object", "null"] },
+    "components": { "type": "object" }
+  }
+}

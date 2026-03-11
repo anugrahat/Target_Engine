@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prioritx.local/schemas/open_targets_genetics_record.schema.json",
+  "title": "OpenTargetsGeneticsRecord",
+  "type": "object",
+  "required": [
+    "benchmark_id",
+    "disease_id",
+    "ensembl_gene_id",
+    "score_name",
+    "score",
+    "statistics",
+    "provenance",
+    "evidence_kind"
+  ],
+  "properties": {
+    "benchmark_id": { "type": "string" },
+    "disease_id": { "type": "string" },
+    "ensembl_gene_id": { "type": "string" },
+    "gene_symbol": { "type": ["string", "null"] },
+    "approved_name": { "type": ["string", "null"] },
+    "score_name": { "const": "open_targets_genetics_evidence_score" },
+    "score": { "type": "number" },
+    "statistics": {
+      "type": "object",
+      "required": [
+        "association_score",
+        "genetic_association_score",
+        "genetic_literature_score",
+        "literature_score"
+      ],
+      "properties": {
+        "association_score": { "type": "number" },
+        "genetic_association_score": { "type": "number" },
+        "genetic_literature_score": { "type": "number" },
+        "literature_score": { "type": "number" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "source_kind",
+        "api_url",
+        "disease_id",
+        "requested_page_size",
+        "query_name"
+      ],
+      "properties": {
+        "source_kind": { "const": "open_targets_graphql" },
+        "api_url": { "type": "string" },
+        "disease_id": { "type": "string" },
+        "requested_page_size": { "type": "integer" },
+        "query_name": { "const": "DiseaseAssociations" }
+      }
+    },
+    "evidence_kind": { "const": "open_targets_genetics" },
+    "components": { "type": "object" }
+  }
+}

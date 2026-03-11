@@ -5,9 +5,10 @@ indication:
   aliases:
     - HCC
   ontology_ids:
-    efo: null
+    efo: EFO_0000182
     mesh: null
     doid: null
+    open_targets: EFO_0000182
 status: partial
 primary_sources:
   - title: AlphaFold Accelerates Artificial Intelligence Powered Drug Discovery Efficient Discovery of a Novel CDK20 Small Molecule Inhibitor
@@ -20,9 +21,11 @@ datasets:
     tissue: liver
     case_group: hcc
     control_group: adjacent_non_tumor_liver
-    sample_counts: null
-    status: partial
-    notes: Explicitly listed in Materials and methods. GEO title indicates tumor and adjacent non-tumor liver, but per-arm counts remain unresolved in this pass.
+    sample_counts:
+      case: 240
+      control: 193
+    status: verified
+    notes: GEO series metadata exposes 240 liver tumor and 193 adjacent non-tumor liver samples on GPL10558, making this usable for an extended adult-HCC evidence slice even though it remains outside the stricter first-wave core.
   - id: GSE107170
     source: GEO
     role: discovery
@@ -39,10 +42,12 @@ datasets:
     modality: transcriptomics
     tissue: liver
     case_group: hcc
-    control_group: null
-    sample_counts: null
+    control_group: adjacent_liver_from_colorectal_liver_metastasis
+    sample_counts:
+      case: 152
+      control: 14
     status: partial
-    notes: Explicitly listed in Materials and methods, but this pass did not recover a reliable control definition from the accession page.
+    notes: GEO series metadata exposes 152 HCC tumors and 14 adjacent liver tissues from colorectal liver metastasis cases without chemotherapy; this comparator is publicly recoverable but not a clean adult-HCC benchmark control arm.
   - id: GSE45267
     source: GEO
     role: discovery
@@ -129,6 +134,7 @@ validation:
   notes: Aggregate paper counts are 1133 disease and 674 healthy-control samples across the 10 cohorts, but the public cohort pool is heterogeneous and should not yet be treated as a clean HCC-only benchmark.
 open_questions:
   - Recover per-dataset sample counts and contrast definitions for the unresolved cohorts.
+  - Decide whether extended HCC evidence should admit GSE36376 while still excluding GSE102079 because its control arm is not HCC-adjacent or healthy liver.
   - Decide whether PrioriTx should curate an HCC-only subset instead of reproducing the paper's full heterogeneous pool.
   - Separate benchmark labels for target nomination from later structure-based chemistry success.
   - Confirm whether all 10 cohorts are directly comparable as discovery-time transcriptomic inputs.

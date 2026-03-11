@@ -1,0 +1,55 @@
+{
+  "schema_version": "0.1.0",
+  "dataset_id": "hcc_adult_extended_gse36376",
+  "benchmark_id": "hcc_cdk20",
+  "accession": {
+    "database": "GEO",
+    "id": "GSE36376",
+    "url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE36376"
+  },
+  "source_publication_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9906638/",
+  "disease_context": {
+    "name": "hepatocellular carcinoma",
+    "ontology_ids": {
+      "efo": "EFO_0000182",
+      "mesh": null,
+      "doid": null,
+      "open_targets": "EFO_0000182"
+    }
+  },
+  "modality": "transcriptomics",
+  "tissue": "liver",
+  "platform": null,
+  "species": "Homo sapiens",
+  "role": "discovery",
+  "sample_units": "bulk_sample",
+  "cohorts": [
+    {
+      "cohort_id": "case",
+      "label": "Hepatocellular carcinoma tumor tissue",
+      "case_control_status": "case",
+      "disease_subtype": null,
+      "sample_count": 240,
+      "status": "verified",
+      "notes": "Large adult HCC microarray cohort with explicit GEO tissue labels and a live accession-backed Illumina platform mapping path."
+    },
+    {
+      "cohort_id": "control",
+      "label": "Adjacent non-tumor liver tissue",
+      "case_control_status": "control",
+      "disease_subtype": null,
+      "sample_count": 193,
+      "status": "verified",
+      "notes": "Adjacent or paired non-tumorous tissue is not identical to healthy tissue."
+    }
+  ],
+  "manifest_status": "verified",
+  "provenance": {
+    "primary_source_url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE36376",
+    "extraction_method": "generated_from_curated_subset_config",
+    "extracted_from_section": "configs/subsets/hcc_adult_extended.yaml"
+  },
+  "open_questions": [
+    "Cross-check the generated registry record against the benchmark-pack note: GEO series metadata exposes 240 liver tumor and 193 adjacent non-tumor liver samples on GPL10558, making this usable for an extended adult-HCC evidence slice even though it remains outside the stricter first-wave core."
+  ]
+}

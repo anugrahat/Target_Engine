@@ -5,9 +5,10 @@ indication:
   aliases:
     - IPF
   ontology_ids:
-    efo: null
+    efo: EFO_0000768
     mesh: null
     doid: null
+    open_targets: EFO_0000768
 status: verified
 primary_sources:
   - title: A small-molecule TNIK inhibitor targets fibrosis in preclinical and clinical models

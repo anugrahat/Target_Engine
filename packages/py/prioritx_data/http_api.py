@@ -9,16 +9,42 @@ from prioritx_data.service import (
     contrast_readiness_scores,
     get_subset,
     list_benchmark_subsets,
+    fused_target_evidence,
     query_dataset_manifests,
     query_study_contrasts,
+    open_targets_genetics_scores,
+    pubmed_literature_scores,
+    reactome_pathway_scores,
+    open_targets_tractability_scores,
+    transcriptomics_indication_evidence,
     transcriptomics_fixture_scores,
     transcriptomics_real_scores,
+)
+from prioritx_eval.policy import BENCHMARK_MODES, benchmark_integrity_review
+from prioritx_eval.service import (
+    audit_target_evidence,
+    compare_benchmark_modes,
+    evaluate_fused_benchmark,
+    explain_target_evidence,
+    explain_target_shortlist,
+    summarize_benchmark_health,
+    summarize_benchmark_dashboard,
+    target_evidence_graph,
 )
 
 
 def _single(query: dict[str, list[str]], key: str) -> str | None:
     values = query.get(key)
     return values[0] if values else None
+
+
+def _mode(query: dict[str, list[str]]) -> str | None:
+    mode = _single(query, "mode")
+    if mode is None:
+        return None
+    if mode not in BENCHMARK_MODES:
+        return "__invalid__"
+    return mode
 
 
 def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, Any]]:
@@ -29,11 +55,26 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
             "routes": [
                 "/health",
                 "/benchmarks",
+                "/benchmark-dashboard-summary",
+                "/benchmark-health-summary",
                 "/subsets",
                 "/subsets/{subset_id}",
                 "/dataset-manifests",
                 "/study-contrasts",
                 "/contrast-readiness",
+                "/open-targets-genetics",
+                "/open-targets-tractability",
+                "/pubmed-literature-support",
+                "/reactome-pathway-support",
+                "/fused-target-evidence",
+                "/benchmark-evaluation",
+                "/benchmark-integrity",
+                "/benchmark-mode-comparison",
+                "/target-explanation",
+                "/target-shortlist-explanations",
+                "/target-evidence-graph",
+                "/target-audit",
+                "/transcriptomics-evidence",
                 "/transcriptomics-real-scores",
                 "/transcriptomics-fixture-scores",
             ],
@@ -44,6 +85,22 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
 
     if path == "/benchmarks":
         return 200, {"items": benchmark_index()}
+
+    if path == "/benchmark-dashboard-summary":
+        top_n_raw = _single(query, "top_n")
+        try:
+            top_n = int(top_n_raw) if top_n_raw else 5
+        except ValueError:
+            return 400, {"error": "top_n must be an integer"}
+        return 200, summarize_benchmark_dashboard(top_n=top_n)
+
+    if path == "/benchmark-health-summary":
+        top_n_raw = _single(query, "top_n")
+        try:
+            top_n = int(top_n_raw) if top_n_raw else 10
+        except ValueError:
+            return 400, {"error": "top_n must be an integer"}
+        return 200, summarize_benchmark_health(top_n=top_n)
 
     if path == "/subsets":
         benchmark_id = _single(query, "benchmark_id")
@@ -86,6 +143,286 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
                 subset_id=_single(query, "subset_id"),
                 tissue=_single(query, "tissue"),
                 modality=_single(query, "modality"),
+            )
+        }
+
+    if path == "/open-targets-genetics":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+
+        size_raw = _single(query, "size")
+        if size_raw:
+            try:
+                size = int(size_raw)
+            except ValueError:
+                return 400, {"error": "size must be an integer"}
+        else:
+            size = 200
+        return 200, {"items": open_targets_genetics_scores(benchmark_id, size=size)}
+
+    if path == "/open-targets-tractability":
+        gene_ids = query.get("ensembl_gene_id") or []
+        if not gene_ids:
+            return 400, {"error": "at least one ensembl_gene_id query parameter is required"}
+        return 200, {"items": open_targets_tractability_scores(gene_ids)}
+
+    if path == "/pubmed-literature-support":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        candidate_top_n_raw = _single(query, "candidate_top_n")
+        try:
+            candidate_top_n = int(candidate_top_n_raw) if candidate_top_n_raw else 100
+        except ValueError:
+            return 400, {"error": "candidate_top_n must be an integer"}
+        return 200, {
+            "items": pubmed_literature_scores(
+                benchmark_id=benchmark_id,
+                subset_id=_single(query, "subset_id"),
+                candidate_top_n=candidate_top_n,
+            )
+        }
+
+    if path == "/reactome-pathway-support":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        return 200, {
+            "items": reactome_pathway_scores(
+                benchmark_id=benchmark_id,
+                subset_id=_single(query, "subset_id"),
+            )
+        }
+
+    if path == "/fused-target-evidence":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+
+        min_support_raw = _single(query, "min_transcriptomics_support")
+        genetics_size_raw = _single(query, "genetics_size")
+        tractability_top_n_raw = _single(query, "tractability_top_n")
+        pathway_top_n_raw = _single(query, "pathway_top_n")
+        network_top_n_raw = _single(query, "network_top_n")
+        try:
+            min_transcriptomics_support = int(min_support_raw) if min_support_raw else 1
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else 200
+            tractability_top_n = int(tractability_top_n_raw) if tractability_top_n_raw else 500
+            pathway_top_n = int(pathway_top_n_raw) if pathway_top_n_raw else 200
+            network_top_n = int(network_top_n_raw) if network_top_n_raw else 100
+        except ValueError:
+            return 400, {"error": "min_transcriptomics_support, genetics_size, tractability_top_n, pathway_top_n, and network_top_n must be integers"}
+        return 200, {
+            "items": fused_target_evidence(
+                benchmark_id=benchmark_id,
+                subset_id=_single(query, "subset_id"),
+                min_transcriptomics_support=min_transcriptomics_support,
+                genetics_size=genetics_size,
+                tractability_top_n=tractability_top_n,
+                pathway_top_n=pathway_top_n,
+                network_top_n=network_top_n,
+            )
+        }
+
+    if path == "/benchmark-evaluation":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        mode = _mode(query)
+        if mode == "__invalid__":
+            return 400, {"error": "mode must be one of: strict, exploratory"}
+
+        min_support_raw = _single(query, "min_transcriptomics_support")
+        genetics_size_raw = _single(query, "genetics_size")
+        tractability_top_n_raw = _single(query, "tractability_top_n")
+        pathway_top_n_raw = _single(query, "pathway_top_n")
+        network_top_n_raw = _single(query, "network_top_n")
+        try:
+            min_transcriptomics_support = int(min_support_raw) if min_support_raw else 1
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else 0
+            tractability_top_n = int(tractability_top_n_raw) if tractability_top_n_raw else 100
+            pathway_top_n = int(pathway_top_n_raw) if pathway_top_n_raw else 40
+            network_top_n = int(network_top_n_raw) if network_top_n_raw else 50
+        except ValueError:
+            return 400, {"error": "min_transcriptomics_support, genetics_size, tractability_top_n, pathway_top_n, and network_top_n must be integers"}
+        return 200, evaluate_fused_benchmark(
+            benchmark_id,
+            mode=mode or "strict",
+            subset_id=_single(query, "subset_id"),
+            min_transcriptomics_support=min_transcriptomics_support,
+            genetics_size=genetics_size,
+            tractability_top_n=tractability_top_n,
+            pathway_top_n=pathway_top_n,
+            network_top_n=network_top_n,
+        )
+
+    if path == "/benchmark-integrity":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        mode = _mode(query)
+        if mode == "__invalid__":
+            return 400, {"error": "mode must be one of: strict, exploratory"}
+        return 200, benchmark_integrity_review(benchmark_id, mode=mode or "strict")
+
+    if path == "/benchmark-mode-comparison":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        top_n_raw = _single(query, "top_n")
+        try:
+            top_n = int(top_n_raw) if top_n_raw else 10
+        except ValueError:
+            return 400, {"error": "top_n must be an integer"}
+        return 200, compare_benchmark_modes(benchmark_id, top_n=top_n)
+
+    if path == "/target-audit":
+        benchmark_id = _single(query, "benchmark_id")
+        gene_symbol = _single(query, "gene_symbol")
+        if not benchmark_id or not gene_symbol:
+            return 400, {"error": "benchmark_id and gene_symbol query parameters are required"}
+        mode = _mode(query)
+        if mode == "__invalid__":
+            return 400, {"error": "mode must be one of: strict, exploratory"}
+
+        genetics_size_raw = _single(query, "genetics_size")
+        tractability_top_n_raw = _single(query, "tractability_top_n")
+        pathway_top_n_raw = _single(query, "pathway_top_n")
+        network_top_n_raw = _single(query, "network_top_n")
+        try:
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else 0
+            tractability_top_n = int(tractability_top_n_raw) if tractability_top_n_raw else 200
+            pathway_top_n = int(pathway_top_n_raw) if pathway_top_n_raw else 40
+            network_top_n = int(network_top_n_raw) if network_top_n_raw else 100
+        except ValueError:
+            return 400, {"error": "genetics_size, tractability_top_n, pathway_top_n, and network_top_n must be integers"}
+        return 200, audit_target_evidence(
+            benchmark_id,
+            gene_symbol=gene_symbol,
+            mode=mode or "strict",
+            subset_id=_single(query, "subset_id"),
+            genetics_size=genetics_size,
+            tractability_top_n=tractability_top_n,
+            pathway_top_n=pathway_top_n,
+            network_top_n=network_top_n,
+        )
+
+    if path == "/target-evidence-graph":
+        benchmark_id = _single(query, "benchmark_id")
+        gene_symbol = _single(query, "gene_symbol")
+        if not benchmark_id or not gene_symbol:
+            return 400, {"error": "benchmark_id and gene_symbol query parameters are required"}
+        mode = _mode(query)
+        if mode == "__invalid__":
+            return 400, {"error": "mode must be one of: strict, exploratory"}
+
+        genetics_size_raw = _single(query, "genetics_size")
+        tractability_top_n_raw = _single(query, "tractability_top_n")
+        pathway_top_n_raw = _single(query, "pathway_top_n")
+        network_top_n_raw = _single(query, "network_top_n")
+        try:
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else 0
+            tractability_top_n = int(tractability_top_n_raw) if tractability_top_n_raw else 200
+            pathway_top_n = int(pathway_top_n_raw) if pathway_top_n_raw else 40
+            network_top_n = int(network_top_n_raw) if network_top_n_raw else 100
+        except ValueError:
+            return 400, {"error": "genetics_size, tractability_top_n, pathway_top_n, and network_top_n must be integers"}
+        return 200, target_evidence_graph(
+            benchmark_id,
+            gene_symbol=gene_symbol,
+            mode=mode or "strict",
+            subset_id=_single(query, "subset_id"),
+            genetics_size=genetics_size,
+            tractability_top_n=tractability_top_n,
+            pathway_top_n=pathway_top_n,
+            network_top_n=network_top_n,
+        )
+
+    if path == "/target-explanation":
+        benchmark_id = _single(query, "benchmark_id")
+        gene_symbol = _single(query, "gene_symbol")
+        if not benchmark_id or not gene_symbol:
+            return 400, {"error": "benchmark_id and gene_symbol query parameters are required"}
+        mode = _mode(query)
+        if mode == "__invalid__":
+            return 400, {"error": "mode must be one of: strict, exploratory"}
+
+        genetics_size_raw = _single(query, "genetics_size")
+        tractability_top_n_raw = _single(query, "tractability_top_n")
+        pathway_top_n_raw = _single(query, "pathway_top_n")
+        network_top_n_raw = _single(query, "network_top_n")
+        try:
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else 0
+            tractability_top_n = int(tractability_top_n_raw) if tractability_top_n_raw else 200
+            pathway_top_n = int(pathway_top_n_raw) if pathway_top_n_raw else 40
+            network_top_n = int(network_top_n_raw) if network_top_n_raw else 100
+        except ValueError:
+            return 400, {"error": "genetics_size, tractability_top_n, pathway_top_n, and network_top_n must be integers"}
+        return 200, explain_target_evidence(
+            benchmark_id,
+            gene_symbol=gene_symbol,
+            mode=mode or "strict",
+            subset_id=_single(query, "subset_id"),
+            genetics_size=genetics_size,
+            tractability_top_n=tractability_top_n,
+            pathway_top_n=pathway_top_n,
+            network_top_n=network_top_n,
+        )
+
+    if path == "/target-shortlist-explanations":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        mode = _mode(query)
+        if mode == "__invalid__":
+            return 400, {"error": "mode must be one of: strict, exploratory"}
+
+        top_n_raw = _single(query, "top_n")
+        genetics_size_raw = _single(query, "genetics_size")
+        tractability_top_n_raw = _single(query, "tractability_top_n")
+        pathway_top_n_raw = _single(query, "pathway_top_n")
+        network_top_n_raw = _single(query, "network_top_n")
+        try:
+            top_n = int(top_n_raw) if top_n_raw else 10
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else 0
+            tractability_top_n = int(tractability_top_n_raw) if tractability_top_n_raw else 200
+            pathway_top_n = int(pathway_top_n_raw) if pathway_top_n_raw else 40
+            network_top_n = int(network_top_n_raw) if network_top_n_raw else 100
+        except ValueError:
+            return 400, {"error": "top_n, genetics_size, tractability_top_n, pathway_top_n, and network_top_n must be integers"}
+        return 200, explain_target_shortlist(
+            benchmark_id,
+            mode=mode or "strict",
+            subset_id=_single(query, "subset_id"),
+            top_n=top_n,
+            genetics_size=genetics_size,
+            tractability_top_n=tractability_top_n,
+            pathway_top_n=pathway_top_n,
+            network_top_n=network_top_n,
+        )
+
+    if path == "/transcriptomics-evidence":
+        benchmark_id = _single(query, "benchmark_id")
+        subset_id = _single(query, "subset_id")
+        if not benchmark_id and not subset_id:
+            return 400, {"error": "benchmark_id or subset_id query parameter is required"}
+
+        min_support_raw = _single(query, "min_support")
+        if min_support_raw:
+            try:
+                min_support = int(min_support_raw)
+            except ValueError:
+                return 400, {"error": "min_support must be an integer"}
+        else:
+            min_support = 1
+        return 200, {
+            "items": transcriptomics_indication_evidence(
+                benchmark_id=benchmark_id,
+                subset_id=subset_id,
+                tissue=_single(query, "tissue"),
+                modality=_single(query, "modality"),
+                min_support=min_support,
             )
         }
 

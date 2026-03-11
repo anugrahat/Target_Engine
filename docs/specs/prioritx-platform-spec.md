@@ -120,6 +120,7 @@ Disease keys:
 The first accession-backed transcriptomics connectors admitted into implementation are:
 
 - `ipf_lung_core_gse52463`
+- `ipf_lung_core_gse24206`
 - `hcc_adult_core_gse60502`
 - `hcc_adult_core_gse45267`
 
@@ -130,6 +131,42 @@ Scientific constraints:
 - primary gene key remains Ensembl gene ID even after adding HGNC-backed symbol mapping
 - approved gene symbols should come from the HGNC complete set and be cached locally for reproducibility
 - the current inferential layer uses transparent t-statistics plus BH correction, with Student t distribution p-values and explicit degrees of freedom
+- indication-level transcriptomics evidence must aggregate real contrast outputs by Ensembl gene with an explicit support rule, cross-study direction tracking, and per-contrast provenance
+
+### First Real Genetics Connector
+
+The first genetics connector admitted into implementation is:
+
+- Open Targets Platform disease-target associations via the official GraphQL API
+
+Scientific constraints:
+
+- benchmark diseases must use source-backed Open Targets disease identifiers
+- returned target records must keep the benchmark disease id, Ensembl gene id, and datatype-level scores
+- genetics scoring should weight `genetic_association` above the aggregate association score
+- benchmark evaluation should use paginated disease-target retrieval rather than a single top-`N` page, or it risks false negatives for lower-ranked but real disease associations
+
+### First Real Tractability Connector
+
+The first tractability connector admitted into implementation is:
+
+- Open Targets target tractability via the official GraphQL API
+
+Scientific constraints:
+
+- tractability should be derived from explicit modality-level buckets, not inferred from target class names
+- fused ranking may use a transparent candidate preselection step before tractability reranking to keep remote calls bounded
+
+### First Real Network Connector
+
+The first network connector admitted into implementation is:
+
+- STRING v12 interaction partners over the top disease-specific candidate slice
+
+Scientific constraints:
+
+- network evidence should be computed inside a disease-specific candidate slice, not as a global degree score
+- seed connections must remain explicit so the rerank can be audited
 
 ## Ranking Spec
 
@@ -143,6 +180,12 @@ Recommended approach:
 - disease-specific calibration
 - weighted additive or gradient-boosted ranking model
 - full feature attribution output
+
+Current first-pass fused layer:
+
+- merge cross-contrast transcriptomics and Open Targets genetics by Ensembl gene
+- keep component scores explicit and separately inspectable
+- penalize transcriptomic direction conflict instead of hiding it in a latent model
 
 ### Advanced Ranker
 

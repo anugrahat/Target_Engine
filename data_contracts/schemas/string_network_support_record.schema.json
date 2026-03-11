@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prioritx.local/schemas/string_network_support_record.schema.json",
+  "title": "StringNetworkSupportRecord",
+  "type": "object",
+  "required": [
+    "benchmark_id",
+    "ensembl_gene_id",
+    "score_name",
+    "score",
+    "partner_count",
+    "seed_partner_count",
+    "top_partners",
+    "evidence_kind"
+  ],
+  "properties": {
+    "benchmark_id": { "type": "string" },
+    "subset_id": { "type": ["string", "null"] },
+    "ensembl_gene_id": { "type": "string" },
+    "gene_symbol": { "type": ["string", "null"] },
+    "score_name": { "const": "string_network_support_score" },
+    "score": { "type": "number" },
+    "partner_count": { "type": "integer", "minimum": 0 },
+    "seed_partner_count": { "type": "integer", "minimum": 0 },
+    "top_partners": { "type": "array", "items": { "type": "object" } },
+    "evidence_kind": { "const": "string_network_support" },
+    "components": { "type": "object" }
+  }
+}

@@ -17,6 +17,20 @@ Current contract layers:
   - one PrioriTx-curated admissible benchmark subset definition
 - `schemas/transcriptomics_gene_stat.schema.json`
   - one illustrative local gene-level transcriptomics record for scaffolded DE-style inputs
+- `schemas/gene_evidence_aggregate.schema.json`
+  - one cross-contrast transcriptomics evidence record aggregated at the indication slice level
+- `schemas/open_targets_genetics_record.schema.json`
+  - one source-backed Open Targets genetics evidence record for a benchmark disease
+- `schemas/fused_target_evidence_record.schema.json`
+  - one merged target-evidence record combining transcriptomics, genetics, tractability, and network support by Ensembl gene
+- `schemas/open_targets_tractability_record.schema.json`
+  - one source-backed Open Targets tractability evidence record for a set of gene targets
+- `schemas/string_network_support_record.schema.json`
+  - one STRING-based network support record over a disease-specific candidate slice
+- `schemas/benchmark_target_assertion.schema.json`
+  - one source-backed positive-target assertion pack for benchmark evaluation
+- `assertions/`
+  - machine-checkable benchmark target assertions used to score live fused rankings against paper-backed positives
 - `registries/`
   - generated first-wave dataset-manifest and study-contrast fixtures
 - `fixtures/transcriptomics/`
@@ -31,6 +45,7 @@ ruby scripts/validate_contract_examples.rb
 ruby scripts/validate_transcriptomics_fixtures.rb
 ruby scripts/generate_first_wave_registry.rb
 ruby scripts/validate_registry_artifacts.rb
+ruby scripts/validate_benchmark_assertions.rb
 ```
 
 Conventions:

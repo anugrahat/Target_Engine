@@ -1,0 +1,90 @@
+{
+  "schema_version": "0.1.0",
+  "subset_id": "hcc_adult_extended",
+  "benchmark_id": "hcc_cdk20",
+  "mode": "curated_prioritx_subset",
+  "objective": "Extended adult HCC evidence subset that keeps live accession-backed transcriptomics cohorts and adds a large resolved tumor-versus-adjacent liver microarray series without changing the stricter first-wave core.",
+  "readiness": "candidate",
+  "inclusion_principles": [
+    "Prefer adult hepatocellular carcinoma cohorts with explicit tumor versus liver comparator definitions in public accession metadata.",
+    "Allow adjacent non-tumor liver comparators in the extended subset when the accession exposes a direct adult-HCC design and usable sample-level matrices.",
+    "Keep this subset separate from the first-wave benchmark core so broader HCC evidence does not silently change benchmark claims."
+  ],
+  "included_datasets": [
+    {
+      "id": "GSE45267",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Primary hepatocellular carcinoma tissue",
+      "control_definition": "Non-cancerous liver tissue",
+      "sample_counts": {
+        "case": 48,
+        "control": 39
+      },
+      "reason": "Adult HCC tissue cohort with explicit case/control counts in the accession design and a live accession-backed microarray loader."
+    },
+    {
+      "id": "GSE60502",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Hepatocellular carcinoma tissue",
+      "control_definition": "Adjacent non-tumorous liver tissue",
+      "sample_counts": {
+        "case": 18,
+        "control": 18
+      },
+      "reason": "Paired adult HCC cohort with explicit accession-level counts and a live accession-backed microarray loader."
+    },
+    {
+      "id": "GSE77314",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Hepatocellular carcinoma tumor tissue",
+      "control_definition": "Paired normal liver tissue",
+      "sample_counts": {
+        "case": 50,
+        "control": 50
+      },
+      "reason": "RNA-seq cohort with explicit paired tumor-normal counts and a live accession-backed expression-workbook loader."
+    },
+    {
+      "id": "GSE36376",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Hepatocellular carcinoma tumor tissue",
+      "control_definition": "Adjacent non-tumor liver tissue",
+      "sample_counts": {
+        "case": 240,
+        "control": 193
+      },
+      "reason": "Large adult HCC microarray cohort with explicit GEO tissue labels and a live accession-backed Illumina platform mapping path."
+    }
+  ],
+  "excluded_datasets": [
+    {
+      "id": "GSE102079",
+      "reason": "Comparator arm is adjacent liver from colorectal liver metastasis cases rather than a clean adult-HCC adjacent or healthy liver control."
+    },
+    {
+      "id": "GSE107170",
+      "reason": "Mixed HDV-HCC, HCV-HCC, HBV-HCC, and cirrhosis cohort rather than a clean adult HCC benchmark."
+    },
+    {
+      "id": "GSE133039",
+      "reason": "Hepatoblastoma, not adult HCC."
+    },
+    {
+      "id": "GSE104766",
+      "reason": "Hepatoblastoma-focused cohort, not adult HCC."
+    },
+    {
+      "id": "E-MTAB-5905",
+      "reason": "Treatment-naive multiregional HCC study with unresolved per-arm counts in the retrieved public metadata."
+    },
+    {
+      "id": "TCGA-LIHC",
+      "reason": "Public GDC project arms are useful for later expansion, but this extended subset is limited to current live accession-backed transcriptomics loaders."
+    }
+  ],
+  "notes": "This is an exploratory PrioriTx subset for broader live adult-HCC transcriptomics evidence and is not the same as the stricter first-wave benchmark core."
+}

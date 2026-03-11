@@ -16,17 +16,17 @@ class RegistryFixtureTests(unittest.TestCase):
 
     def test_dataset_manifests_are_generated(self) -> None:
         manifests = list_dataset_manifests()
-        self.assertEqual(9, len(manifests))
+        self.assertEqual(17, len(manifests))
         grouped = group_by_benchmark(manifests)
-        self.assertEqual(5, len(grouped["ipf_tnik"]))
-        self.assertEqual(4, len(grouped["hcc_cdk20"]))
+        self.assertEqual(9, len(grouped["ipf_tnik"]))
+        self.assertEqual(8, len(grouped["hcc_cdk20"]))
 
     def test_study_contrasts_are_generated(self) -> None:
         contrasts = list_study_contrasts()
-        self.assertEqual(9, len(contrasts))
+        self.assertEqual(17, len(contrasts))
         grouped = group_by_benchmark(contrasts)
-        self.assertEqual(5, len(grouped["ipf_tnik"]))
-        self.assertEqual(4, len(grouped["hcc_cdk20"]))
+        self.assertEqual(9, len(grouped["ipf_tnik"]))
+        self.assertEqual(8, len(grouped["hcc_cdk20"]))
 
     def test_tcga_lihc_curated_public_arm_is_present(self) -> None:
         tcga = [

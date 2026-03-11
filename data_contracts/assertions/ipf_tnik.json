@@ -1,0 +1,27 @@
+{
+  "schema_version": "0.1.0",
+  "assertion_status": "source_backed",
+  "benchmark_id": "ipf_tnik",
+  "default_subset_id": "ipf_lung_core",
+  "exploratory_subset_id": "ipf_lung_extended",
+  "indication_name": "idiopathic pulmonary fibrosis",
+  "target_assertions": [
+    {
+      "gene_symbol": "TNIK",
+      "ensembl_gene_id": null,
+      "label_tier": "tier1_mechanistic_support",
+      "assertion_kind": "source_backed_positive_target",
+      "source": {
+        "title": "A small-molecule TNIK inhibitor targets fibrosis in preclinical and clinical models",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11738990/",
+        "note": "TNIK is the nominated target in the IPF case study; later clinical progression must remain evaluation-only context, not a discovery-time feature."
+      },
+      "forbidden_feature_leakage": [
+        "clinical trial progression",
+        "later in vivo validation from the same paper",
+        "discussion-section retrospective rationale"
+      ]
+    }
+  ],
+  "notes": "Use TNIK as a source-backed positive target for discovery-time evaluation only."
+}

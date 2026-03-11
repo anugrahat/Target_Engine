@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import csv
+import functools
+import io
 import math
 import re
+from zipfile import ZipFile
+from xml.etree import ElementTree as ET
 from dataclasses import dataclass
 from statistics import fmean, stdev
 from typing import Any
 
 from prioritx_data.hgnc import load_hgnc_symbol_map, load_hgnc_symbol_reverse_map
-from prioritx_data.remote_cache import load_text_with_cache, normalize_geo_url
+from prioritx_data.remote_cache import load_bytes_with_cache, load_text_with_cache, normalize_geo_url
 
 REAL_CONTRASTS: dict[str, dict[str, str]] = {
     "ipf_lung_core_gse52463": {
@@ -21,7 +25,74 @@ REAL_CONTRASTS: dict[str, dict[str, str]] = {
         "case_label": "idiopathic pulmonary fibrosis",
         "control_label": "normal",
     },
+    "ipf_lung_extended_gse52463": {
+        "source_type": "geo_rnaseq_counts",
+        "series_accession": "GSE52463",
+        "benchmark_id": "ipf_tnik",
+        "dataset_id": "GSE52463",
+        "case_label": "idiopathic pulmonary fibrosis",
+        "control_label": "normal",
+    },
+    "ipf_lung_core_gse24206": {
+        "source_type": "geo_microarray_series",
+        "series_accession": "GSE24206",
+        "platform_accession": "GPL570",
+        "design": "unpaired",
+        "benchmark_id": "ipf_tnik",
+        "dataset_id": "GSE24206",
+        "case_label": "idiopathic pulmonary fibrosis",
+        "control_label": "healthy",
+    },
+    "ipf_lung_extended_gse24206": {
+        "source_type": "geo_microarray_series",
+        "series_accession": "GSE24206",
+        "platform_accession": "GPL570",
+        "design": "unpaired",
+        "benchmark_id": "ipf_tnik",
+        "dataset_id": "GSE24206",
+        "case_label": "idiopathic pulmonary fibrosis",
+        "control_label": "healthy",
+    },
+    "ipf_lung_core_gse92592": {
+        "source_type": "geo_rnaseq_matrix_counts",
+        "series_accession": "GSE92592",
+        "benchmark_id": "ipf_tnik",
+        "dataset_id": "GSE92592",
+        "case_label": "idiopathic pulmonary fibrosis",
+        "control_label": "control",
+        "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE92nnn/GSE92592/suppl/GSE92592_gene.counts.txt.gz",
+    },
+    "ipf_lung_extended_gse92592": {
+        "source_type": "geo_rnaseq_matrix_counts",
+        "series_accession": "GSE92592",
+        "benchmark_id": "ipf_tnik",
+        "dataset_id": "GSE92592",
+        "case_label": "idiopathic pulmonary fibrosis",
+        "control_label": "control",
+        "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE92nnn/GSE92592/suppl/GSE92592_gene.counts.txt.gz",
+    },
+    "ipf_lung_extended_gse150910": {
+        "source_type": "geo_rnaseq_matrix_counts",
+        "series_accession": "GSE150910",
+        "benchmark_id": "ipf_tnik",
+        "dataset_id": "GSE150910",
+        "case_label": "ipf",
+        "control_label": "control",
+        "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE150nnn/GSE150910/suppl/GSE150910_gene-level_count_file.csv.gz",
+        "delimiter": ",",
+        "has_gene_header": True,
+    },
     "hcc_adult_core_gse60502": {
+        "source_type": "geo_microarray_series",
+        "series_accession": "GSE60502",
+        "platform_accession": "GPL96",
+        "design": "paired",
+        "benchmark_id": "hcc_cdk20",
+        "dataset_id": "GSE60502",
+        "case_label": "hepatocellular carcinoma",
+        "control_label": "adjacent non-tumorous liver",
+    },
+    "hcc_adult_extended_gse60502": {
         "source_type": "geo_microarray_series",
         "series_accession": "GSE60502",
         "platform_accession": "GPL96",
@@ -41,6 +112,47 @@ REAL_CONTRASTS: dict[str, dict[str, str]] = {
         "case_label": "tumor",
         "control_label": "normal",
     },
+    "hcc_adult_extended_gse45267": {
+        "source_type": "geo_microarray_series",
+        "series_accession": "GSE45267",
+        "platform_accession": "GPL570",
+        "design": "unpaired",
+        "benchmark_id": "hcc_cdk20",
+        "dataset_id": "GSE45267",
+        "case_label": "tumor",
+        "control_label": "normal",
+    },
+    "hcc_adult_core_gse77314": {
+        "source_type": "geo_xlsx_expression_matrix",
+        "series_accession": "GSE77314",
+        "benchmark_id": "hcc_cdk20",
+        "dataset_id": "GSE77314",
+        "case_label": "tumor",
+        "control_label": "normal",
+        "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE77nnn/GSE77314/suppl/GSE77314_expression.xlsx",
+        "sheet_path": "xl/worksheets/sheet5.xml",
+    },
+    "hcc_adult_extended_gse77314": {
+        "source_type": "geo_xlsx_expression_matrix",
+        "series_accession": "GSE77314",
+        "benchmark_id": "hcc_cdk20",
+        "dataset_id": "GSE77314",
+        "case_label": "tumor",
+        "control_label": "normal",
+        "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE77nnn/GSE77314/suppl/GSE77314_expression.xlsx",
+        "sheet_path": "xl/worksheets/sheet5.xml",
+    },
+    "hcc_adult_extended_gse36376": {
+        "source_type": "geo_microarray_series",
+        "series_accession": "GSE36376",
+        "platform_accession": "GPL10558",
+        "platform_supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/platforms/GPL10nnn/GPL10558/suppl/GPL10558_HumanHT-12_V4_0_R2_15002873_B.txt.gz",
+        "design": "unpaired",
+        "benchmark_id": "hcc_cdk20",
+        "dataset_id": "GSE36376",
+        "case_label": "liver tumor",
+        "control_label": "adjacent non-tumor liver",
+    },
 }
 
 
@@ -52,6 +164,9 @@ class GeoSample:
     title: str
     phenotype: str
     supplementary_gene_url: str
+
+
+XLSX_NS = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 
 
 def list_real_contrast_ids() -> list[str]:
@@ -115,6 +230,7 @@ def parse_geo_series_samples(series_matrix_text: str) -> list[GeoSample]:
         phenotype = (
             characteristics[index].get("phenotype")
             or characteristics[index].get("disease")
+            or characteristics[index].get("disease state")
             or characteristics[index].get("diagnosis")
             or characteristics[index].get("tissue type")
             or characteristics[index].get("tissue")
@@ -142,6 +258,33 @@ def parse_gene_count_text(gene_count_text: str) -> dict[str, int]:
     return counts
 
 
+def parse_gene_count_matrix_text(
+    gene_count_text: str,
+    *,
+    delimiter: str = "\t",
+    has_gene_header: bool = False,
+) -> tuple[list[str], dict[str, list[int]]]:
+    """Parse a sample-by-gene count matrix keyed by gene label."""
+    reader = csv.reader(
+        [line for line in gene_count_text.splitlines() if line.strip()],
+        delimiter=delimiter,
+        quotechar='"',
+    )
+    rows = list(reader)
+    if not rows:
+        return [], {}
+
+    header = rows[0]
+    sample_titles = header[1:] if has_gene_header else header
+    matrix: dict[str, list[int]] = {}
+    for cells in rows[1:]:
+        expected_length = len(sample_titles) + 1
+        if len(cells) != expected_length:
+            continue
+        matrix[cells[0]] = [int(value) for value in cells[1:]]
+    return sample_titles, matrix
+
+
 def parse_geo_series_matrix_table(series_matrix_text: str) -> tuple[list[str], list[tuple[str, list[float]]]]:
     """Parse the expression table from a GEO series matrix."""
     lines = series_matrix_text.splitlines()
@@ -161,15 +304,23 @@ def parse_geo_series_matrix_table(series_matrix_text: str) -> tuple[list[str], l
         if not sample_ids:
             sample_ids = cells[1:]
             continue
-        rows.append((cells[0], [float(value) for value in cells[1:]]))
+        try:
+            values = [float(value) for value in cells[1:]]
+        except ValueError:
+            continue
+        rows.append((cells[0], values))
     return sample_ids, rows
 
 
 def parse_geo_platform_gene_symbols(platform_text: str) -> dict[str, str]:
-    """Parse unambiguous probe-to-symbol mappings from a GEO annotation file."""
+    """Parse unambiguous probe-to-symbol mappings from a GEO platform text file."""
     lines = platform_text.splitlines()
     header: list[str] | None = None
     data_lines: list[str] = []
+    probe_header: list[str] | None = None
+    probe_rows: list[str] = []
+    in_probe_table = False
+
     for line in lines:
         if line.startswith("#ID ="):
             header = ["ID"]
@@ -178,22 +329,45 @@ def parse_geo_platform_gene_symbols(platform_text: str) -> dict[str, str]:
             label = line[1:].split(" = ", 1)[0]
             header.append(label)
             continue
+        if line.strip() == "[Probes]":
+            in_probe_table = True
+            probe_header = None
+            continue
+        if in_probe_table and probe_header is None:
+            probe_header = line.split("\t")
+            continue
+        if in_probe_table:
+            if line.strip():
+                probe_rows.append(line)
+            continue
         if line.startswith("^Annotation") or line.startswith("!"):
             continue
         if line.strip():
             data_lines.append(line)
 
-    if header is None:
-        return {}
-
-    reader = csv.DictReader(data_lines, delimiter="\t", fieldnames=header)
     mapping: dict[str, str] = {}
+
+    if header is not None:
+        reader = csv.DictReader(data_lines, delimiter="\t", fieldnames=header)
+        for row in reader:
+            probe_id = (row.get("ID") or "").strip()
+            gene_symbol = (row.get("Gene symbol") or "").strip()
+            if not probe_id or not gene_symbol or gene_symbol == "---":
+                continue
+            if "///" in gene_symbol:
+                continue
+            mapping[probe_id] = gene_symbol
+
+    if probe_header is None:
+        return mapping
+
+    reader = csv.DictReader(probe_rows, delimiter="\t", fieldnames=probe_header)
     for row in reader:
-        probe_id = (row.get("ID") or "").strip()
-        gene_symbol = (row.get("Gene symbol") or "").strip()
+        probe_id = (row.get("Probe_Id") or "").strip()
+        gene_symbol = (row.get("Symbol") or "").strip()
         if not probe_id or not gene_symbol or gene_symbol == "---":
             continue
-        if "///" in gene_symbol:
+        if "///" in gene_symbol or "," in gene_symbol or " " in gene_symbol:
             continue
         mapping[probe_id] = gene_symbol
     return mapping
@@ -428,6 +602,9 @@ def build_real_gene_statistics(
 
 
 def _pair_id_from_title(title: str) -> str | None:
+    workbook_match = re.search(r"S(\d+)[NT]$", title, re.IGNORECASE)
+    if workbook_match:
+        return workbook_match.group(1)
     hcc_match = re.search(r"HCC(\d+)", title, re.IGNORECASE)
     if hcc_match:
         return hcc_match.group(1)
@@ -435,13 +612,6 @@ def _pair_id_from_title(title: str) -> str | None:
     if patient_match:
         return patient_match.group(1)
     return None
-
-
-def _is_case_sample(sample: GeoSample) -> bool:
-    phenotype = sample.phenotype.lower()
-    if "non-tumorous" in phenotype or "normal" in phenotype or "adjacent" in phenotype:
-        return False
-    return "carcinoma" in phenotype or "tumor" in phenotype
 
 
 def _aggregate_probe_rows_by_gene(
@@ -461,14 +631,16 @@ def _aggregate_probe_rows_by_gene(
         bucket = grouped.setdefault(
             gene["ensembl_gene_id"],
             {
-                "symbol": symbol,
+                "symbol": gene["symbol"],
                 "hgnc_id": gene["hgnc_id"],
                 "probes": [],
                 "vectors": [],
+                "source_symbols": set(),
             },
         )
         bucket["probes"].append(probe_id)
         bucket["vectors"].append(values)
+        bucket["source_symbols"].add(symbol)
 
     aggregated: list[dict[str, Any]] = []
     for ensembl_gene_id, bucket in grouped.items():
@@ -484,6 +656,7 @@ def _aggregate_probe_rows_by_gene(
                 "hgnc_id": bucket["hgnc_id"],
                 "probe_ids": sorted(bucket["probes"]),
                 "probe_count": len(bucket["probes"]),
+                "source_symbols": sorted(bucket["source_symbols"]),
                 "values": averaged,
             }
         )
@@ -495,6 +668,8 @@ def build_microarray_gene_statistics(
     contrast_id: str,
     benchmark_id: str,
     dataset_id: str,
+    case_label: str,
+    control_label: str,
     samples: list[GeoSample],
     sample_ids: list[str],
     gene_rows: list[dict[str, Any]],
@@ -503,8 +678,12 @@ def build_microarray_gene_statistics(
     """Build inferential microarray gene statistics from paired GEO matrix values."""
     sample_by_accession = {sample.geo_accession: sample for sample in samples}
     sample_index = {sample_id: index for index, sample_id in enumerate(sample_ids)}
-    case_ids = [sample_id for sample_id in sample_ids if _is_case_sample(sample_by_accession[sample_id])]
-    control_ids = [sample_id for sample_id in sample_ids if not _is_case_sample(sample_by_accession[sample_id])]
+    selected_case_ids = {sample.geo_accession for sample in _select_samples(samples, case_label)}
+    selected_control_ids = {sample.geo_accession for sample in _select_samples(samples, control_label)}
+    case_ids = [sample_id for sample_id in sample_ids if sample_id in selected_case_ids]
+    control_ids = [sample_id for sample_id in sample_ids if sample_id in selected_control_ids]
+    if not case_ids or not control_ids:
+        raise ValueError(f"Failed to recover case/control samples for {contrast_id}")
     records: list[dict[str, Any]] = []
 
     if paired_design:
@@ -515,9 +694,9 @@ def build_microarray_gene_statistics(
             if pair_id is None:
                 continue
             pair_bucket = pairs.setdefault(pair_id, {})
-            if _is_case_sample(sample):
+            if sample_id in selected_case_ids:
                 pair_bucket["case"] = sample_id
-            else:
+            elif sample_id in selected_control_ids:
                 pair_bucket["control"] = sample_id
 
         ordered_pairs = sorted(
@@ -583,6 +762,111 @@ def build_microarray_gene_statistics(
                     "sample_geo_accessions": sample_ids,
                     "paired_design": paired_flag,
                     "source_probe_ids": gene_row["probe_ids"],
+                    "source_gene_symbols": gene_row.get("source_symbols", [gene_row["symbol"]]),
+                    "analysis_notes": analysis_notes,
+                    "p_value_method": p_value_method,
+                },
+            }
+        )
+    _bh_adjust(records)
+    return records
+
+
+def build_expression_matrix_gene_statistics(
+    *,
+    contrast_id: str,
+    benchmark_id: str,
+    dataset_id: str,
+    case_label: str,
+    control_label: str,
+    samples: list[GeoSample],
+    sample_ids: list[str],
+    gene_rows: list[dict[str, Any]],
+    paired_design: bool,
+    source_kind: str,
+    analysis_notes: str,
+) -> list[dict[str, Any]]:
+    """Build inferential statistics from a sample-level expression matrix."""
+    sample_by_accession = {sample.geo_accession: sample for sample in samples}
+    sample_index = {sample_id: index for index, sample_id in enumerate(sample_ids)}
+    selected_case_ids = {sample.geo_accession for sample in _select_samples(samples, case_label)}
+    selected_control_ids = {sample.geo_accession for sample in _select_samples(samples, control_label)}
+    case_ids = [sample_id for sample_id in sample_ids if sample_id in selected_case_ids]
+    control_ids = [sample_id for sample_id in sample_ids if sample_id in selected_control_ids]
+    if not case_ids or not control_ids:
+        raise ValueError(f"Failed to recover case/control samples for {contrast_id}")
+
+    if paired_design:
+        pairs: dict[str, dict[str, str]] = {}
+        for sample_id in sample_ids:
+            sample = sample_by_accession[sample_id]
+            pair_id = _pair_id_from_title(sample.title)
+            if pair_id is None:
+                continue
+            pair_bucket = pairs.setdefault(pair_id, {})
+            if sample_id in selected_case_ids:
+                pair_bucket["case"] = sample_id
+            elif sample_id in selected_control_ids:
+                pair_bucket["control"] = sample_id
+        ordered_pairs = sorted(
+            (pair_id, values["case"], values["control"])
+            for pair_id, values in pairs.items()
+            if "case" in values and "control" in values
+        )
+    else:
+        ordered_pairs = []
+
+    records: list[dict[str, Any]] = []
+    for gene_row in gene_rows:
+        if paired_design:
+            case_values = [gene_row["values"][sample_index[case_id]] for _, case_id, _ in ordered_pairs]
+            control_values = [gene_row["values"][sample_index[control_id]] for _, _, control_id in ordered_pairs]
+            t_statistic, p_value, degrees_of_freedom = _safe_ttest_rel(case_values, control_values)
+            standardized_effect = _paired_standardized_effect(case_values, control_values)
+            p_value_method = "Student t distribution with paired t degrees of freedom."
+        else:
+            case_values = [gene_row["values"][sample_index[case_id]] for case_id in case_ids]
+            control_values = [gene_row["values"][sample_index[control_id]] for control_id in control_ids]
+            t_statistic, p_value, degrees_of_freedom = _safe_ttest_ind(case_values, control_values)
+            standardized_effect = _standardized_mean_difference(case_values, control_values)
+            p_value_method = "Student t distribution with Welch-Satterthwaite degrees of freedom."
+        if not case_values or not control_values:
+            continue
+
+        mean_case = fmean(case_values)
+        mean_control = fmean(control_values)
+        records.append(
+            {
+                "schema_version": "0.1.0",
+                "evidence_kind": "accession_backed_real",
+                "contrast_id": contrast_id,
+                "benchmark_id": benchmark_id,
+                "dataset_id": dataset_id,
+                "gene": {
+                    "ensembl_gene_id": gene_row["ensembl_gene_id"],
+                    "symbol": gene_row["symbol"],
+                    "hgnc_id": gene_row["hgnc_id"],
+                },
+                "statistics": {
+                    "case_mean_expression": round(mean_case, 6),
+                    "control_mean_expression": round(mean_control, 6),
+                    "log2_fold_change": round(mean_case - mean_control, 6),
+                    "t_statistic": round(t_statistic, 6),
+                    "degrees_of_freedom": round(degrees_of_freedom, 6),
+                    "p_value": round(p_value, 12),
+                    "standardized_mean_difference": round(standardized_effect, 6),
+                    "mean_expression": round(fmean(case_values + control_values), 6),
+                },
+                "sample_counts": {
+                    "case": len(case_values),
+                    "control": len(control_values),
+                },
+                "provenance": {
+                    "source_kind": source_kind,
+                    "series_accession": dataset_id,
+                    "sample_geo_accessions": sample_ids,
+                    "paired_design": paired_design,
+                    "source_gene_symbols": gene_row.get("source_symbols", [gene_row["symbol"]]),
                     "analysis_notes": analysis_notes,
                     "p_value_method": p_value_method,
                 },
@@ -627,11 +911,156 @@ def _load_rnaseq_count_contrast(config: dict[str, str], contrast_id: str) -> lis
     return records
 
 
+def _normalize_matrix_gene_symbol(raw_gene_label: str) -> str:
+    base = raw_gene_label.rsplit(".chr", 1)[0]
+    return base.split("|", 1)[0].strip()
+
+
+def _load_xlsx_shared_strings(workbook_bytes: bytes) -> list[str]:
+    with ZipFile(io.BytesIO(workbook_bytes)) as workbook:
+        root = ET.fromstring(workbook.read("xl/sharedStrings.xml"))
+    return [
+        "".join((text_node.text or "") for text_node in item.iter(f"{XLSX_NS}t"))
+        for item in root.findall(f"{XLSX_NS}si")
+    ]
+
+
+def _xlsx_cell_value(cell: ET.Element, shared_strings: list[str]) -> str:
+    raw_value = cell.find(f"{XLSX_NS}v")
+    if raw_value is None:
+        return ""
+    if cell.attrib.get("t") == "s":
+        return shared_strings[int(raw_value.text or "0")]
+    return raw_value.text or ""
+
+
+def parse_xlsx_expression_sheet(workbook_bytes: bytes, sheet_path: str) -> tuple[list[str], list[dict[str, Any]]]:
+    """Parse one xlsx worksheet into sample ids and gene-value rows."""
+    shared_strings = _load_xlsx_shared_strings(workbook_bytes)
+    with ZipFile(io.BytesIO(workbook_bytes)) as workbook:
+        root = ET.fromstring(workbook.read(sheet_path))
+    rows = root.find(f"{XLSX_NS}sheetData").findall(f"{XLSX_NS}row")
+    header_cells = rows[0].findall(f"{XLSX_NS}c")
+    sample_ids = [_xlsx_cell_value(cell, shared_strings) for cell in header_cells[1:]]
+    gene_rows: list[dict[str, Any]] = []
+    for row in rows[1:]:
+        cells = row.findall(f"{XLSX_NS}c")
+        if len(cells) < len(sample_ids) + 1:
+            continue
+        symbol = _xlsx_cell_value(cells[0], shared_strings)
+        if not symbol:
+            continue
+        values = [float(_xlsx_cell_value(cell, shared_strings)) for cell in cells[1 : len(sample_ids) + 1]]
+        gene_rows.append({"symbol": symbol, "values": values})
+    return sample_ids, gene_rows
+
+
+def _load_rnaseq_matrix_count_contrast(config: dict[str, str], contrast_id: str) -> list[dict[str, Any]]:
+    series_text = load_text_with_cache(_series_matrix_url(config["series_accession"]), namespace="geo_cache")
+    samples = parse_geo_series_samples(series_text)
+    title_to_sample = {sample.title: sample for sample in samples}
+    case_samples = _select_samples(samples, config["case_label"])
+    control_samples = _select_samples(samples, config["control_label"])
+    if not case_samples or not control_samples:
+        raise ValueError(f"Failed to recover case/control samples for {contrast_id}")
+
+    matrix_text = load_text_with_cache(config["supplementary_url"], namespace="geo_cache")
+    sample_titles, matrix = parse_gene_count_matrix_text(
+        matrix_text,
+        delimiter=config.get("delimiter", "\t"),
+        has_gene_header=config.get("has_gene_header") == True,
+    )
+    symbol_to_gene = load_hgnc_symbol_reverse_map()
+
+    sample_counts = {sample.geo_accession: {} for sample in case_samples + control_samples}
+    for raw_gene_label, values in matrix.items():
+        symbol = _normalize_matrix_gene_symbol(raw_gene_label)
+        gene = symbol_to_gene.get(symbol)
+        if gene is None:
+            continue
+        for title, value in zip(sample_titles, values):
+            sample = title_to_sample.get(title)
+            if sample is None or sample.geo_accession not in sample_counts:
+                continue
+            sample_counts[sample.geo_accession][gene["ensembl_gene_id"]] = (
+                sample_counts[sample.geo_accession].get(gene["ensembl_gene_id"], 0) + value
+            )
+
+    records = build_real_gene_statistics(
+        contrast_id=contrast_id,
+        benchmark_id=config["benchmark_id"],
+        dataset_id=config["dataset_id"],
+        case_samples=case_samples,
+        control_samples=control_samples,
+        sample_counts=sample_counts,
+    )
+    symbol_map = load_hgnc_symbol_map()
+    for record in records:
+        mapping = symbol_map.get(record["gene"]["ensembl_gene_id"])
+        if mapping is None:
+            continue
+        record["gene"]["symbol"] = mapping["symbol"]
+        record["gene"]["hgnc_id"] = mapping["hgnc_id"]
+        record["provenance"]["identifier_mapping"] = {
+            "source": "HGNC complete set",
+            "hgnc_id": mapping["hgnc_id"],
+        }
+        record["provenance"]["source_kind"] = "geo_series_supplement_counts_matrix"
+        record["provenance"]["supplementary_url"] = config["supplementary_url"]
+        record["provenance"]["analysis_notes"] = (
+            "Computed from GEO series-level gene count matrix values mapped from sample titles and HGNC-backed gene symbols using log2(CPM+1) with Welch t-tests and BH FDR."
+        )
+    return records
+
+
+def _load_xlsx_expression_matrix_contrast(config: dict[str, str], contrast_id: str) -> list[dict[str, Any]]:
+    workbook_bytes = load_bytes_with_cache(config["supplementary_url"], namespace="geo_cache")
+    sample_ids, raw_gene_rows = parse_xlsx_expression_sheet(workbook_bytes, config["sheet_path"])
+    samples = [
+        GeoSample(
+            geo_accession=sample_id,
+            title=sample_id,
+            phenotype="tumor" if sample_id.endswith("T") else "normal",
+            supplementary_gene_url=config["supplementary_url"],
+        )
+        for sample_id in sample_ids
+    ]
+    symbol_to_gene = load_hgnc_symbol_reverse_map()
+    gene_rows = []
+    for row in raw_gene_rows:
+        gene = symbol_to_gene.get(row["symbol"])
+        if gene is None:
+            continue
+        gene_rows.append(
+            {
+                "ensembl_gene_id": gene["ensembl_gene_id"],
+                "symbol": gene["symbol"],
+                "hgnc_id": gene["hgnc_id"],
+                "source_symbols": [row["symbol"]],
+                "values": row["values"],
+            }
+        )
+    return build_expression_matrix_gene_statistics(
+        contrast_id=contrast_id,
+        benchmark_id=config["benchmark_id"],
+        dataset_id=config["dataset_id"],
+        case_label=config["case_label"],
+        control_label=config["control_label"],
+        samples=samples,
+        sample_ids=sample_ids,
+        gene_rows=gene_rows,
+        paired_design=True,
+        source_kind="geo_expression_workbook",
+        analysis_notes="Computed from the official GEO supplementary expression workbook using paired t-tests over the sample-level expression matrix on sheet5.",
+    )
+
+
 def _load_microarray_series_contrast(config: dict[str, str], contrast_id: str) -> list[dict[str, Any]]:
     series_text = load_text_with_cache(_series_matrix_url(config["series_accession"]), namespace="geo_cache")
     samples = parse_geo_series_samples(series_text)
     sample_ids, rows = parse_geo_series_matrix_table(series_text)
-    platform_text = load_text_with_cache(_platform_annotation_url(config["platform_accession"]), namespace="geo_platform_cache")
+    platform_url = config.get("platform_supplementary_url") or _platform_annotation_url(config["platform_accession"])
+    platform_text = load_text_with_cache(platform_url, namespace="geo_platform_cache")
     probe_to_symbol = parse_geo_platform_gene_symbols(platform_text)
     symbol_to_gene = load_hgnc_symbol_reverse_map()
     gene_rows = _aggregate_probe_rows_by_gene(sample_ids, rows, probe_to_symbol, symbol_to_gene)
@@ -639,6 +1068,8 @@ def _load_microarray_series_contrast(config: dict[str, str], contrast_id: str) -
         contrast_id=contrast_id,
         benchmark_id=config["benchmark_id"],
         dataset_id=config["dataset_id"],
+        case_label=config["case_label"],
+        control_label=config["control_label"],
         samples=samples,
         sample_ids=sample_ids,
         gene_rows=gene_rows,
@@ -646,6 +1077,7 @@ def _load_microarray_series_contrast(config: dict[str, str], contrast_id: str) -
     )
 
 
+@functools.lru_cache(maxsize=16)
 def load_real_geo_gene_statistics(contrast_id: str) -> list[dict[str, Any]]:
     """Load real accession-backed gene statistics for a supported contrast."""
     config = REAL_CONTRASTS.get(contrast_id)
@@ -655,6 +1087,10 @@ def load_real_geo_gene_statistics(contrast_id: str) -> list[dict[str, Any]]:
     source_type = config["source_type"]
     if source_type == "geo_rnaseq_counts":
         return _load_rnaseq_count_contrast(config, contrast_id)
+    if source_type == "geo_rnaseq_matrix_counts":
+        return _load_rnaseq_matrix_count_contrast(config, contrast_id)
+    if source_type == "geo_xlsx_expression_matrix":
+        return _load_xlsx_expression_matrix_contrast(config, contrast_id)
     if source_type == "geo_microarray_series":
         return _load_microarray_series_contrast(config, contrast_id)
     raise ValueError(f"Unsupported real contrast source type: {source_type}")
