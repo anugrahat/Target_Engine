@@ -22,6 +22,16 @@ REAL_CONTRASTS: dict[str, dict[str, str]] = {
         "case_label": "idiopathic pulmonary fibrosis",
         "control_label": "normal",
     },
+    "ipf_lung_core_gse24206": {
+        "source_type": "geo_microarray_series",
+        "series_accession": "GSE24206",
+        "platform_accession": "GPL570",
+        "design": "unpaired",
+        "benchmark_id": "ipf_tnik",
+        "dataset_id": "GSE24206",
+        "case_label": "idiopathic pulmonary fibrosis",
+        "control_label": "healthy",
+    },
     "hcc_adult_core_gse60502": {
         "source_type": "geo_microarray_series",
         "series_accession": "GSE60502",
@@ -438,13 +448,6 @@ def _pair_id_from_title(title: str) -> str | None:
     return None
 
 
-def _is_case_sample(sample: GeoSample) -> bool:
-    phenotype = sample.phenotype.lower()
-    if "non-tumorous" in phenotype or "normal" in phenotype or "adjacent" in phenotype:
-        return False
-    return "carcinoma" in phenotype or "tumor" in phenotype
-
-
 def _aggregate_probe_rows_by_gene(
     sample_ids: list[str],
     rows: list[tuple[str, list[float]]],
@@ -496,6 +499,8 @@ def build_microarray_gene_statistics(
     contrast_id: str,
     benchmark_id: str,
     dataset_id: str,
+    case_label: str,
+    control_label: str,
     samples: list[GeoSample],
     sample_ids: list[str],
     gene_rows: list[dict[str, Any]],
@@ -504,8 +509,12 @@ def build_microarray_gene_statistics(
     """Build inferential microarray gene statistics from paired GEO matrix values."""
     sample_by_accession = {sample.geo_accession: sample for sample in samples}
     sample_index = {sample_id: index for index, sample_id in enumerate(sample_ids)}
-    case_ids = [sample_id for sample_id in sample_ids if _is_case_sample(sample_by_accession[sample_id])]
-    control_ids = [sample_id for sample_id in sample_ids if not _is_case_sample(sample_by_accession[sample_id])]
+    selected_case_ids = {sample.geo_accession for sample in _select_samples(samples, case_label)}
+    selected_control_ids = {sample.geo_accession for sample in _select_samples(samples, control_label)}
+    case_ids = [sample_id for sample_id in sample_ids if sample_id in selected_case_ids]
+    control_ids = [sample_id for sample_id in sample_ids if sample_id in selected_control_ids]
+    if not case_ids or not control_ids:
+        raise ValueError(f"Failed to recover case/control samples for {contrast_id}")
     records: list[dict[str, Any]] = []
 
     if paired_design:
@@ -516,9 +525,9 @@ def build_microarray_gene_statistics(
             if pair_id is None:
                 continue
             pair_bucket = pairs.setdefault(pair_id, {})
-            if _is_case_sample(sample):
+            if sample_id in selected_case_ids:
                 pair_bucket["case"] = sample_id
-            else:
+            elif sample_id in selected_control_ids:
                 pair_bucket["control"] = sample_id
 
         ordered_pairs = sorted(
@@ -640,6 +649,8 @@ def _load_microarray_series_contrast(config: dict[str, str], contrast_id: str) -
         contrast_id=contrast_id,
         benchmark_id=config["benchmark_id"],
         dataset_id=config["dataset_id"],
+        case_label=config["case_label"],
+        control_label=config["control_label"],
         samples=samples,
         sample_ids=sample_ids,
         gene_rows=gene_rows,

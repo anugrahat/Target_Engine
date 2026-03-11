@@ -124,6 +124,8 @@ class RealTranscriptomicsTests(unittest.TestCase):
             contrast_id="hcc_adult_core_gse60502",
             benchmark_id="hcc_cdk20",
             dataset_id="GSE60502",
+            case_label="hepatocellular carcinoma",
+            control_label="adjacent non-tumorous liver",
             samples=samples,
             sample_ids=sample_ids,
             gene_rows=gene_rows,
@@ -157,6 +159,8 @@ class RealTranscriptomicsTests(unittest.TestCase):
             contrast_id="hcc_adult_core_gse45267",
             benchmark_id="hcc_cdk20",
             dataset_id="GSE45267",
+            case_label="tumor",
+            control_label="normal",
             samples=samples,
             sample_ids=sample_ids,
             gene_rows=gene_rows,
@@ -193,6 +197,53 @@ class RealTranscriptomicsTests(unittest.TestCase):
         self.assertEqual(3, len(records))
         mapped = next(record for record in records if record["gene"]["ensembl_gene_id"] == "ENSG000001")
         self.assertEqual("TESTGENE1", mapped["gene"]["symbol"])
+
+    def test_loads_real_ipf_microarray_gene_statistics_with_patched_downloads(self) -> None:
+        matrix_text = "\n".join(
+            [
+                '!Sample_title\t"Healthy donor 1"\t"Healthy donor 2"\t"Early IPF 1"\t"Advanced IPF 1"',
+                '!Sample_geo_accession\t"GSMN1"\t"GSMN2"\t"GSMI1"\t"GSMI2"',
+                '!Sample_characteristics_ch1\t"phenotype: healthy"\t"phenotype: healthy"\t"phenotype: early idiopathic pulmonary fibrosis (IPF)"\t"phenotype: advanced idiopathic pulmonary fibrosis (IPF)"',
+                "!series_matrix_table_begin",
+                '"ID_REF"\t"GSMN1"\t"GSMN2"\t"GSMI1"\t"GSMI2"',
+                '"1007_s_at"\t4.0\t4.2\t8.1\t8.4',
+                '"117_at"\t3.1\t3.3\t5.6\t5.8',
+                "!series_matrix_table_end",
+            ]
+        )
+        platform_text = "\n".join(
+            [
+                "^Annotation",
+                "#ID = ID from Platform data table",
+                "#Gene symbol = Entrez Gene symbol",
+                "1007_s_at\tGENEA",
+                "117_at\tGENEB",
+            ]
+        )
+        reverse_map = {
+            "GENEA": {"ensembl_gene_id": "ENSG000001", "hgnc_id": "HGNC:1"},
+            "GENEB": {"ensembl_gene_id": "ENSG000002", "hgnc_id": "HGNC:2"},
+        }
+
+        def fake_load_text(url: str, namespace: str) -> str:
+            if url.endswith("GSE24206_series_matrix.txt.gz"):
+                return matrix_text
+            if url.endswith("GPL570.annot.gz"):
+                return platform_text
+            raise AssertionError(url)
+
+        load_real_geo_gene_statistics.cache_clear()
+        with patch("prioritx_data.real_transcriptomics.load_text_with_cache", side_effect=fake_load_text), patch(
+            "prioritx_data.real_transcriptomics.load_hgnc_symbol_reverse_map",
+            return_value=reverse_map,
+        ):
+            records = load_real_geo_gene_statistics("ipf_lung_core_gse24206")
+
+        self.assertEqual(2, len(records))
+        self.assertTrue(all(record["dataset_id"] == "GSE24206" for record in records))
+        self.assertTrue(all(record["sample_counts"] == {"case": 2, "control": 2} for record in records))
+        self.assertTrue(all(record["gene"]["symbol"] in {"GENEA", "GENEB"} for record in records))
+        self.assertTrue(all(not record["provenance"]["paired_design"] for record in records))
 
 
 if __name__ == "__main__":
