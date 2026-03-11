@@ -929,3 +929,90 @@ def summarize_benchmark_health(*, top_n: int = 10) -> dict[str, Any]:
             "source_summary": "benchmark_dashboard_summary",
         },
     }
+
+
+def export_benchmark_health_rows(*, top_n: int = 10) -> dict[str, Any]:
+    health = summarize_benchmark_health(top_n=top_n)
+    dashboard = summarize_benchmark_dashboard(top_n=top_n)
+    dashboard_by_benchmark = {item["benchmark_id"]: item for item in dashboard["items"]}
+
+    rows = []
+    for item in health["items"]:
+        dashboard_item = dashboard_by_benchmark[item["benchmark_id"]]
+        positive_items = dashboard_item["benchmark_positive_comparison"]
+        if not positive_items:
+            rows.append(
+                {
+                    "benchmark_id": item["benchmark_id"],
+                    "indication_name": item["indication_name"],
+                    "top_n": top_n,
+                    "readiness_flag": item["readiness_flag"],
+                    "strict_subset_id": dashboard_item["strict_subset_id"],
+                    "exploratory_subset_id": dashboard_item["exploratory_subset_id"],
+                    "strict_leader_gene_symbol": (item["strict_leader"] or {}).get("gene_symbol"),
+                    "strict_leader_rank": (item["strict_leader"] or {}).get("rank"),
+                    "strict_leader_score": (item["strict_leader"] or {}).get("score"),
+                    "exploratory_leader_gene_symbol": (item["exploratory_leader"] or {}).get("gene_symbol"),
+                    "exploratory_leader_rank": (item["exploratory_leader"] or {}).get("rank"),
+                    "exploratory_leader_score": (item["exploratory_leader"] or {}).get("score"),
+                    "positive_gene_symbol": None,
+                    "label_tier": None,
+                    "strict_rank": None,
+                    "exploratory_rank": None,
+                    "rank_delta": None,
+                    "movement": None,
+                    "strict_recovered_in_top_n": False,
+                    "exploratory_recovered_in_top_n": False,
+                    "positive_target_count": item["positive_target_count"],
+                    "strict_recovered_in_top_n_count": item["strict_recovered_in_top_n_count"],
+                    "exploratory_recovered_in_top_n_count": item["exploratory_recovered_in_top_n_count"],
+                    "recovered_anywhere_count": item["recovered_anywhere_count"],
+                    "improved_in_exploratory_count": item["improved_in_exploratory_count"],
+                    "worsened_in_exploratory_count": item["worsened_in_exploratory_count"],
+                    "unchanged_count": item["unchanged_count"],
+                }
+            )
+            continue
+
+        for positive in positive_items:
+            rows.append(
+                {
+                    "benchmark_id": item["benchmark_id"],
+                    "indication_name": item["indication_name"],
+                    "top_n": top_n,
+                    "readiness_flag": item["readiness_flag"],
+                    "strict_subset_id": dashboard_item["strict_subset_id"],
+                    "exploratory_subset_id": dashboard_item["exploratory_subset_id"],
+                    "strict_leader_gene_symbol": (item["strict_leader"] or {}).get("gene_symbol"),
+                    "strict_leader_rank": (item["strict_leader"] or {}).get("rank"),
+                    "strict_leader_score": (item["strict_leader"] or {}).get("score"),
+                    "exploratory_leader_gene_symbol": (item["exploratory_leader"] or {}).get("gene_symbol"),
+                    "exploratory_leader_rank": (item["exploratory_leader"] or {}).get("rank"),
+                    "exploratory_leader_score": (item["exploratory_leader"] or {}).get("score"),
+                    "positive_gene_symbol": positive["gene_symbol"],
+                    "label_tier": positive["label_tier"],
+                    "strict_rank": positive["strict_rank"],
+                    "exploratory_rank": positive["exploratory_rank"],
+                    "rank_delta": positive["rank_delta"],
+                    "movement": positive["movement"],
+                    "strict_recovered_in_top_n": positive["strict_recovered_in_top_n"],
+                    "exploratory_recovered_in_top_n": positive["exploratory_recovered_in_top_n"],
+                    "positive_target_count": item["positive_target_count"],
+                    "strict_recovered_in_top_n_count": item["strict_recovered_in_top_n_count"],
+                    "exploratory_recovered_in_top_n_count": item["exploratory_recovered_in_top_n_count"],
+                    "recovered_anywhere_count": item["recovered_anywhere_count"],
+                    "improved_in_exploratory_count": item["improved_in_exploratory_count"],
+                    "worsened_in_exploratory_count": item["worsened_in_exploratory_count"],
+                    "unchanged_count": item["unchanged_count"],
+                }
+            )
+
+    return {
+        "top_n": top_n,
+        "row_count": len(rows),
+        "rows": rows,
+        "provenance": {
+            "export_kind": "benchmark_health_rows",
+            "source_summary": "benchmark_health_summary",
+        },
+    }
