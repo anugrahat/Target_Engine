@@ -21,7 +21,7 @@ from prioritx_data.service import (
     transcriptomics_real_scores,
 )
 from prioritx_eval.policy import BENCHMARK_MODES, benchmark_integrity_review
-from prioritx_eval.service import audit_target_evidence, evaluate_fused_benchmark, target_evidence_graph
+from prioritx_eval.service import audit_target_evidence, evaluate_fused_benchmark, explain_target_evidence, target_evidence_graph
 
 
 def _single(query: dict[str, list[str]], key: str) -> str | None:
@@ -58,6 +58,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
                 "/fused-target-evidence",
                 "/benchmark-evaluation",
                 "/benchmark-integrity",
+                "/target-explanation",
                 "/target-evidence-graph",
                 "/target-audit",
                 "/transcriptomics-evidence",
@@ -288,6 +289,37 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
         except ValueError:
             return 400, {"error": "genetics_size, tractability_top_n, pathway_top_n, and network_top_n must be integers"}
         return 200, target_evidence_graph(
+            benchmark_id,
+            gene_symbol=gene_symbol,
+            mode=mode or "strict",
+            subset_id=_single(query, "subset_id"),
+            genetics_size=genetics_size,
+            tractability_top_n=tractability_top_n,
+            pathway_top_n=pathway_top_n,
+            network_top_n=network_top_n,
+        )
+
+    if path == "/target-explanation":
+        benchmark_id = _single(query, "benchmark_id")
+        gene_symbol = _single(query, "gene_symbol")
+        if not benchmark_id or not gene_symbol:
+            return 400, {"error": "benchmark_id and gene_symbol query parameters are required"}
+        mode = _mode(query)
+        if mode == "__invalid__":
+            return 400, {"error": "mode must be one of: strict, exploratory"}
+
+        genetics_size_raw = _single(query, "genetics_size")
+        tractability_top_n_raw = _single(query, "tractability_top_n")
+        pathway_top_n_raw = _single(query, "pathway_top_n")
+        network_top_n_raw = _single(query, "network_top_n")
+        try:
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else 0
+            tractability_top_n = int(tractability_top_n_raw) if tractability_top_n_raw else 200
+            pathway_top_n = int(pathway_top_n_raw) if pathway_top_n_raw else 40
+            network_top_n = int(network_top_n_raw) if network_top_n_raw else 100
+        except ValueError:
+            return 400, {"error": "genetics_size, tractability_top_n, pathway_top_n, and network_top_n must be integers"}
+        return 200, explain_target_evidence(
             benchmark_id,
             gene_symbol=gene_symbol,
             mode=mode or "strict",

@@ -17,6 +17,30 @@ from prioritx_eval.policy import benchmark_integrity_review, benchmark_mode_conf
 from prioritx_features.transcriptomics import REAL_SUPPORT_MAX_ADJUSTED_P, REAL_SUPPORT_MIN_ABS_LOG2_FC
 
 
+def _ranked_target_item(
+    benchmark_id: str,
+    *,
+    subset_id: str,
+    gene_symbol: str,
+    genetics_size: int,
+    tractability_top_n: int,
+    pathway_top_n: int,
+    network_top_n: int,
+) -> tuple[int | None, dict[str, Any] | None]:
+    ranked = fused_target_evidence(
+        benchmark_id=benchmark_id,
+        subset_id=subset_id,
+        genetics_size=genetics_size,
+        tractability_top_n=tractability_top_n,
+        pathway_top_n=pathway_top_n,
+        network_top_n=network_top_n,
+    )
+    for index, item in enumerate(ranked, start=1):
+        if item.get("gene_symbol") == gene_symbol:
+            return index, item
+    return None, None
+
+
 def evaluate_fused_benchmark(
     benchmark_id: str,
     *,
@@ -199,20 +223,14 @@ def audit_target_evidence(
         (item for item in open_targets_genetics_scores(benchmark_id, size=resolved_genetics_size) if item.get("gene_symbol") == gene_symbol),
         None,
     )
-    fused = next(
-        (
-            item
-            for item in fused_target_evidence(
-                benchmark_id=benchmark_id,
-                subset_id=chosen_subset_id,
-                genetics_size=resolved_genetics_size,
-                tractability_top_n=resolved_tractability_top_n,
-                pathway_top_n=resolved_pathway_top_n,
-                network_top_n=resolved_network_top_n,
-            )
-            if item.get("gene_symbol") == gene_symbol
-        ),
-        None,
+    _, fused = _ranked_target_item(
+        benchmark_id,
+        subset_id=chosen_subset_id,
+        gene_symbol=gene_symbol,
+        genetics_size=resolved_genetics_size,
+        tractability_top_n=resolved_tractability_top_n,
+        pathway_top_n=resolved_pathway_top_n,
+        network_top_n=resolved_network_top_n,
     )
 
     return {
@@ -271,20 +289,14 @@ def target_evidence_graph(
         pathway_top_n=resolved_pathway_top_n,
         network_top_n=resolved_network_top_n,
     )
-    fused = next(
-        (
-            item
-            for item in fused_target_evidence(
-                benchmark_id=benchmark_id,
-                subset_id=chosen_subset_id,
-                genetics_size=resolved_genetics_size,
-                tractability_top_n=resolved_tractability_top_n,
-                pathway_top_n=resolved_pathway_top_n,
-                network_top_n=resolved_network_top_n,
-            )
-            if item.get("gene_symbol") == gene_symbol
-        ),
-        None,
+    fused_rank, fused = _ranked_target_item(
+        benchmark_id,
+        subset_id=chosen_subset_id,
+        gene_symbol=gene_symbol,
+        genetics_size=resolved_genetics_size,
+        tractability_top_n=resolved_tractability_top_n,
+        pathway_top_n=resolved_pathway_top_n,
+        network_top_n=resolved_network_top_n,
     )
     pathway = next(
         (
@@ -343,6 +355,7 @@ def target_evidence_graph(
                 "ensembl_gene_id": ensembl_gene_id,
                 "fused_score": fused.get("score") if fused else None,
                 "found_in_fused_ranking": fused is not None,
+                "fused_rank": fused_rank,
             },
         },
     ]
@@ -504,6 +517,8 @@ def target_evidence_graph(
         },
         "evidence_summary": {
             "fused_found": fused is not None,
+            "fused_rank": fused_rank,
+            "fused_score": fused.get("score") if fused else None,
             "transcriptomics_found_in_contrasts": sum(1 for item in audit["transcriptomics"] if item["found"]),
             "transcriptomics_support_hits": sum(1 for item in audit["transcriptomics"] if item["passes_support_rule"]),
             "genetics_found": genetics is not None,
@@ -512,4 +527,115 @@ def target_evidence_graph(
             "network_found": bool(fused and fused.get("network_provenance", {}).get("top_partners")),
         },
         "integrity_review": benchmark_integrity_review(benchmark_id, mode=mode),
+    }
+
+
+def explain_target_evidence(
+    benchmark_id: str,
+    *,
+    gene_symbol: str,
+    mode: str = "strict",
+    subset_id: str | None = None,
+    genetics_size: int | None = None,
+    tractability_top_n: int | None = None,
+    pathway_top_n: int | None = None,
+    network_top_n: int | None = None,
+) -> dict[str, Any]:
+    graph_result = target_evidence_graph(
+        benchmark_id,
+        gene_symbol=gene_symbol,
+        mode=mode,
+        subset_id=subset_id,
+        genetics_size=genetics_size,
+        tractability_top_n=tractability_top_n,
+        pathway_top_n=pathway_top_n,
+        network_top_n=network_top_n,
+    )
+    summary = graph_result["evidence_summary"]
+    gene_node = next(
+        (node for node in graph_result["graph"]["nodes"] if node["type"] == "gene" and node["label"] == gene_symbol),
+        None,
+    )
+    fused_edge = next(
+        (edge for edge in graph_result["graph"]["edges"] if edge["type"] == "fused_target_evidence"),
+        None,
+    )
+    pathway_nodes = [node for node in graph_result["graph"]["nodes"] if node["type"] == "pathway"]
+    network_partners = [
+        node["label"]
+        for node in graph_result["graph"]["nodes"]
+        if node["type"] == "gene" and node["attributes"].get("is_network_partner")
+    ]
+
+    rationale = []
+    if summary["transcriptomics_support_hits"] > 0:
+        rationale.append(
+            f"Transcriptomics support passed the PrioriTx rule in {summary['transcriptomics_support_hits']} accession-backed contrasts."
+        )
+    elif summary["transcriptomics_found_in_contrasts"] > 0:
+        rationale.append(
+            f"Transcriptomics signal was observed in {summary['transcriptomics_found_in_contrasts']} contrasts, but none passed the current support rule."
+        )
+    if summary["genetics_found"]:
+        genetics_edge = next((edge for edge in graph_result["graph"]["edges"] if edge["type"] == "genetics_association"), None)
+        association_rank = genetics_edge["attributes"].get("association_rank") if genetics_edge else None
+        if association_rank is not None:
+            rationale.append(f"Open Targets genetics evidence is present with association rank {association_rank}.")
+        else:
+            rationale.append("Open Targets genetics evidence is present for this indication.")
+    if summary["tractability_found"]:
+        tractability_node = next((node for node in graph_result["graph"]["nodes"] if node["type"] == "tractability_profile"), None)
+        modalities = tractability_node["attributes"].get("positive_modalities") if tractability_node else []
+        if modalities:
+            rationale.append(f"Open Targets tractability shows positive modalities: {', '.join(modalities)}.")
+    if summary["pathway_found"] and pathway_nodes:
+        top_pathway = sorted(pathway_nodes, key=lambda node: node["attributes"].get("fdr", 1.0))[0]
+        rationale.append(
+            f"Reactome pathway overlap is present, led by {top_pathway['label']} (FDR {top_pathway['attributes']['fdr']:.3g})."
+        )
+    if summary["network_found"] and network_partners:
+        rationale.append(f"STRING network support connects this gene to partners such as {', '.join(network_partners[:3])}.")
+
+    caveats = []
+    if not summary["fused_found"]:
+        caveats.append("This gene is not currently recovered in the fused target ranking for the selected mode and subset.")
+    elif summary["fused_rank"] and summary["fused_rank"] > 100:
+        caveats.append(f"This gene is currently low-ranked in fused evidence at rank {summary['fused_rank']}.")
+    if summary["transcriptomics_found_in_contrasts"] > 0 and summary["transcriptomics_support_hits"] == 0:
+        caveats.append("Observed transcriptomics effects remain below the current significance-and-effect support threshold.")
+    if any(item["risk_level"] == "high" for item in graph_result["integrity_review"]["families"]):
+        caveats.append("High-risk literature-style evidence exists for this benchmark but is intentionally excluded from fused ranking.")
+
+    components = (fused_edge or {}).get("attributes", {}).get("components") or {}
+    overview = (
+        f"{gene_symbol} is "
+        + (
+            f"ranked #{summary['fused_rank']} with fused score {summary['fused_score']:.4f}"
+            if summary["fused_found"] and summary["fused_rank"] and summary["fused_score"] is not None
+            else "not currently ranked by the fused evidence stack"
+        )
+        + f" for {graph_result['indication_name']} in {graph_result['mode']} mode."
+    )
+
+    return {
+        "benchmark_id": benchmark_id,
+        "indication_name": graph_result["indication_name"],
+        "mode": graph_result["mode"],
+        "subset_id": graph_result["subset_id"],
+        "gene_symbol": gene_symbol,
+        "ensembl_gene_id": graph_result["ensembl_gene_id"],
+        "overview": overview,
+        "rationale": rationale,
+        "caveats": caveats,
+        "fused_components": components,
+        "evidence_summary": summary,
+        "integrity_review": graph_result["integrity_review"],
+        "graph": {
+            "node_count": len(graph_result["graph"]["nodes"]),
+            "edge_count": len(graph_result["graph"]["edges"]),
+        },
+        "provenance": {
+            "explanation_kind": "deterministic_target_evidence_summary",
+            "graph_gene_node": gene_node["id"] if gene_node else None,
+        },
     }

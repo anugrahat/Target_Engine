@@ -27,6 +27,7 @@ Current routes:
 - `/fused-target-evidence?benchmark_id=...`
 - `/benchmark-evaluation?benchmark_id=...`
 - `/benchmark-integrity?benchmark_id=...`
+- `/target-explanation?benchmark_id=...&gene_symbol=...`
 - `/target-evidence-graph?benchmark_id=...&gene_symbol=...`
 - `/target-audit?benchmark_id=...&gene_symbol=...`
 - `/transcriptomics-evidence?subset_id=...`
@@ -44,6 +45,7 @@ Important:
 - `benchmark-evaluation` scores the live fused ranking against source-backed benchmark positives and reports whether PrioriTx recovers targets such as `TNIK` and `CDK20`
 - `benchmark-evaluation` and `target-audit` now accept `mode=strict|exploratory`; strict uses the benchmark core subset, while exploratory uses the broader curated subset when one exists
 - `benchmark-integrity` reports the subset, evidence-family leakage review, and benchmark-specific forbidden leakage items without running a full rank
+- `target-explanation` returns a deterministic explanation summary for one target, including fused rank, evidence rationale, and caveats derived only from the current source-backed stack
 - `target-evidence-graph` returns a compact source-backed evidence graph for one target, linking the disease node to accession-backed transcriptomics contrasts, genetics support, tractability, Reactome pathways, and STRING partners
 - `target-audit` explains benchmark misses by showing raw per-contrast transcriptomics measurements, support-rule pass/fail, and presence or absence in genetics and fused ranking
 - `benchmark-evaluation` and `target-audit` use full paginated Open Targets genetics coverage by default so benchmark misses are not caused by an arbitrary top-`N` cutoff

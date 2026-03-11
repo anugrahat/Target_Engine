@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
-from prioritx_eval.service import audit_target_evidence, evaluate_fused_benchmark, target_evidence_graph
+from prioritx_eval.service import audit_target_evidence, evaluate_fused_benchmark, explain_target_evidence, target_evidence_graph
 
 
 class BenchmarkEvalTests(unittest.TestCase):
@@ -159,6 +159,50 @@ class BenchmarkEvalTests(unittest.TestCase):
         self.assertIn("transcriptomics_support", edge_types)
         self.assertIn("genetics_association", edge_types)
         self.assertIn("string_interaction", edge_types)
+
+    def test_explains_target_evidence(self) -> None:
+        graph_result = {
+            "benchmark_id": "ipf_tnik",
+            "indication_name": "Idiopathic Pulmonary Fibrosis",
+            "mode": "strict",
+            "subset_id": "ipf_lung_core",
+            "gene_symbol": "TNIK",
+            "ensembl_gene_id": "ENSG000001",
+            "graph": {
+                "nodes": [
+                    {"id": "gene:ENSG000001", "type": "gene", "label": "TNIK", "attributes": {}},
+                    {"id": "tractability:ENSG000001", "type": "tractability_profile", "label": "TNIK tractability", "attributes": {"positive_modalities": ["SM"]}},
+                    {"id": "pathway:R-HSA-123", "type": "pathway", "label": "Example pathway", "attributes": {"fdr": 0.01}},
+                    {"id": "gene:MAPK1", "type": "gene", "label": "MAPK1", "attributes": {"is_network_partner": True}},
+                ],
+                "edges": [
+                    {"type": "fused_target_evidence", "attributes": {"components": {"genetics_component": 0.2}}},
+                    {"type": "genetics_association", "attributes": {"association_rank": 887}},
+                ],
+            },
+            "evidence_summary": {
+                "fused_found": True,
+                "fused_rank": 125,
+                "fused_score": 0.4012,
+                "transcriptomics_found_in_contrasts": 2,
+                "transcriptomics_support_hits": 0,
+                "genetics_found": True,
+                "tractability_found": True,
+                "pathway_found": True,
+                "network_found": True,
+            },
+            "integrity_review": {
+                "families": [{"family": "pubmed_literature", "risk_level": "high"}],
+            },
+        }
+        with patch("prioritx_eval.service.target_evidence_graph", return_value=graph_result):
+            result = explain_target_evidence("ipf_tnik", gene_symbol="TNIK")
+
+        self.assertEqual("TNIK", result["gene_symbol"])
+        self.assertIn("ranked #125", result["overview"])
+        self.assertTrue(any("association rank 887" in item for item in result["rationale"]))
+        self.assertTrue(any("low-ranked" in item for item in result["caveats"]))
+        self.assertEqual({"genetics_component": 0.2}, result["fused_components"])
 
 
 if __name__ == "__main__":
