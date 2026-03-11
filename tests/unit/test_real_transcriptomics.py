@@ -10,6 +10,7 @@ from prioritx_data.real_transcriptomics import (
     build_microarray_gene_statistics,
     build_real_gene_statistics,
     load_real_geo_gene_statistics,
+    parse_gene_count_matrix_text,
     parse_gene_count_text,
     parse_geo_platform_gene_symbols,
     parse_geo_series_matrix_table,
@@ -36,6 +37,18 @@ class RealTranscriptomicsTests(unittest.TestCase):
         counts = parse_gene_count_text(text)
         self.assertEqual(100, counts["ENSG000001"])
         self.assertEqual(3, len(counts))
+
+    def test_parses_gene_count_matrix_text(self) -> None:
+        text = "\n".join(
+            [
+                "s_1\ts_2",
+                "GENEA.chr1\t10\t20",
+                "GENEB.chr2\t5\t8",
+            ]
+        )
+        sample_titles, matrix = parse_gene_count_matrix_text(text)
+        self.assertEqual(["s_1", "s_2"], sample_titles)
+        self.assertEqual([10, 20], matrix["GENEA.chr1"])
 
     def test_builds_inferential_rnaseq_gene_statistics(self) -> None:
         case_samples = [
@@ -244,6 +257,54 @@ class RealTranscriptomicsTests(unittest.TestCase):
         self.assertTrue(all(record["sample_counts"] == {"case": 2, "control": 2} for record in records))
         self.assertTrue(all(record["gene"]["symbol"] in {"GENEA", "GENEB"} for record in records))
         self.assertTrue(all(not record["provenance"]["paired_design"] for record in records))
+
+    def test_loads_real_ipf_rnaseq_matrix_gene_statistics_with_patched_downloads(self) -> None:
+        matrix_text = "\n".join(
+            [
+                '!Sample_title\t"s_1"\t"s_2"\t"s_3"\t"s_4"',
+                '!Sample_geo_accession\t"GSM1"\t"GSM2"\t"GSM3"\t"GSM4"',
+                '!Sample_characteristics_ch1\t"tissue: lung"\t"tissue: lung"\t"tissue: lung"\t"tissue: lung"',
+                '!Sample_characteristics_ch1\t"disease state: Idiopathic Pulmonary Fibrosis"\t"disease state: Idiopathic Pulmonary Fibrosis"\t"disease state: Control"\t"disease state: Control"',
+            ]
+        )
+        counts_text = "\n".join(
+            [
+                "s_1\ts_2\ts_3\ts_4",
+                "TNIK.chr3\t100\t90\t40\t35",
+                "A2M.chr12\t500\t520\t100\t120",
+            ]
+        )
+        reverse_map = {
+            "TNIK": {"ensembl_gene_id": "ENSG00000154310", "hgnc_id": "HGNC:11576"},
+            "A2M": {"ensembl_gene_id": "ENSG00000175899", "hgnc_id": "HGNC:7"},
+        }
+        symbol_map = {
+            "ENSG00000154310": {"symbol": "TNIK", "hgnc_id": "HGNC:11576"},
+            "ENSG00000175899": {"symbol": "A2M", "hgnc_id": "HGNC:7"},
+        }
+
+        def fake_load_text(url: str, namespace: str) -> str:
+            if url.endswith("GSE92592_series_matrix.txt.gz"):
+                return matrix_text
+            if url.endswith("GSE92592_gene.counts.txt.gz"):
+                return counts_text
+            raise AssertionError(url)
+
+        load_real_geo_gene_statistics.cache_clear()
+        with patch("prioritx_data.real_transcriptomics.load_text_with_cache", side_effect=fake_load_text), patch(
+            "prioritx_data.real_transcriptomics.load_hgnc_symbol_reverse_map",
+            return_value=reverse_map,
+        ), patch(
+            "prioritx_data.real_transcriptomics.load_hgnc_symbol_map",
+            return_value=symbol_map,
+        ):
+            records = load_real_geo_gene_statistics("ipf_lung_core_gse92592")
+
+        self.assertEqual(2, len(records))
+        tnik = next(record for record in records if record["gene"]["symbol"] == "TNIK")
+        self.assertEqual({"case": 2, "control": 2}, tnik["sample_counts"])
+        self.assertEqual("geo_series_supplement_counts_matrix", tnik["provenance"]["source_kind"])
+        self.assertEqual("HGNC:11576", tnik["gene"]["hgnc_id"])
 
 
 if __name__ == "__main__":

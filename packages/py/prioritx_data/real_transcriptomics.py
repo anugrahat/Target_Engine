@@ -32,6 +32,15 @@ REAL_CONTRASTS: dict[str, dict[str, str]] = {
         "case_label": "idiopathic pulmonary fibrosis",
         "control_label": "healthy",
     },
+    "ipf_lung_core_gse92592": {
+        "source_type": "geo_rnaseq_matrix_counts",
+        "series_accession": "GSE92592",
+        "benchmark_id": "ipf_tnik",
+        "dataset_id": "GSE92592",
+        "case_label": "idiopathic pulmonary fibrosis",
+        "control_label": "control",
+        "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE92nnn/GSE92592/suppl/GSE92592_gene.counts.txt.gz",
+    },
     "hcc_adult_core_gse60502": {
         "source_type": "geo_microarray_series",
         "series_accession": "GSE60502",
@@ -126,6 +135,7 @@ def parse_geo_series_samples(series_matrix_text: str) -> list[GeoSample]:
         phenotype = (
             characteristics[index].get("phenotype")
             or characteristics[index].get("disease")
+            or characteristics[index].get("disease state")
             or characteristics[index].get("diagnosis")
             or characteristics[index].get("tissue type")
             or characteristics[index].get("tissue")
@@ -151,6 +161,23 @@ def parse_gene_count_text(gene_count_text: str) -> dict[str, int]:
         gene_id, raw_count = line.split("\t", 1)
         counts[gene_id] = int(raw_count)
     return counts
+
+
+def parse_gene_count_matrix_text(gene_count_text: str) -> tuple[list[str], dict[str, list[int]]]:
+    """Parse a GEO count matrix keyed by gene label with per-sample columns."""
+    lines = [line for line in gene_count_text.splitlines() if line.strip()]
+    if not lines:
+        return [], {}
+
+    header = lines[0].split("\t")
+    sample_titles = header
+    matrix: dict[str, list[int]] = {}
+    for line in lines[1:]:
+        cells = line.split("\t")
+        if len(cells) != len(sample_titles) + 1:
+            continue
+        matrix[cells[0]] = [int(value) for value in cells[1:]]
+    return sample_titles, matrix
 
 
 def parse_geo_series_matrix_table(series_matrix_text: str) -> tuple[list[str], list[tuple[str, list[float]]]]:
@@ -637,6 +664,65 @@ def _load_rnaseq_count_contrast(config: dict[str, str], contrast_id: str) -> lis
     return records
 
 
+def _normalize_matrix_gene_symbol(raw_gene_label: str) -> str:
+    base = raw_gene_label.rsplit(".chr", 1)[0]
+    return base.split("|", 1)[0].strip()
+
+
+def _load_rnaseq_matrix_count_contrast(config: dict[str, str], contrast_id: str) -> list[dict[str, Any]]:
+    series_text = load_text_with_cache(_series_matrix_url(config["series_accession"]), namespace="geo_cache")
+    samples = parse_geo_series_samples(series_text)
+    title_to_sample = {sample.title: sample for sample in samples}
+    case_samples = _select_samples(samples, config["case_label"])
+    control_samples = _select_samples(samples, config["control_label"])
+    if not case_samples or not control_samples:
+        raise ValueError(f"Failed to recover case/control samples for {contrast_id}")
+
+    matrix_text = load_text_with_cache(config["supplementary_url"], namespace="geo_cache")
+    sample_titles, matrix = parse_gene_count_matrix_text(matrix_text)
+    symbol_to_gene = load_hgnc_symbol_reverse_map()
+
+    sample_counts = {sample.geo_accession: {} for sample in case_samples + control_samples}
+    for raw_gene_label, values in matrix.items():
+        symbol = _normalize_matrix_gene_symbol(raw_gene_label)
+        gene = symbol_to_gene.get(symbol)
+        if gene is None:
+            continue
+        for title, value in zip(sample_titles, values):
+            sample = title_to_sample.get(title)
+            if sample is None or sample.geo_accession not in sample_counts:
+                continue
+            sample_counts[sample.geo_accession][gene["ensembl_gene_id"]] = (
+                sample_counts[sample.geo_accession].get(gene["ensembl_gene_id"], 0) + value
+            )
+
+    records = build_real_gene_statistics(
+        contrast_id=contrast_id,
+        benchmark_id=config["benchmark_id"],
+        dataset_id=config["dataset_id"],
+        case_samples=case_samples,
+        control_samples=control_samples,
+        sample_counts=sample_counts,
+    )
+    symbol_map = load_hgnc_symbol_map()
+    for record in records:
+        mapping = symbol_map.get(record["gene"]["ensembl_gene_id"])
+        if mapping is None:
+            continue
+        record["gene"]["symbol"] = mapping["symbol"]
+        record["gene"]["hgnc_id"] = mapping["hgnc_id"]
+        record["provenance"]["identifier_mapping"] = {
+            "source": "HGNC complete set",
+            "hgnc_id": mapping["hgnc_id"],
+        }
+        record["provenance"]["source_kind"] = "geo_series_supplement_counts_matrix"
+        record["provenance"]["supplementary_url"] = config["supplementary_url"]
+        record["provenance"]["analysis_notes"] = (
+            "Computed from GEO series-level gene count matrix values mapped from sample titles and HGNC-backed gene symbols using log2(CPM+1) with Welch t-tests and BH FDR."
+        )
+    return records
+
+
 def _load_microarray_series_contrast(config: dict[str, str], contrast_id: str) -> list[dict[str, Any]]:
     series_text = load_text_with_cache(_series_matrix_url(config["series_accession"]), namespace="geo_cache")
     samples = parse_geo_series_samples(series_text)
@@ -668,6 +754,8 @@ def load_real_geo_gene_statistics(contrast_id: str) -> list[dict[str, Any]]:
     source_type = config["source_type"]
     if source_type == "geo_rnaseq_counts":
         return _load_rnaseq_count_contrast(config, contrast_id)
+    if source_type == "geo_rnaseq_matrix_counts":
+        return _load_rnaseq_matrix_count_contrast(config, contrast_id)
     if source_type == "geo_microarray_series":
         return _load_microarray_series_contrast(config, contrast_id)
     raise ValueError(f"Unsupported real contrast source type: {source_type}")
