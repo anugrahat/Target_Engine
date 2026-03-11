@@ -162,7 +162,7 @@ class HttpApiTests(unittest.TestCase):
         with patch("prioritx_data.http_api.evaluate_fused_benchmark", return_value=mocked_result):
             status, payload = handle_get(
                 "/benchmark-evaluation",
-                {"benchmark_id": ["ipf_tnik"], "subset_id": ["ipf_lung_core"], "network_top_n": ["25"]},
+                {"benchmark_id": ["ipf_tnik"], "subset_id": ["ipf_lung_core"], "network_top_n": ["25"], "mode": ["strict"]},
             )
         self.assertEqual(200, status)
         self.assertEqual("ipf_tnik", payload["benchmark_id"])
@@ -177,12 +177,24 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(400, status)
         self.assertIn("error", payload)
 
+    def test_benchmark_evaluation_validates_mode(self) -> None:
+        status, payload = handle_get("/benchmark-evaluation", {"benchmark_id": ["ipf_tnik"], "mode": ["bad"]})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
+    def test_benchmark_integrity_route(self) -> None:
+        mocked_result = {"benchmark_id": "ipf_tnik", "mode": "strict"}
+        with patch("prioritx_data.http_api.benchmark_integrity_review", return_value=mocked_result):
+            status, payload = handle_get("/benchmark-integrity", {"benchmark_id": ["ipf_tnik"], "mode": ["strict"]})
+        self.assertEqual(200, status)
+        self.assertEqual("strict", payload["mode"])
+
     def test_target_audit_route(self) -> None:
         mocked_result = {"benchmark_id": "ipf_tnik", "gene_symbol": "TNIK"}
         with patch("prioritx_data.http_api.audit_target_evidence", return_value=mocked_result):
             status, payload = handle_get(
                 "/target-audit",
-                {"benchmark_id": ["ipf_tnik"], "gene_symbol": ["TNIK"], "genetics_size": ["500"]},
+                {"benchmark_id": ["ipf_tnik"], "gene_symbol": ["TNIK"], "genetics_size": ["500"], "mode": ["strict"]},
             )
         self.assertEqual(200, status)
         self.assertEqual("TNIK", payload["gene_symbol"])
@@ -196,6 +208,14 @@ class HttpApiTests(unittest.TestCase):
         status, payload = handle_get(
             "/target-audit",
             {"benchmark_id": ["ipf_tnik"], "gene_symbol": ["TNIK"], "genetics_size": ["abc"]},
+        )
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
+    def test_target_audit_validates_mode(self) -> None:
+        status, payload = handle_get(
+            "/target-audit",
+            {"benchmark_id": ["ipf_tnik"], "gene_symbol": ["TNIK"], "mode": ["bad"]},
         )
         self.assertEqual(400, status)
         self.assertIn("error", payload)

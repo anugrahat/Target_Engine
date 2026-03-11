@@ -11,29 +11,36 @@ from prioritx_data.service import (
     transcriptomics_real_scores,
 )
 from prioritx_eval.assertions import load_benchmark_assertion
+from prioritx_eval.policy import benchmark_integrity_review, benchmark_mode_config
 from prioritx_features.transcriptomics import REAL_SUPPORT_MAX_ADJUSTED_P, REAL_SUPPORT_MIN_ABS_LOG2_FC
 
 
 def evaluate_fused_benchmark(
     benchmark_id: str,
     *,
+    mode: str = "strict",
     subset_id: str | None = None,
     min_transcriptomics_support: int = 1,
-    genetics_size: int = 0,
-    tractability_top_n: int = 100,
-    pathway_top_n: int = 40,
-    network_top_n: int = 50,
+    genetics_size: int | None = None,
+    tractability_top_n: int | None = None,
+    pathway_top_n: int | None = None,
+    network_top_n: int | None = None,
 ) -> dict[str, Any]:
     assertion = load_benchmark_assertion(benchmark_id)
-    chosen_subset_id = subset_id or assertion["default_subset_id"]
+    mode_config = benchmark_mode_config(benchmark_id, mode=mode)
+    chosen_subset_id = subset_id or mode_config["subset_id"]
+    resolved_genetics_size = mode_config["genetics_size"] if genetics_size is None else genetics_size
+    resolved_tractability_top_n = mode_config["tractability_top_n"] if tractability_top_n is None else tractability_top_n
+    resolved_pathway_top_n = mode_config["pathway_top_n"] if pathway_top_n is None else pathway_top_n
+    resolved_network_top_n = mode_config["network_top_n"] if network_top_n is None else network_top_n
     ranked = fused_target_evidence(
         benchmark_id=benchmark_id,
         subset_id=chosen_subset_id,
         min_transcriptomics_support=min_transcriptomics_support,
-        genetics_size=genetics_size,
-        tractability_top_n=tractability_top_n,
-        pathway_top_n=pathway_top_n,
-        network_top_n=network_top_n,
+        genetics_size=resolved_genetics_size,
+        tractability_top_n=resolved_tractability_top_n,
+        pathway_top_n=resolved_pathway_top_n,
+        network_top_n=resolved_network_top_n,
     )
 
     by_symbol = {
@@ -104,6 +111,7 @@ def evaluate_fused_benchmark(
 
     return {
         "benchmark_id": benchmark_id,
+        "mode": mode,
         "subset_id": chosen_subset_id,
         "indication_name": assertion["indication_name"],
         "target_universe_size": len(ranked),
@@ -119,11 +127,12 @@ def evaluate_fused_benchmark(
         "provenance": {
             "evidence_stack": "fused_target_evidence",
             "min_transcriptomics_support": min_transcriptomics_support,
-            "genetics_size": genetics_size,
-            "tractability_top_n": tractability_top_n,
-            "pathway_top_n": pathway_top_n,
-            "network_top_n": network_top_n,
+            "genetics_size": resolved_genetics_size,
+            "tractability_top_n": resolved_tractability_top_n,
+            "pathway_top_n": resolved_pathway_top_n,
+            "network_top_n": resolved_network_top_n,
         },
+        "integrity_review": benchmark_integrity_review(benchmark_id, mode=mode),
         "notes": assertion["notes"],
     }
 
@@ -132,14 +141,20 @@ def audit_target_evidence(
     benchmark_id: str,
     *,
     gene_symbol: str,
+    mode: str = "strict",
     subset_id: str | None = None,
-    genetics_size: int = 0,
-    tractability_top_n: int = 200,
-    pathway_top_n: int = 40,
-    network_top_n: int = 100,
+    genetics_size: int | None = None,
+    tractability_top_n: int | None = None,
+    pathway_top_n: int | None = None,
+    network_top_n: int | None = None,
 ) -> dict[str, Any]:
     assertion = load_benchmark_assertion(benchmark_id)
-    chosen_subset_id = subset_id or assertion["default_subset_id"]
+    mode_config = benchmark_mode_config(benchmark_id, mode=mode)
+    chosen_subset_id = subset_id or mode_config["subset_id"]
+    resolved_genetics_size = mode_config["genetics_size"] if genetics_size is None else genetics_size
+    resolved_tractability_top_n = mode_config["tractability_top_n"] if tractability_top_n is None else tractability_top_n
+    resolved_pathway_top_n = mode_config["pathway_top_n"] if pathway_top_n is None else pathway_top_n
+    resolved_network_top_n = mode_config["network_top_n"] if network_top_n is None else network_top_n
     real_contrast_ids = sorted(
         contrast["contrast_id"]
         for contrast in query_study_contrasts(benchmark_id=benchmark_id, subset_id=chosen_subset_id)
@@ -179,7 +194,7 @@ def audit_target_evidence(
         )
 
     genetics = next(
-        (item for item in open_targets_genetics_scores(benchmark_id, size=genetics_size) if item.get("gene_symbol") == gene_symbol),
+        (item for item in open_targets_genetics_scores(benchmark_id, size=resolved_genetics_size) if item.get("gene_symbol") == gene_symbol),
         None,
     )
     fused = next(
@@ -188,10 +203,10 @@ def audit_target_evidence(
             for item in fused_target_evidence(
                 benchmark_id=benchmark_id,
                 subset_id=chosen_subset_id,
-                genetics_size=genetics_size,
-                tractability_top_n=tractability_top_n,
-                pathway_top_n=pathway_top_n,
-                network_top_n=network_top_n,
+                genetics_size=resolved_genetics_size,
+                tractability_top_n=resolved_tractability_top_n,
+                pathway_top_n=resolved_pathway_top_n,
+                network_top_n=resolved_network_top_n,
             )
             if item.get("gene_symbol") == gene_symbol
         ),
@@ -200,6 +215,7 @@ def audit_target_evidence(
 
     return {
         "benchmark_id": benchmark_id,
+        "mode": mode,
         "subset_id": chosen_subset_id,
         "gene_symbol": gene_symbol,
         "transcriptomics_support_rule": {
@@ -220,4 +236,5 @@ def audit_target_evidence(
             "ensembl_gene_id": fused.get("ensembl_gene_id") if fused else None,
             "components": fused.get("components") if fused else None,
         },
+        "integrity_review": benchmark_integrity_review(benchmark_id, mode=mode),
     }

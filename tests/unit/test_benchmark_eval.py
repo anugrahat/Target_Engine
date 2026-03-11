@@ -31,6 +31,16 @@ class BenchmarkEvalTests(unittest.TestCase):
         self.assertEqual(0.5, result["metrics"]["mean_reciprocal_rank"])
         self.assertTrue(result["items"][0]["found"])
         self.assertEqual("gene_symbol", result["items"][0]["matching_strategy"])
+        self.assertEqual("strict", result["mode"])
+        self.assertEqual("ipf_lung_core", result["integrity_review"]["subset_id"])
+
+    def test_exploratory_mode_uses_extended_subset(self) -> None:
+        ranked = [{"ensembl_gene_id": "ENSG000001", "gene_symbol": "CDK20", "score": 0.5, "components": {}}]
+        with patch("prioritx_eval.service.fused_target_evidence", return_value=ranked):
+            result = evaluate_fused_benchmark("hcc_cdk20", mode="exploratory")
+
+        self.assertEqual("exploratory", result["mode"])
+        self.assertEqual("hcc_adult_extended", result["subset_id"])
 
     def test_reports_missing_positive_target(self) -> None:
         with patch("prioritx_eval.service.fused_target_evidence", return_value=[]):
@@ -75,6 +85,7 @@ class BenchmarkEvalTests(unittest.TestCase):
         self.assertTrue(result["open_targets_genetics"]["found"])
         self.assertEqual(887, result["open_targets_genetics"]["association_rank"])
         self.assertTrue(result["fused_target_evidence"]["found"])
+        self.assertEqual("strict", result["mode"])
 
 
 if __name__ == "__main__":

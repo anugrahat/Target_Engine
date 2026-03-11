@@ -53,6 +53,7 @@ Current benchmark ordering after source verification:
 - STRING-based network support is now available over the top disease-specific candidate slice
 - a first fused target-evidence layer now combines transcriptomics, genetics, tractability, Reactome pathway support, and STRING network support by Ensembl gene
 - PubMed literature support is intentionally kept outside the fused rank for now so benchmark papers and broad literature popularity do not silently dominate discovery-time scoring
+- benchmark evaluation now supports explicit `strict` and `exploratory` modes, with a leakage review that spells out which evidence families are active and which ones are higher-risk for honest benchmarking
 - source-backed benchmark target assertions now evaluate whether the live fused ranking recovers paper-backed positives such as `TNIK` and `CDK20`
 - illustrative transcriptomics gene-stat fixtures remain isolated for test scaffolding only
 

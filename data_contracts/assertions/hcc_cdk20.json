@@ -3,6 +3,7 @@
   "assertion_status": "source_backed",
   "benchmark_id": "hcc_cdk20",
   "default_subset_id": "hcc_adult_core",
+  "exploratory_subset_id": "hcc_adult_extended",
   "indication_name": "hepatocellular carcinoma",
   "target_assertions": [
     {

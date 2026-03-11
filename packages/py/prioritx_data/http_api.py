@@ -20,12 +20,22 @@ from prioritx_data.service import (
     transcriptomics_fixture_scores,
     transcriptomics_real_scores,
 )
+from prioritx_eval.policy import BENCHMARK_MODES, benchmark_integrity_review
 from prioritx_eval.service import audit_target_evidence, evaluate_fused_benchmark
 
 
 def _single(query: dict[str, list[str]], key: str) -> str | None:
     values = query.get(key)
     return values[0] if values else None
+
+
+def _mode(query: dict[str, list[str]]) -> str | None:
+    mode = _single(query, "mode")
+    if mode is None:
+        return None
+    if mode not in BENCHMARK_MODES:
+        return "__invalid__"
+    return mode
 
 
 def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, Any]]:
@@ -47,6 +57,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
                 "/reactome-pathway-support",
                 "/fused-target-evidence",
                 "/benchmark-evaluation",
+                "/benchmark-integrity",
                 "/target-audit",
                 "/transcriptomics-evidence",
                 "/transcriptomics-real-scores",
@@ -187,6 +198,9 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
         benchmark_id = _single(query, "benchmark_id")
         if not benchmark_id:
             return 400, {"error": "benchmark_id query parameter is required"}
+        mode = _mode(query)
+        if mode == "__invalid__":
+            return 400, {"error": "mode must be one of: strict, exploratory"}
 
         min_support_raw = _single(query, "min_transcriptomics_support")
         genetics_size_raw = _single(query, "genetics_size")
@@ -203,6 +217,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
             return 400, {"error": "min_transcriptomics_support, genetics_size, tractability_top_n, pathway_top_n, and network_top_n must be integers"}
         return 200, evaluate_fused_benchmark(
             benchmark_id,
+            mode=mode or "strict",
             subset_id=_single(query, "subset_id"),
             min_transcriptomics_support=min_transcriptomics_support,
             genetics_size=genetics_size,
@@ -211,11 +226,23 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
             network_top_n=network_top_n,
         )
 
+    if path == "/benchmark-integrity":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        mode = _mode(query)
+        if mode == "__invalid__":
+            return 400, {"error": "mode must be one of: strict, exploratory"}
+        return 200, benchmark_integrity_review(benchmark_id, mode=mode or "strict")
+
     if path == "/target-audit":
         benchmark_id = _single(query, "benchmark_id")
         gene_symbol = _single(query, "gene_symbol")
         if not benchmark_id or not gene_symbol:
             return 400, {"error": "benchmark_id and gene_symbol query parameters are required"}
+        mode = _mode(query)
+        if mode == "__invalid__":
+            return 400, {"error": "mode must be one of: strict, exploratory"}
 
         genetics_size_raw = _single(query, "genetics_size")
         tractability_top_n_raw = _single(query, "tractability_top_n")
@@ -231,6 +258,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
         return 200, audit_target_evidence(
             benchmark_id,
             gene_symbol=gene_symbol,
+            mode=mode or "strict",
             subset_id=_single(query, "subset_id"),
             genetics_size=genetics_size,
             tractability_top_n=tractability_top_n,

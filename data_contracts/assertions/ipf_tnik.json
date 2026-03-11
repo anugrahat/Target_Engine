@@ -3,6 +3,7 @@
   "assertion_status": "source_backed",
   "benchmark_id": "ipf_tnik",
   "default_subset_id": "ipf_lung_core",
+  "exploratory_subset_id": "ipf_lung_extended",
   "indication_name": "idiopathic pulmonary fibrosis",
   "target_assertions": [
     {

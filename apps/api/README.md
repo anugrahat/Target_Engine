@@ -26,6 +26,7 @@ Current routes:
 - `/reactome-pathway-support?benchmark_id=...`
 - `/fused-target-evidence?benchmark_id=...`
 - `/benchmark-evaluation?benchmark_id=...`
+- `/benchmark-integrity?benchmark_id=...`
 - `/target-audit?benchmark_id=...&gene_symbol=...`
 - `/transcriptomics-evidence?subset_id=...`
 - `/transcriptomics-real-scores?contrast_id=...`
@@ -40,6 +41,8 @@ Important:
 - `reactome-pathway-support` submits the current disease-support gene slice to the official Reactome Analysis Service, then overlaps enriched pathways with per-gene Reactome memberships for the candidate slice
 - `fused-target-evidence` now applies a transparent four-stage rerank: transcriptomics plus genetics define the candidate set, Open Targets tractability and Reactome pathway support enrich the larger candidate slice, and STRING network support reranks a smaller top slice
 - `benchmark-evaluation` scores the live fused ranking against source-backed benchmark positives and reports whether PrioriTx recovers targets such as `TNIK` and `CDK20`
+- `benchmark-evaluation` and `target-audit` now accept `mode=strict|exploratory`; strict uses the benchmark core subset, while exploratory uses the broader curated subset when one exists
+- `benchmark-integrity` reports the subset, evidence-family leakage review, and benchmark-specific forbidden leakage items without running a full rank
 - `target-audit` explains benchmark misses by showing raw per-contrast transcriptomics measurements, support-rule pass/fail, and presence or absence in genetics and fused ranking
 - `benchmark-evaluation` and `target-audit` use full paginated Open Targets genetics coverage by default so benchmark misses are not caused by an arbitrary top-`N` cutoff
 - `transcriptomics-evidence` aggregates accession-backed transcriptomics outputs across the real contrasts admitted for a benchmark slice and applies an explicit support rule (`adjusted_p_value <= 0.05` and `|log2_fold_change| >= 0.5`)
