@@ -19,6 +19,8 @@ Current contract layers:
   - one illustrative local gene-level transcriptomics record for scaffolded DE-style inputs
 - `schemas/gene_evidence_aggregate.schema.json`
   - one cross-contrast transcriptomics evidence record aggregated at the indication slice level
+- `schemas/open_targets_genetics_record.schema.json`
+  - one source-backed Open Targets genetics evidence record for a benchmark disease
 - `registries/`
   - generated first-wave dataset-manifest and study-contrast fixtures
 - `fixtures/transcriptomics/`

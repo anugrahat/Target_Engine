@@ -67,6 +67,26 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(200, status)
         self.assertEqual("cross_contrast_transcriptomics_evidence_score", payload["items"][0]["score_name"])
 
+    def test_open_targets_genetics_route(self) -> None:
+        mocked_items = [{"ensembl_gene_id": "ENSG000001", "score_name": "open_targets_genetics_evidence_score"}]
+        with patch("prioritx_data.http_api.open_targets_genetics_scores", return_value=mocked_items):
+            status, payload = handle_get(
+                "/open-targets-genetics",
+                {"benchmark_id": ["ipf_tnik"], "size": ["25"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("open_targets_genetics_evidence_score", payload["items"][0]["score_name"])
+
+    def test_open_targets_genetics_requires_benchmark_id(self) -> None:
+        status, payload = handle_get("/open-targets-genetics", {})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
+    def test_open_targets_genetics_validates_size(self) -> None:
+        status, payload = handle_get("/open-targets-genetics", {"benchmark_id": ["ipf_tnik"], "size": ["abc"]})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
     def test_transcriptomics_evidence_requires_scope(self) -> None:
         status, payload = handle_get("/transcriptomics-evidence", {})
         self.assertEqual(400, status)

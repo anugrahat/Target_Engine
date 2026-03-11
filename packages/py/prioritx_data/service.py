@@ -6,9 +6,11 @@ import json
 from pathlib import Path
 from typing import Any
 
+from prioritx_data.open_targets import list_open_targets_benchmark_ids, load_open_targets_genetics
 from prioritx_data.real_transcriptomics import list_real_contrast_ids, load_real_geo_gene_statistics
 from prioritx_data.registry import RegistryArtifact, list_dataset_manifests, list_study_contrasts, repo_root
 from prioritx_data.transcriptomics import list_fixture_contrast_ids, load_transcriptomics_fixture
+from prioritx_features.genetics import derive_open_targets_genetics_features
 from prioritx_features.transcriptomics import (
     derive_contrast_quality_features,
     derive_gene_transcriptomics_features,
@@ -16,6 +18,7 @@ from prioritx_features.transcriptomics import (
     derive_real_gene_transcriptomics_features,
 )
 from prioritx_rank.baseline import (
+    score_open_targets_genetics,
     score_cross_contrast_transcriptomics_evidence,
     score_contrast_readiness,
     score_gene_transcriptomics,
@@ -157,6 +160,24 @@ def transcriptomics_real_scores(contrast_id: str) -> list[dict[str, Any]]:
             **score_real_gene_transcriptomics(derive_real_gene_transcriptomics_features(record)),
             "statistics": record["statistics"],
             "sample_counts": record["sample_counts"],
+            "provenance": record["provenance"],
+        }
+        for record in records
+    ]
+    scored.sort(key=lambda item: item["score"], reverse=True)
+    return scored
+
+
+def open_targets_genetics_scores(benchmark_id: str, *, size: int = 200) -> list[dict[str, Any]]:
+    """Return scored Open Targets genetics evidence for one benchmark disease."""
+    if benchmark_id not in set(list_open_targets_benchmark_ids()):
+        return []
+
+    records = load_open_targets_genetics(benchmark_id, size=size)
+    scored = [
+        {
+            **score_open_targets_genetics(derive_open_targets_genetics_features(record)),
+            "statistics": record["statistics"],
             "provenance": record["provenance"],
         }
         for record in records

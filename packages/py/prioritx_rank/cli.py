@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from prioritx_data.real_transcriptomics import list_real_contrast_ids
 from prioritx_data.transcriptomics import list_fixture_contrast_ids, load_transcriptomics_fixture
-from prioritx_data.service import query_study_contrasts, transcriptomics_indication_evidence, transcriptomics_real_scores
+from prioritx_data.service import (
+    open_targets_genetics_scores,
+    query_study_contrasts,
+    transcriptomics_indication_evidence,
+    transcriptomics_real_scores,
+)
 from prioritx_features.transcriptomics import derive_contrast_quality_features, derive_gene_transcriptomics_features
 from prioritx_rank.baseline import score_contrast_readiness, score_gene_transcriptomics
 
@@ -52,6 +57,15 @@ def main() -> int:
         top = items[0]
         label = top["gene_symbol"] or top["ensembl_gene_id"]
         print(f"- {subset_id}: top {label} ({top['score']}) across {top['supporting_contrast_count']} supporting contrasts")
+
+    print("Open Targets genetics evidence:")
+    for benchmark_id in ("ipf_tnik", "hcc_cdk20"):
+        items = open_targets_genetics_scores(benchmark_id, size=50)
+        if not items:
+            continue
+        top = items[0]
+        label = top["gene_symbol"] or top["ensembl_gene_id"]
+        print(f"- {benchmark_id}: top {label} ({top['score']})")
     return 0
 
 

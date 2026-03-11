@@ -11,6 +11,7 @@ from prioritx_data.service import (
     list_benchmark_subsets,
     query_dataset_manifests,
     query_study_contrasts,
+    open_targets_genetics_scores,
     transcriptomics_indication_evidence,
     transcriptomics_fixture_scores,
     transcriptomics_real_scores,
@@ -35,6 +36,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
                 "/dataset-manifests",
                 "/study-contrasts",
                 "/contrast-readiness",
+                "/open-targets-genetics",
                 "/transcriptomics-evidence",
                 "/transcriptomics-real-scores",
                 "/transcriptomics-fixture-scores",
@@ -90,6 +92,21 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
                 modality=_single(query, "modality"),
             )
         }
+
+    if path == "/open-targets-genetics":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+
+        size_raw = _single(query, "size")
+        if size_raw:
+            try:
+                size = int(size_raw)
+            except ValueError:
+                return 400, {"error": "size must be an integer"}
+        else:
+            size = 200
+        return 200, {"items": open_targets_genetics_scores(benchmark_id, size=size)}
 
     if path == "/transcriptomics-evidence":
         benchmark_id = _single(query, "benchmark_id")

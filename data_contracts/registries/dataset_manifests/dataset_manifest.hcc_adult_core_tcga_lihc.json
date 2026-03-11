@@ -11,9 +11,10 @@
   "disease_context": {
     "name": "hepatocellular carcinoma",
     "ontology_ids": {
-      "efo": null,
+      "efo": "EFO_0000182",
       "mesh": null,
-      "doid": null
+      "doid": null,
+      "open_targets": "EFO_0000182"
     }
   },
   "modality": "transcriptomics",

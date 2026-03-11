@@ -151,3 +151,30 @@ def score_cross_contrast_transcriptomics_evidence(features: dict[str, Any]) -> d
         "source_dataset_ids": features["source_dataset_ids"],
         "per_contrast_evidence": features["per_contrast_evidence"],
     }
+
+
+def score_open_targets_genetics(features: dict[str, Any]) -> dict[str, Any]:
+    """Score source-backed Open Targets genetics evidence."""
+    genetic_component = 0.7 * min(float(features["genetic_association_score"]), 1.0)
+    association_component = 0.2 * min(float(features["association_score"]), 1.0)
+    literature_component = 0.1 * min(
+        max(float(features["genetic_literature_score"]), float(features["literature_score"])),
+        1.0,
+    )
+
+    score = genetic_component + association_component + literature_component
+    return {
+        "benchmark_id": features["benchmark_id"],
+        "disease_id": features["disease_id"],
+        "ensembl_gene_id": features["ensembl_gene_id"],
+        "gene_symbol": features["gene_symbol"],
+        "approved_name": features["approved_name"],
+        "score_name": "open_targets_genetics_evidence_score",
+        "score": round(score, 4),
+        "components": {
+            "genetic_component": round(genetic_component, 4),
+            "association_component": round(association_component, 4),
+            "literature_component": round(literature_component, 4),
+        },
+        "evidence_kind": features["evidence_kind"],
+    }

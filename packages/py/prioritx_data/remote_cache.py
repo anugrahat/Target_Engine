@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import gzip
 import hashlib
+import json
 from pathlib import Path
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 from prioritx_data.registry import repo_root
 
@@ -35,3 +36,19 @@ def load_text_with_cache(url: str, *, namespace: str) -> str:
     if cache_path.suffix == ".gz":
         return gzip.decompress(data).decode("utf-8", "replace")
     return data.decode("utf-8", "replace")
+
+
+def load_json_post_with_cache(url: str, *, namespace: str, payload: dict[str, object]) -> object:
+    """POST a JSON payload once, then reuse the cached JSON response."""
+    serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    digest = hashlib.sha256(f"{url}\n{serialized}".encode("utf-8")).hexdigest()[:16]
+    cache_path = cache_dir(namespace) / f"{digest}.json"
+    if not cache_path.exists():
+        request = Request(
+            url,
+            data=serialized.encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(request, timeout=60) as response:
+            cache_path.write_bytes(response.read())
+    return json.loads(cache_path.read_text())

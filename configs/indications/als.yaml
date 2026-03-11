@@ -8,6 +8,7 @@ indication:
     efo: null
     mesh: null
     doid: null
+    open_targets: MONDO_0004976
 status: partial
 primary_sources:
   - title: Identification of Therapeutic Targets for Amyotrophic Lateral Sclerosis Using PandaOmics

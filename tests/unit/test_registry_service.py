@@ -10,6 +10,7 @@ from prioritx_data.service import (
     list_benchmark_subsets,
     query_dataset_manifests,
     query_study_contrasts,
+    open_targets_genetics_scores,
     transcriptomics_indication_evidence,
     transcriptomics_fixture_scores,
     transcriptomics_real_scores,
@@ -195,6 +196,32 @@ class RegistryServiceTests(unittest.TestCase):
 
         self.assertEqual(1, len(items))
         self.assertEqual(2, items[0]["supporting_contrast_count"])
+
+    def test_returns_open_targets_genetics_scores(self) -> None:
+        mocked_records = [
+            {
+                "benchmark_id": "ipf_tnik",
+                "disease": {"id": "EFO_0000768", "name": "idiopathic pulmonary fibrosis"},
+                "gene": {
+                    "ensembl_gene_id": "ENSG000001",
+                    "symbol": "GENE1",
+                    "approved_name": "Gene one",
+                },
+                "statistics": {
+                    "association_score": 0.82,
+                    "genetic_association_score": 0.91,
+                    "genetic_literature_score": 0.4,
+                    "literature_score": 0.1,
+                },
+                "provenance": {"source_kind": "open_targets_graphql"},
+                "evidence_kind": "open_targets_genetics",
+            }
+        ]
+        with patch("prioritx_data.service.load_open_targets_genetics", return_value=mocked_records):
+            items = open_targets_genetics_scores("ipf_tnik", size=25)
+
+        self.assertEqual(1, len(items))
+        self.assertEqual("open_targets_genetics_evidence_score", items[0]["score_name"])
 
 
 if __name__ == "__main__":

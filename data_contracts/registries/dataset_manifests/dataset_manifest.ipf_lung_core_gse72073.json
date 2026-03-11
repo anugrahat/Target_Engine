@@ -11,9 +11,10 @@
   "disease_context": {
     "name": "idiopathic pulmonary fibrosis",
     "ontology_ids": {
-      "efo": null,
+      "efo": "EFO_0000768",
       "mesh": null,
-      "doid": null
+      "doid": null,
+      "open_targets": "EFO_0000768"
     }
   },
   "modality": "transcriptomics",

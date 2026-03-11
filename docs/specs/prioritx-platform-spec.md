@@ -133,6 +133,18 @@ Scientific constraints:
 - the current inferential layer uses transparent t-statistics plus BH correction, with Student t distribution p-values and explicit degrees of freedom
 - indication-level transcriptomics evidence must aggregate real contrast outputs by Ensembl gene with an explicit support rule, cross-study direction tracking, and per-contrast provenance
 
+### First Real Genetics Connector
+
+The first genetics connector admitted into implementation is:
+
+- Open Targets Platform disease-target associations via the official GraphQL API
+
+Scientific constraints:
+
+- benchmark diseases must use source-backed Open Targets disease identifiers
+- returned target records must keep the benchmark disease id, Ensembl gene id, and datatype-level scores
+- genetics scoring should weight `genetic_association` above the aggregate association score
+
 ## Ranking Spec
 
 ### Baseline Ranker

@@ -8,6 +8,7 @@ indication:
     efo: null
     mesh: null
     doid: null
+    open_targets: MONDO_0004975
 status: partial
 primary_sources:
   - title: Multiomic prediction of therapeutic targets for human diseases associated with protein phase separation

@@ -5,9 +5,10 @@ indication:
   aliases:
     - HCC
   ontology_ids:
-    efo: null
+    efo: EFO_0000182
     mesh: null
     doid: null
+    open_targets: EFO_0000182
 status: partial
 primary_sources:
   - title: AlphaFold Accelerates Artificial Intelligence Powered Drug Discovery Efficient Discovery of a Novel CDK20 Small Molecule Inhibitor
