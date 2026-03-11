@@ -4,8 +4,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from prioritx_data.service import fused_target_evidence
+from prioritx_data.service import (
+    fused_target_evidence,
+    open_targets_genetics_scores,
+    query_study_contrasts,
+    transcriptomics_real_scores,
+)
 from prioritx_eval.assertions import load_benchmark_assertion
+from prioritx_features.transcriptomics import REAL_SUPPORT_MAX_ADJUSTED_P, REAL_SUPPORT_MIN_ABS_LOG2_FC
 
 
 def evaluate_fused_benchmark(
@@ -116,4 +122,95 @@ def evaluate_fused_benchmark(
             "network_top_n": network_top_n,
         },
         "notes": assertion["notes"],
+    }
+
+
+def audit_target_evidence(
+    benchmark_id: str,
+    *,
+    gene_symbol: str,
+    subset_id: str | None = None,
+    genetics_size: int = 500,
+    tractability_top_n: int = 200,
+    network_top_n: int = 100,
+) -> dict[str, Any]:
+    assertion = load_benchmark_assertion(benchmark_id)
+    chosen_subset_id = subset_id or assertion["default_subset_id"]
+    real_contrast_ids = sorted(
+        contrast["contrast_id"]
+        for contrast in query_study_contrasts(benchmark_id=benchmark_id, subset_id=chosen_subset_id)
+        if contrast["contrast_id"].startswith(f"{chosen_subset_id}_")
+    )
+
+    transcriptomics_hits = []
+    for contrast_id in real_contrast_ids:
+        match = next(
+            (item for item in transcriptomics_real_scores(contrast_id) if item.get("gene_symbol") == gene_symbol),
+            None,
+        )
+        if match is None:
+            transcriptomics_hits.append(
+                {
+                    "contrast_id": contrast_id,
+                    "found": False,
+                    "passes_support_rule": False,
+                }
+            )
+            continue
+        stats = match["statistics"]
+        passes_support_rule = (
+            float(stats["adjusted_p_value"]) <= REAL_SUPPORT_MAX_ADJUSTED_P
+            and abs(float(stats["log2_fold_change"])) >= REAL_SUPPORT_MIN_ABS_LOG2_FC
+        )
+        transcriptomics_hits.append(
+            {
+                "contrast_id": contrast_id,
+                "found": True,
+                "ensembl_gene_id": match.get("ensembl_gene_id"),
+                "score": match["score"],
+                "log2_fold_change": stats["log2_fold_change"],
+                "adjusted_p_value": stats["adjusted_p_value"],
+                "passes_support_rule": passes_support_rule,
+            }
+        )
+
+    genetics = next(
+        (item for item in open_targets_genetics_scores(benchmark_id, size=genetics_size) if item.get("gene_symbol") == gene_symbol),
+        None,
+    )
+    fused = next(
+        (
+            item
+            for item in fused_target_evidence(
+                benchmark_id=benchmark_id,
+                subset_id=chosen_subset_id,
+                genetics_size=genetics_size,
+                tractability_top_n=tractability_top_n,
+                network_top_n=network_top_n,
+            )
+            if item.get("gene_symbol") == gene_symbol
+        ),
+        None,
+    )
+
+    return {
+        "benchmark_id": benchmark_id,
+        "subset_id": chosen_subset_id,
+        "gene_symbol": gene_symbol,
+        "transcriptomics_support_rule": {
+            "max_adjusted_p_value": REAL_SUPPORT_MAX_ADJUSTED_P,
+            "min_absolute_log2_fold_change": REAL_SUPPORT_MIN_ABS_LOG2_FC,
+        },
+        "transcriptomics": transcriptomics_hits,
+        "open_targets_genetics": {
+            "found": genetics is not None,
+            "score": genetics.get("score") if genetics else None,
+            "ensembl_gene_id": genetics.get("ensembl_gene_id") if genetics else None,
+        },
+        "fused_target_evidence": {
+            "found": fused is not None,
+            "score": fused.get("score") if fused else None,
+            "ensembl_gene_id": fused.get("ensembl_gene_id") if fused else None,
+            "components": fused.get("components") if fused else None,
+        },
     }

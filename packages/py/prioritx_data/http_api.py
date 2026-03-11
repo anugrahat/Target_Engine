@@ -18,7 +18,7 @@ from prioritx_data.service import (
     transcriptomics_fixture_scores,
     transcriptomics_real_scores,
 )
-from prioritx_eval.service import evaluate_fused_benchmark
+from prioritx_eval.service import audit_target_evidence, evaluate_fused_benchmark
 
 
 def _single(query: dict[str, list[str]], key: str) -> str | None:
@@ -43,6 +43,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
                 "/open-targets-tractability",
                 "/fused-target-evidence",
                 "/benchmark-evaluation",
+                "/target-audit",
                 "/transcriptomics-evidence",
                 "/transcriptomics-real-scores",
                 "/transcriptomics-fixture-scores",
@@ -167,6 +168,30 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
             benchmark_id,
             subset_id=_single(query, "subset_id"),
             min_transcriptomics_support=min_transcriptomics_support,
+            genetics_size=genetics_size,
+            tractability_top_n=tractability_top_n,
+            network_top_n=network_top_n,
+        )
+
+    if path == "/target-audit":
+        benchmark_id = _single(query, "benchmark_id")
+        gene_symbol = _single(query, "gene_symbol")
+        if not benchmark_id or not gene_symbol:
+            return 400, {"error": "benchmark_id and gene_symbol query parameters are required"}
+
+        genetics_size_raw = _single(query, "genetics_size")
+        tractability_top_n_raw = _single(query, "tractability_top_n")
+        network_top_n_raw = _single(query, "network_top_n")
+        try:
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else 500
+            tractability_top_n = int(tractability_top_n_raw) if tractability_top_n_raw else 200
+            network_top_n = int(network_top_n_raw) if network_top_n_raw else 100
+        except ValueError:
+            return 400, {"error": "genetics_size, tractability_top_n, and network_top_n must be integers"}
+        return 200, audit_target_evidence(
+            benchmark_id,
+            gene_symbol=gene_symbol,
+            subset_id=_single(query, "subset_id"),
             genetics_size=genetics_size,
             tractability_top_n=tractability_top_n,
             network_top_n=network_top_n,

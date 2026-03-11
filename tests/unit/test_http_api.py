@@ -142,6 +142,29 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(400, status)
         self.assertIn("error", payload)
 
+    def test_target_audit_route(self) -> None:
+        mocked_result = {"benchmark_id": "ipf_tnik", "gene_symbol": "TNIK"}
+        with patch("prioritx_data.http_api.audit_target_evidence", return_value=mocked_result):
+            status, payload = handle_get(
+                "/target-audit",
+                {"benchmark_id": ["ipf_tnik"], "gene_symbol": ["TNIK"], "genetics_size": ["500"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("TNIK", payload["gene_symbol"])
+
+    def test_target_audit_requires_benchmark_id_and_gene_symbol(self) -> None:
+        status, payload = handle_get("/target-audit", {"benchmark_id": ["ipf_tnik"]})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
+    def test_target_audit_validates_int_params(self) -> None:
+        status, payload = handle_get(
+            "/target-audit",
+            {"benchmark_id": ["ipf_tnik"], "gene_symbol": ["TNIK"], "genetics_size": ["abc"]},
+        )
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
     def test_transcriptomics_evidence_requires_scope(self) -> None:
         status, payload = handle_get("/transcriptomics-evidence", {})
         self.assertEqual(400, status)

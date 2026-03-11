@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from prioritx_eval.assertions import list_benchmark_assertion_ids
-from prioritx_eval.service import evaluate_fused_benchmark
+from prioritx_eval.service import audit_target_evidence, evaluate_fused_benchmark
 
 
 def main() -> int:
@@ -14,6 +14,13 @@ def main() -> int:
         print(
             f"- {benchmark_id}: found {result['positive_targets_found']}/{result['positive_target_count']} "
             f"positives, best_rank={metric['best_rank']}, hit@10={metric['hit_at_10']}, MRR={metric['mean_reciprocal_rank']}"
+        )
+        target = result["items"][0]["gene_symbol"]
+        audit = audit_target_evidence(benchmark_id, gene_symbol=target)
+        support_hits = sum(1 for item in audit["transcriptomics"] if item["passes_support_rule"])
+        print(
+            f"  target audit {target}: transcriptomics_support_hits={support_hits}, "
+            f"genetics_found={audit['open_targets_genetics']['found']}, fused_found={audit['fused_target_evidence']['found']}"
         )
     return 0
 

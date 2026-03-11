@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
-from prioritx_eval.service import evaluate_fused_benchmark
+from prioritx_eval.service import audit_target_evidence, evaluate_fused_benchmark
 
 
 class BenchmarkEvalTests(unittest.TestCase):
@@ -39,6 +39,36 @@ class BenchmarkEvalTests(unittest.TestCase):
         self.assertEqual(0, result["positive_targets_found"])
         self.assertIsNone(result["metrics"]["best_rank"])
         self.assertFalse(result["items"][0]["found"])
+
+    def test_audits_target_across_layers(self) -> None:
+        transcriptomics = [
+            {
+                "gene_symbol": "TNIK",
+                "ensembl_gene_id": "ENSG000001",
+                "score": 0.22,
+                "statistics": {"log2_fold_change": 0.4, "adjusted_p_value": 0.07},
+            }
+        ]
+        genetics = [{"gene_symbol": "TNIK", "ensembl_gene_id": "ENSG000001", "score": 0.55}]
+        fused = [{"gene_symbol": "TNIK", "ensembl_gene_id": "ENSG000001", "score": 0.4, "components": {"genetics_component": 0.2}}]
+        contrasts = [{"contrast_id": "ipf_lung_core_gse52463"}]
+        with patch("prioritx_eval.service.query_study_contrasts", return_value=contrasts), patch(
+            "prioritx_eval.service.transcriptomics_real_scores",
+            return_value=transcriptomics,
+        ), patch(
+            "prioritx_eval.service.open_targets_genetics_scores",
+            return_value=genetics,
+        ), patch(
+            "prioritx_eval.service.fused_target_evidence",
+            return_value=fused,
+        ):
+            result = audit_target_evidence("ipf_tnik", gene_symbol="TNIK")
+
+        self.assertEqual("TNIK", result["gene_symbol"])
+        self.assertTrue(result["transcriptomics"][0]["found"])
+        self.assertFalse(result["transcriptomics"][0]["passes_support_rule"])
+        self.assertTrue(result["open_targets_genetics"]["found"])
+        self.assertTrue(result["fused_target_evidence"]["found"])
 
 
 if __name__ == "__main__":
