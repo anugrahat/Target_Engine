@@ -8,8 +8,7 @@ from typing import Any
 
 from prioritx_data.mechanistic import load_mechanistic_edges
 from prioritx_data.reactome import load_reactome_gene_pathways, load_reactome_pathway_enrichment
-from prioritx_data.service import fused_target_evidence
-from prioritx_data.service import transcriptomics_indication_evidence
+from prioritx_data.service import fused_target_evidence, query_study_contrasts, transcriptomics_indication_evidence, transcriptomics_real_scores
 from prioritx_data.cell_state import load_cell_state_programs
 from prioritx_data.signaling import load_signaling_programs
 from prioritx_eval.assertions import load_benchmark_assertion
@@ -308,6 +307,51 @@ def signaling_program_activity_scores(
     return scored
 
 
+def contrast_signaling_program_activity_scores(
+    benchmark_id: str,
+    *,
+    subset_id: str,
+) -> list[dict[str, Any]]:
+    """Return per-contrast signaling program activity to preserve context-specific signal."""
+    programs = load_signaling_programs(benchmark_id)
+    if not programs:
+        return []
+    contrast_ids = sorted(
+        contrast["contrast_id"]
+        for contrast in query_study_contrasts(benchmark_id=benchmark_id, subset_id=subset_id)
+        if contrast["contrast_id"].startswith(f"{subset_id}_")
+    )
+    scored = []
+    for contrast_id in contrast_ids:
+        by_symbol = {
+            item["gene_symbol"]: {
+                "gene_symbol": item["gene_symbol"],
+                "score": item["score"],
+                "weighted_mean_log2_fold_change": item["statistics"]["log2_fold_change"],
+                "supporting_contrast_count": 1,
+            }
+            for item in transcriptomics_real_scores(contrast_id)
+            if item.get("gene_symbol")
+        }
+        for program in programs:
+            marker_hits = [
+                by_symbol[marker]
+                for marker in program.get("marker_genes") or []
+                if marker in by_symbol
+            ]
+            features = derive_signaling_program_activity_features(
+                benchmark_id=benchmark_id,
+                subset_id=subset_id,
+                program=program,
+                marker_hits=marker_hits,
+            )
+            item = score_signaling_program_activity(features)
+            item["contrast_id"] = contrast_id
+            scored.append(item)
+    scored.sort(key=lambda item: (item["score"], item["positive_marker_count"]), reverse=True)
+    return scored
+
+
 def cell_state_program_activity_scores(
     benchmark_id: str,
     *,
@@ -423,7 +467,18 @@ def signaling_support_scores(
         subset_id=chosen_subset_id,
         min_support=1,
     )
+    context_program_activity = contrast_signaling_program_activity_scores(
+        benchmark_id,
+        subset_id=chosen_subset_id,
+    )
     program_activity_by_ref = {item["program_ref"]: item for item in program_activity if item.get("program_ref")}
+    for item in context_program_activity:
+        program_ref = item.get("program_ref")
+        if not program_ref:
+            continue
+        current = program_activity_by_ref.get(program_ref)
+        if current is None or float(item["score"]) > float(current["score"]):
+            program_activity_by_ref[program_ref] = item
     if not program_activity_by_ref:
         return []
 

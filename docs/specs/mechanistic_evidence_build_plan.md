@@ -252,6 +252,28 @@ This is still useful because it narrows the scientific gap further:
 - the remaining HCC miss is not just missing graph specificity
 - it is now more likely a cohort-context problem, a missing phosphoproteomic/kinase-activity layer, or both
 
+## HCC Context-selective Signaling Result
+
+The signaling layer now preserves the strongest admissible contrast instead of averaging everything into one HCC slice.
+
+This surfaces real context-specific biology:
+
+- `gse36376` shows the clearest `beta-catenin` and `IL6/STAT3` activity
+- `gse77314` shows the strongest inflammatory `IL-6 / PMN-MDSC` signature
+
+That materially raises `CDK20` signaling support:
+
+- earlier aggregated signaling support score: `0.3593`
+- context-selective signaling support score: `0.5733`
+
+But the bounded graph rank still remains `501` in the current `500`-candidate slice with mechanistic seeding.
+
+Interpretation:
+
+- context preservation was scientifically necessary and improved the right internal signal
+- even after that correction, the remaining miss points beyond transcriptomics-derived signaling proxies
+- the most likely next missing HCC layer is direct kinase-activity or phosphoproteomic evidence
+
 ## First IPF Cell-state Result
 
 The first single-cell-derived IPF cell-state layer is now implemented and benchmarked.

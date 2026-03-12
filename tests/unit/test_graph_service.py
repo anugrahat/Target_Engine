@@ -5,9 +5,11 @@ from unittest.mock import patch
 
 from prioritx_graph.service import (
     build_benchmark_knowledge_graph,
+    contrast_signaling_program_activity_scores,
     evaluate_graph_augmented_benchmark,
     graph_augmented_target_evidence,
     graph_feature_scores,
+    signaling_support_scores,
 )
 
 
@@ -172,6 +174,17 @@ HCC_SIGNALING_SUPPORT = [
         "score": 0.92,
         "program_support_count": 2,
         "top_programs": [{"ref": "beta_catenin_signaling"}],
+    }
+]
+
+HCC_CONTRAST_SIGNALING = [
+    {
+        "program_ref": "beta_catenin_signaling",
+        "program_label": "Beta-catenin signaling",
+        "score": 0.7,
+        "positive_marker_count": 3,
+        "top_markers": [{"gene_symbol": "AXIN2"}],
+        "contrast_id": "hcc_adult_extended_gse36376",
     }
 ]
 
@@ -412,6 +425,28 @@ class GraphServiceTests(unittest.TestCase):
 
         by_symbol = {item["gene_symbol"]: item for item in ranked}
         self.assertGreater(by_symbol["CDK20"]["graph_score"], 0.0)
+
+    def test_context_selective_signaling_support_uses_best_contrast(self) -> None:
+        with patch("prioritx_graph.service.fused_target_evidence", return_value=HCC_CORE_RANKED), patch(
+            "prioritx_graph.service.signaling_program_activity_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.contrast_signaling_program_activity_scores",
+            return_value=HCC_CONTRAST_SIGNALING,
+        ), patch(
+            "prioritx_graph.service.load_mechanistic_edges",
+            return_value=HCC_MECHANISTIC_EDGES,
+        ):
+            support = signaling_support_scores(
+                "hcc_cdk20",
+                mode="exploratory",
+                subset_id="hcc_adult_extended",
+                candidate_limit=2,
+                genetics_size=0,
+            )
+
+        cdk20 = next(item for item in support if item["gene_symbol"] == "CDK20")
+        self.assertGreater(cdk20["score"], 0.0)
 
     def test_cell_state_support_can_promote_tnik(self) -> None:
         with patch("prioritx_graph.service.fused_target_evidence", return_value=CORE_RANKED), patch(
