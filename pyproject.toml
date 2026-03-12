@@ -28,7 +28,7 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["packages/py"]
-include = ["prioritx_core", "prioritx_data", "prioritx_eval", "prioritx_features", "prioritx_rank", "prioritx_rl"]
+include = ["prioritx_core", "prioritx_data", "prioritx_eval", "prioritx_features", "prioritx_graph", "prioritx_rank", "prioritx_rl"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

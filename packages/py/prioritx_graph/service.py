@@ -1,0 +1,447 @@
+"""Assemble provenance-first knowledge graphs and transparent graph features."""
+
+from __future__ import annotations
+
+import math
+from collections import defaultdict
+from typing import Any
+
+from prioritx_data.service import fused_target_evidence, reactome_pathway_scores
+from prioritx_eval.assertions import load_benchmark_assertion
+from prioritx_eval.policy import benchmark_mode_config
+
+
+def _bounded_log_score(value: float, *, max_log: float = 10.0) -> float:
+    return min(-math.log10(max(value, 1e-300)) / max_log, 1.0)
+
+
+def _edge(
+    source: str,
+    target: str,
+    edge_type: str,
+    *,
+    weight: float,
+    evidence_family: str,
+    provenance: dict[str, Any],
+    leakage_risk: str = "low",
+) -> dict[str, Any]:
+    return {
+        "source": source,
+        "target": target,
+        "type": edge_type,
+        "weight": round(weight, 4),
+        "evidence_family": evidence_family,
+        "discovery_time_valid": leakage_risk == "low",
+        "leakage_risk": leakage_risk,
+        "provenance": provenance,
+    }
+
+
+def build_benchmark_knowledge_graph(
+    benchmark_id: str,
+    *,
+    mode: str = "strict",
+    subset_id: str | None = None,
+    candidate_limit: int = 500,
+    genetics_size: int = 200,
+) -> dict[str, Any]:
+    """Build a provenance-first benchmark slice knowledge graph."""
+    assertion = load_benchmark_assertion(benchmark_id)
+    mode_config = benchmark_mode_config(benchmark_id, mode=mode)
+    chosen_subset_id = subset_id or mode_config["subset_id"]
+
+    core_ranked = fused_target_evidence(
+        benchmark_id=benchmark_id,
+        subset_id=chosen_subset_id,
+        genetics_size=genetics_size,
+        tractability_top_n=0,
+        pathway_top_n=0,
+        network_top_n=0,
+    )[: max(candidate_limit, 0)]
+    pathway_scores = [
+        item
+        for item in reactome_pathway_scores(
+            benchmark_id=benchmark_id,
+            subset_id=chosen_subset_id,
+            candidate_top_n=candidate_limit,
+        )
+        if item.get("ensembl_gene_id")
+    ]
+
+    disease_node_id = f"disease:{benchmark_id}"
+    nodes = {
+        disease_node_id: {
+            "id": disease_node_id,
+            "type": "disease",
+            "label": assertion["indication_name"],
+            "attributes": {
+                "benchmark_id": benchmark_id,
+                "mode": mode,
+                "subset_id": chosen_subset_id,
+            },
+        }
+    }
+    edges: list[dict[str, Any]] = []
+    graph_gene_ids: set[str] = set()
+    pathway_gene_weights: dict[str, dict[str, float]] = defaultdict(dict)
+    disease_pathway_weights: dict[str, float] = {}
+
+    for index, item in enumerate(core_ranked, start=1):
+        gene_id = item["ensembl_gene_id"]
+        if not gene_id or not item.get("gene_symbol"):
+            continue
+        graph_gene_ids.add(gene_id)
+        gene_node_id = f"gene:{gene_id}"
+        nodes[gene_node_id] = {
+            "id": gene_node_id,
+            "type": "gene",
+            "label": item["gene_symbol"],
+            "attributes": {
+                "ensembl_gene_id": gene_id,
+                "core_rank": index,
+                "core_score": item["score"],
+                "transcriptomics_available": item["transcriptomics_available"],
+                "genetics_available": item["genetics_available"],
+            },
+        }
+        if item["transcriptomics_available"]:
+            edges.append(
+                _edge(
+                    disease_node_id,
+                    gene_node_id,
+                    "disease_gene_transcriptomics",
+                    weight=float(item["components"]["transcriptomics_component"]),
+                    evidence_family="transcriptomics",
+                    provenance=item["transcriptomics_provenance"] or {},
+                )
+            )
+        if item["genetics_available"]:
+            edges.append(
+                _edge(
+                    disease_node_id,
+                    gene_node_id,
+                    "disease_gene_genetics",
+                    weight=float(item["components"]["genetics_component"]),
+                    evidence_family="genetics",
+                    provenance=item["genetics_provenance"] or {},
+                )
+            )
+
+    for item in pathway_scores:
+        gene_id = item["ensembl_gene_id"]
+        if gene_id not in graph_gene_ids:
+            continue
+        gene_node_id = f"gene:{gene_id}"
+        for pathway in item["top_overlap_pathways"]:
+            pathway_id = pathway["st_id"]
+            pathway_node_id = f"pathway:{pathway_id}"
+            pathway_weight = _bounded_log_score(float(pathway["fdr"]))
+            nodes[pathway_node_id] = {
+                "id": pathway_node_id,
+                "type": "pathway",
+                "label": pathway["name"],
+                "attributes": {
+                    "pathway_id": pathway_id,
+                    "fdr": pathway["fdr"],
+                },
+            }
+            disease_pathway_weights[pathway_node_id] = max(disease_pathway_weights.get(pathway_node_id, 0.0), pathway_weight)
+            pathway_gene_weights[pathway_node_id][gene_id] = max(
+                pathway_gene_weights[pathway_node_id].get(gene_id, 0.0),
+                float(item["score"]),
+            )
+            edges.append(
+                _edge(
+                    pathway_node_id,
+                    gene_node_id,
+                    "pathway_gene_membership",
+                    weight=float(item["score"]),
+                    evidence_family="reactome_pathway",
+                    provenance={
+                        **(item.get("provenance") or {}),
+                        "pathway_id": pathway_id,
+                    },
+                )
+            )
+
+    for pathway_node_id, weight in disease_pathway_weights.items():
+        edges.append(
+            _edge(
+                disease_node_id,
+                pathway_node_id,
+                "disease_pathway_enrichment",
+                weight=weight,
+                evidence_family="reactome_pathway",
+                provenance={
+                    "source_kind": "reactome_analysis_service",
+                },
+            )
+        )
+
+    for pathway_node_id, gene_weights in pathway_gene_weights.items():
+        genes = sorted(gene_weights)
+        for left_index, left_gene_id in enumerate(genes):
+            for right_gene_id in genes[left_index + 1 :]:
+                left_node_id = f"gene:{left_gene_id}"
+                right_node_id = f"gene:{right_gene_id}"
+                shared_weight = min(gene_weights[left_gene_id], gene_weights[right_gene_id])
+                edges.append(
+                    _edge(
+                        left_node_id,
+                        right_node_id,
+                        "shared_pathway_neighbor",
+                        weight=shared_weight,
+                        evidence_family="reactome_pathway",
+                        provenance={
+                            "pathway_node_id": pathway_node_id,
+                        },
+                    )
+                )
+
+    return {
+        "benchmark_id": benchmark_id,
+        "indication_name": assertion["indication_name"],
+        "mode": mode,
+        "subset_id": chosen_subset_id,
+        "candidate_limit": candidate_limit,
+        "graph": {
+            "nodes": list(nodes.values()),
+            "edges": edges,
+        },
+        "provenance": {
+            "graph_kind": "benchmark_slice_knowledge_graph",
+            "genetics_size": genetics_size,
+            "candidate_source": "core_fused_target_evidence_without_graph_rerank",
+        },
+    }
+
+
+def _adjacency(graph: dict[str, Any]) -> dict[str, list[tuple[str, float]]]:
+    adjacency: dict[str, list[tuple[str, float]]] = defaultdict(list)
+    for edge in graph["edges"]:
+        source = edge["source"]
+        target = edge["target"]
+        weight = float(edge["weight"])
+        adjacency[source].append((target, weight))
+        adjacency[target].append((source, weight))
+    return adjacency
+
+
+def _propagation_scores(graph: dict[str, Any], *, seed_node_id: str, restart: float = 0.25, steps: int = 20) -> dict[str, float]:
+    adjacency = _adjacency(graph)
+    nodes = [node["id"] for node in graph["nodes"]]
+    scores = {node_id: 0.0 for node_id in nodes}
+    scores[seed_node_id] = 1.0
+    for _ in range(max(steps, 1)):
+        updated = {node_id: 0.0 for node_id in nodes}
+        updated[seed_node_id] += restart
+        for node_id in nodes:
+            neighbors = adjacency.get(node_id, [])
+            total = sum(weight for _, weight in neighbors)
+            if total <= 0.0:
+                continue
+            retained = (1.0 - restart) * scores[node_id]
+            for neighbor_id, weight in neighbors:
+                updated[neighbor_id] += retained * (weight / total)
+        scores = updated
+    return scores
+
+
+def graph_feature_scores(
+    benchmark_id: str,
+    *,
+    mode: str = "strict",
+    subset_id: str | None = None,
+    candidate_limit: int = 500,
+    genetics_size: int = 200,
+) -> list[dict[str, Any]]:
+    """Compute transparent graph features for genes in one benchmark slice."""
+    kg = build_benchmark_knowledge_graph(
+        benchmark_id,
+        mode=mode,
+        subset_id=subset_id,
+        candidate_limit=candidate_limit,
+        genetics_size=genetics_size,
+    )
+    graph = kg["graph"]
+    disease_node_id = f"disease:{benchmark_id}"
+    propagation = _propagation_scores(graph, seed_node_id=disease_node_id)
+    nodes_by_id = {node["id"]: node for node in graph["nodes"]}
+    adjacency = _adjacency(graph)
+
+    disease_pathway_weights = {
+        edge["target"]: float(edge["weight"])
+        for edge in graph["edges"]
+        if edge["type"] == "disease_pathway_enrichment"
+    }
+    gene_base_scores = {
+        node["id"]: float(node["attributes"]["core_score"])
+        for node in graph["nodes"]
+        if node["type"] == "gene"
+    }
+
+    scores = []
+    for node in graph["nodes"]:
+        if node["type"] != "gene":
+            continue
+        gene_node_id = node["id"]
+        neighbors = adjacency.get(gene_node_id, [])
+        pathway_neighbors = [neighbor_id for neighbor_id, _ in neighbors if nodes_by_id[neighbor_id]["type"] == "pathway"]
+        gene_neighbors = [neighbor_id for neighbor_id, _ in neighbors if nodes_by_id[neighbor_id]["type"] == "gene"]
+
+        disease_pathway_connectivity = sum(disease_pathway_weights.get(pathway_id, 0.0) for pathway_id in pathway_neighbors)
+        path_count = len(pathway_neighbors)
+        neighborhood_support = (
+            sum(gene_base_scores.get(neighbor_id, 0.0) for neighbor_id in gene_neighbors) / len(gene_neighbors)
+            if gene_neighbors
+            else 0.0
+        )
+        propagation_score = propagation.get(gene_node_id, 0.0)
+        graph_score = (
+            0.35 * min(propagation_score * 10.0, 1.0)
+            + 0.30 * min(disease_pathway_connectivity / 3.0, 1.0)
+            + 0.20 * min(path_count / 5.0, 1.0)
+            + 0.15 * min(neighborhood_support, 1.0)
+        )
+        scores.append(
+            {
+                "benchmark_id": benchmark_id,
+                "mode": mode,
+                "subset_id": kg["subset_id"],
+                "ensembl_gene_id": node["attributes"]["ensembl_gene_id"],
+                "gene_symbol": node["label"],
+                "score_name": "knowledge_graph_support_score",
+                "score": round(graph_score, 4),
+                "components": {
+                    "propagation_component": round(0.35 * min(propagation_score * 10.0, 1.0), 4),
+                    "disease_pathway_component": round(0.30 * min(disease_pathway_connectivity / 3.0, 1.0), 4),
+                    "path_count_component": round(0.20 * min(path_count / 5.0, 1.0), 4),
+                    "neighborhood_component": round(0.15 * min(neighborhood_support, 1.0), 4),
+                },
+                "pathway_neighbor_count": path_count,
+                "gene_neighbor_count": len(gene_neighbors),
+                "disease_pathway_connectivity": round(disease_pathway_connectivity, 4),
+                "propagation_score": round(propagation_score, 6),
+                "provenance": kg["provenance"],
+            }
+        )
+
+    scores.sort(key=lambda item: (item["score"], item["propagation_score"]), reverse=True)
+    return scores
+
+
+def graph_augmented_target_evidence(
+    benchmark_id: str,
+    *,
+    mode: str = "strict",
+    subset_id: str | None = None,
+    candidate_limit: int = 500,
+    genetics_size: int = 200,
+) -> list[dict[str, Any]]:
+    """Combine core fused evidence with transparent graph support."""
+    mode_config = benchmark_mode_config(benchmark_id, mode=mode)
+    chosen_subset_id = subset_id or mode_config["subset_id"]
+    core_ranked = fused_target_evidence(
+        benchmark_id=benchmark_id,
+        subset_id=chosen_subset_id,
+        genetics_size=genetics_size,
+        tractability_top_n=0,
+        pathway_top_n=0,
+        network_top_n=0,
+    )[: max(candidate_limit, 0)]
+    graph_scores = {
+        item["ensembl_gene_id"]: item
+        for item in graph_feature_scores(
+            benchmark_id,
+            mode=mode,
+            subset_id=chosen_subset_id,
+            candidate_limit=candidate_limit,
+            genetics_size=genetics_size,
+        )
+    }
+    ranked = []
+    for item in core_ranked:
+        graph_item = graph_scores.get(item["ensembl_gene_id"])
+        graph_score = graph_item["score"] if graph_item else 0.0
+        combined = (0.75 * float(item["score"])) + (0.25 * float(graph_score))
+        ranked.append(
+            {
+                **item,
+                "score_name": "graph_augmented_target_evidence_score",
+                "score": round(combined, 4),
+                "graph_score": graph_score,
+                "components": {
+                    **item["components"],
+                    "graph_component": round(0.25 * float(graph_score), 4),
+                },
+            }
+        )
+    ranked.sort(key=lambda item: (item["score"], item["graph_score"]), reverse=True)
+    return ranked
+
+
+def evaluate_graph_augmented_benchmark(
+    benchmark_id: str,
+    *,
+    mode: str = "strict",
+    subset_id: str | None = None,
+    candidate_limit: int = 500,
+    genetics_size: int = 200,
+) -> dict[str, Any]:
+    """Evaluate graph-augmented ranking against source-backed positives."""
+    assertion = load_benchmark_assertion(benchmark_id)
+    mode_config = benchmark_mode_config(benchmark_id, mode=mode)
+    chosen_subset_id = subset_id or mode_config["subset_id"]
+    ranked = graph_augmented_target_evidence(
+        benchmark_id,
+        mode=mode,
+        subset_id=chosen_subset_id,
+        candidate_limit=candidate_limit,
+        genetics_size=genetics_size,
+    )
+    by_symbol = {item["gene_symbol"]: (index + 1, item) for index, item in enumerate(ranked) if item.get("gene_symbol")}
+    items = []
+    found_ranks = []
+    for target in assertion["target_assertions"]:
+        match = by_symbol.get(target["gene_symbol"])
+        if match is None:
+            items.append(
+                {
+                    "gene_symbol": target["gene_symbol"],
+                    "found": False,
+                    "rank": None,
+                    "score": None,
+                    "source": target["source"],
+                }
+            )
+            continue
+        rank, item = match
+        found_ranks.append(rank)
+        items.append(
+            {
+                "gene_symbol": target["gene_symbol"],
+                "found": True,
+                "rank": rank,
+                "score": item["score"],
+                "graph_score": item["graph_score"],
+                "source": target["source"],
+            }
+        )
+    return {
+        "benchmark_id": benchmark_id,
+        "mode": mode,
+        "subset_id": chosen_subset_id,
+        "candidate_limit": candidate_limit,
+        "target_universe_size": len(ranked),
+        "metrics": {
+            "best_rank": min(found_ranks) if found_ranks else None,
+            "hit_at_25": any(rank <= 25 for rank in found_ranks),
+            "mean_reciprocal_rank": round(sum(1.0 / rank for rank in found_ranks) / len(found_ranks), 4) if found_ranks else 0.0,
+        },
+        "items": items,
+        "provenance": {
+            "ranking_kind": "graph_augmented_target_evidence",
+            "candidate_limit": candidate_limit,
+            "genetics_size": genetics_size,
+        },
+    }

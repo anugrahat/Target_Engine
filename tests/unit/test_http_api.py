@@ -339,6 +339,40 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(200, status)
         self.assertEqual("offline_contextual_bandit_replay", payload["evaluation_kind"])
 
+    def test_knowledge_graph_route(self) -> None:
+        mocked_result = {"benchmark_id": "ipf_tnik", "graph": {"nodes": [], "edges": []}}
+        with patch("prioritx_data.http_api.build_benchmark_knowledge_graph", return_value=mocked_result):
+            status, payload = handle_get("/knowledge-graph", {"benchmark_id": ["ipf_tnik"], "mode": ["strict"]})
+        self.assertEqual(200, status)
+        self.assertEqual("ipf_tnik", payload["benchmark_id"])
+
+    def test_graph_feature_scores_route(self) -> None:
+        mocked_items = [{"gene_symbol": "TNIK", "score_name": "knowledge_graph_support_score"}]
+        with patch("prioritx_data.http_api.graph_feature_scores", return_value=mocked_items):
+            status, payload = handle_get("/graph-feature-scores", {"benchmark_id": ["ipf_tnik"], "mode": ["strict"]})
+        self.assertEqual(200, status)
+        self.assertEqual("knowledge_graph_support_score", payload["items"][0]["score_name"])
+
+    def test_graph_augmented_target_evidence_route(self) -> None:
+        mocked_items = [{"gene_symbol": "TNIK", "score_name": "graph_augmented_target_evidence_score"}]
+        with patch("prioritx_data.http_api.graph_augmented_target_evidence", return_value=mocked_items):
+            status, payload = handle_get(
+                "/graph-augmented-target-evidence",
+                {"benchmark_id": ["ipf_tnik"], "mode": ["strict"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("graph_augmented_target_evidence_score", payload["items"][0]["score_name"])
+
+    def test_graph_augmented_benchmark_evaluation_route(self) -> None:
+        mocked_result = {"benchmark_id": "ipf_tnik", "metrics": {"best_rank": 1}}
+        with patch("prioritx_data.http_api.evaluate_graph_augmented_benchmark", return_value=mocked_result):
+            status, payload = handle_get(
+                "/graph-augmented-benchmark-evaluation",
+                {"benchmark_id": ["ipf_tnik"], "mode": ["strict"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("ipf_tnik", payload["benchmark_id"])
+
     def test_target_audit_requires_benchmark_id_and_gene_symbol(self) -> None:
         status, payload = handle_get("/target-audit", {"benchmark_id": ["ipf_tnik"]})
         self.assertEqual(400, status)
@@ -426,6 +460,18 @@ class HttpApiTests(unittest.TestCase):
         status, payload = handle_get("/rl-benchmark-evaluation", {"episodes": ["bad"]})
         self.assertEqual(400, status)
         self.assertIn("error", payload)
+
+    def test_graph_routes_require_benchmark_id(self) -> None:
+        for route in ("/knowledge-graph", "/graph-feature-scores", "/graph-augmented-target-evidence", "/graph-augmented-benchmark-evaluation"):
+            status, payload = handle_get(route, {})
+            self.assertEqual(400, status)
+            self.assertIn("error", payload)
+
+    def test_graph_routes_validate_mode(self) -> None:
+        for route in ("/knowledge-graph", "/graph-feature-scores", "/graph-augmented-target-evidence", "/graph-augmented-benchmark-evaluation"):
+            status, payload = handle_get(route, {"benchmark_id": ["ipf_tnik"], "mode": ["bad"]})
+            self.assertEqual(400, status)
+            self.assertIn("error", payload)
 
     def test_transcriptomics_evidence_requires_scope(self) -> None:
         status, payload = handle_get("/transcriptomics-evidence", {})
