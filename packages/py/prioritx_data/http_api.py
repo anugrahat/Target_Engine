@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
 
 from prioritx_data.service import (
@@ -33,6 +35,9 @@ from prioritx_eval.service import (
     target_evidence_graph,
 )
 
+ROOT = Path(__file__).resolve().parents[3]
+MATERIALIZED_EXPORTS_DIR = ROOT / "tmp" / "benchmark_exports" / "latest"
+
 
 def _single(query: dict[str, list[str]], key: str) -> str | None:
     values = query.get(key)
@@ -48,6 +53,21 @@ def _mode(query: dict[str, list[str]]) -> str | None:
     return mode
 
 
+def _materialized_payload(filename: str) -> dict[str, Any] | None:
+    path = MATERIALIZED_EXPORTS_DIR / filename
+    if not path.exists():
+        return None
+    return json.loads(path.read_text())
+
+
+def _materialized_benchmark_payload(folder: str, benchmark_id: str, mode: str | None = None) -> dict[str, Any] | None:
+    filename = f"{benchmark_id}.{mode}.json" if mode else f"{benchmark_id}.json"
+    path = MATERIALIZED_EXPORTS_DIR / folder / filename
+    if not path.exists():
+        return None
+    return json.loads(path.read_text())
+
+
 def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, Any]]:
     """Return status code plus JSON payload for a read-only GET route."""
     if path == "/":
@@ -56,6 +76,11 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
             "routes": [
                 "/health",
                 "/benchmarks",
+                "/materialized/benchmark-dashboard-summary",
+                "/materialized/benchmark-health-summary",
+                "/materialized/benchmark-health-export",
+                "/materialized/benchmark-mode-comparison",
+                "/materialized/target-shortlist-explanations",
                 "/benchmark-dashboard-summary",
                 "/benchmark-health-summary",
                 "/benchmark-health-export",
@@ -87,6 +112,45 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
 
     if path == "/benchmarks":
         return 200, {"items": benchmark_index()}
+
+    if path == "/materialized/benchmark-dashboard-summary":
+        payload = _materialized_payload("benchmark_dashboard.json")
+        if payload is None:
+            return 404, {"error": "No materialized benchmark dashboard snapshot available"}
+        return 200, payload
+
+    if path == "/materialized/benchmark-health-summary":
+        payload = _materialized_payload("benchmark_health.json")
+        if payload is None:
+            return 404, {"error": "No materialized benchmark health snapshot available"}
+        return 200, payload
+
+    if path == "/materialized/benchmark-health-export":
+        payload = _materialized_payload("benchmark_health_rows.json")
+        if payload is None:
+            return 404, {"error": "No materialized benchmark health export available"}
+        return 200, payload
+
+    if path == "/materialized/benchmark-mode-comparison":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        payload = _materialized_benchmark_payload("benchmark_mode_comparisons", benchmark_id)
+        if payload is None:
+            return 404, {"error": f"No materialized benchmark mode comparison available for {benchmark_id}"}
+        return 200, payload
+
+    if path == "/materialized/target-shortlist-explanations":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        mode = _mode(query)
+        if mode == "__invalid__":
+            return 400, {"error": "mode must be one of: strict, exploratory"}
+        payload = _materialized_benchmark_payload("target_shortlists", benchmark_id, mode or "strict")
+        if payload is None:
+            return 404, {"error": f"No materialized target shortlist available for {benchmark_id} ({mode or 'strict'})"}
+        return 200, payload
 
     if path == "/benchmark-dashboard-summary":
         top_n_raw = _single(query, "top_n")

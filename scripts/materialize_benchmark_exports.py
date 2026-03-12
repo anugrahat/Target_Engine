@@ -10,7 +10,10 @@ import json
 import shutil
 from pathlib import Path
 
+from prioritx_data.service import benchmark_index
 from prioritx_eval.service import (
+    compare_benchmark_modes,
+    explain_target_shortlist,
     export_benchmark_health_rows,
     summarize_benchmark_dashboard,
     summarize_benchmark_health,
@@ -27,11 +30,13 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def _write_json(path: Path, payload: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2) + "\n")
 
 
 def _write_csv(path: Path, rows: list[dict[str, object]]) -> None:
     fieldnames = list(rows[0].keys()) if rows else []
+    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
@@ -53,6 +58,18 @@ def main(argv: list[str] | None = None) -> int:
     _write_json(export_dir / "benchmark_health.json", health)
     _write_json(export_dir / "benchmark_health_rows.json", rows_payload)
     _write_csv(export_dir / "benchmark_health_rows.csv", rows_payload["rows"])
+
+    for benchmark in benchmark_index():
+        benchmark_id = benchmark["benchmark_id"]
+        _write_json(
+            export_dir / "benchmark_mode_comparisons" / f"{benchmark_id}.json",
+            compare_benchmark_modes(benchmark_id, top_n=args.top_n),
+        )
+        for mode in ("strict", "exploratory"):
+            _write_json(
+                export_dir / "target_shortlists" / f"{benchmark_id}.{mode}.json",
+                explain_target_shortlist(benchmark_id, mode=mode, top_n=args.top_n),
+            )
 
     if latest_dir.exists():
         shutil.rmtree(latest_dir)

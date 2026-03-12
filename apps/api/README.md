@@ -15,6 +15,11 @@ Current routes:
 
 - `/health`
 - `/benchmarks`
+- `/materialized/benchmark-dashboard-summary`
+- `/materialized/benchmark-health-summary`
+- `/materialized/benchmark-health-export`
+- `/materialized/benchmark-mode-comparison?benchmark_id=...`
+- `/materialized/target-shortlist-explanations?benchmark_id=...&mode=...`
 - `/benchmark-dashboard-summary`
 - `/benchmark-health-summary`
 - `/benchmark-health-export`
@@ -52,6 +57,8 @@ Important:
 - `benchmark-health-summary` reduces the dashboard payload into benchmark health metrics such as recovered-in-top-N counts, improved versus worsened positives, and a simple readiness flag per indication
 - `benchmark-health-export` flattens benchmark health into row-oriented records so notebooks and frontend tables can consume leaders, movement, and readiness metrics without reconstructing nested benchmark objects
 - `scripts/materialize_benchmark_exports.py` writes timestamped benchmark dashboard, health, and row exports under `tmp/benchmark_exports/` and refreshes `tmp/benchmark_exports/latest/`
+- the `/materialized/...` routes serve those latest JSON snapshots directly so the frontend can render immediately without blocking on full live recomputation
+- benchmark-specific materialized routes are available for strict-vs-exploratory comparison and target shortlist payloads so the frontend can stay responsive on first load
 - `benchmark-evaluation` and `target-audit` now accept `mode=strict|exploratory`; strict uses the benchmark core subset, while exploratory uses the broader curated subset when one exists
 - `benchmark-integrity` reports the subset, evidence-family leakage review, and benchmark-specific forbidden leakage items without running a full rank
 - `benchmark-mode-comparison` compares strict and exploratory shortlist behavior, including how source-backed positive targets move in rank when the broader curated subset is enabled
