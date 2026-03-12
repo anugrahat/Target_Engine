@@ -176,17 +176,18 @@ def mechanistic_support_scores(
     mode: str = "strict",
     subset_id: str | None = None,
     candidate_limit: int = 500,
-    genetics_size: int = 200,
+    genetics_size: int | None = None,
     ranked_items: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """Return typed mechanistic support over the current candidate slice."""
     mode_config = benchmark_mode_config(benchmark_id, mode=mode)
     chosen_subset_id = subset_id or mode_config["subset_id"]
+    resolved_genetics_size = mode_config["genetics_size"] if genetics_size is None else genetics_size
     if ranked_items is None:
         core_ranked = fused_target_evidence(
             benchmark_id=benchmark_id,
             subset_id=chosen_subset_id,
-            genetics_size=genetics_size,
+            genetics_size=resolved_genetics_size,
             tractability_top_n=0,
             pathway_top_n=0,
             network_top_n=0,
@@ -242,16 +243,18 @@ def _select_graph_candidates(
     mode: str,
     subset_id: str,
     candidate_limit: int,
-    genetics_size: int,
+    genetics_size: int | None,
     mechanistic_seed_top_n: int,
 ) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
+    mode_config = benchmark_mode_config(benchmark_id, mode=mode)
+    resolved_genetics_size = mode_config["genetics_size"] if genetics_size is None else genetics_size
     ranked_full = fused_target_evidence(
         benchmark_id=benchmark_id,
         subset_id=subset_id,
-        genetics_size=genetics_size,
-        tractability_top_n=0,
-        pathway_top_n=0,
-        network_top_n=0,
+        genetics_size=resolved_genetics_size,
+        tractability_top_n=mode_config["tractability_top_n"],
+        pathway_top_n=mode_config["pathway_top_n"],
+        network_top_n=mode_config["network_top_n"],
     )
     ranked_by_gene_id = {item["ensembl_gene_id"]: item for item in ranked_full if item.get("ensembl_gene_id")}
     selected_ids: list[str] = [
@@ -264,7 +267,7 @@ def _select_graph_candidates(
         mode=mode,
         subset_id=subset_id,
         candidate_limit=len(ranked_full),
-        genetics_size=genetics_size,
+        genetics_size=resolved_genetics_size,
         ranked_items=ranked_full,
     )
     for item in mechanistic_ranked[: max(mechanistic_seed_top_n, 0)]:
@@ -403,17 +406,18 @@ def cell_state_support_scores(
     mode: str = "strict",
     subset_id: str | None = None,
     candidate_limit: int = 500,
-    genetics_size: int = 200,
+    genetics_size: int | None = None,
     ranked_items: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """Return gene support from active single-cell-derived cell-state programs."""
     mode_config = benchmark_mode_config(benchmark_id, mode=mode)
     chosen_subset_id = subset_id or mode_config["subset_id"]
+    resolved_genetics_size = mode_config["genetics_size"] if genetics_size is None else genetics_size
     if ranked_items is None:
         ranked_items = fused_target_evidence(
             benchmark_id=benchmark_id,
             subset_id=chosen_subset_id,
-            genetics_size=genetics_size,
+            genetics_size=resolved_genetics_size,
             tractability_top_n=0,
             pathway_top_n=0,
             network_top_n=0,
@@ -453,17 +457,18 @@ def signaling_support_scores(
     mode: str = "strict",
     subset_id: str | None = None,
     candidate_limit: int = 500,
-    genetics_size: int = 200,
+    genetics_size: int | None = None,
     ranked_items: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """Return gene support from active signaling programs."""
     mode_config = benchmark_mode_config(benchmark_id, mode=mode)
     chosen_subset_id = subset_id or mode_config["subset_id"]
+    resolved_genetics_size = mode_config["genetics_size"] if genetics_size is None else genetics_size
     if ranked_items is None:
         ranked_items = fused_target_evidence(
             benchmark_id=benchmark_id,
             subset_id=chosen_subset_id,
-            genetics_size=genetics_size,
+            genetics_size=resolved_genetics_size,
             tractability_top_n=0,
             pathway_top_n=0,
             network_top_n=0,
@@ -563,17 +568,18 @@ def proteophospho_support_scores(
     mode: str = "strict",
     subset_id: str | None = None,
     candidate_limit: int = 500,
-    genetics_size: int = 200,
+    genetics_size: int | None = None,
     ranked_items: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """Return target support from active proteo-phospho programs."""
     mode_config = benchmark_mode_config(benchmark_id, mode=mode)
     chosen_subset_id = subset_id or mode_config["subset_id"]
+    resolved_genetics_size = mode_config["genetics_size"] if genetics_size is None else genetics_size
     if ranked_items is None:
         ranked_items = fused_target_evidence(
             benchmark_id=benchmark_id,
             subset_id=chosen_subset_id,
-            genetics_size=genetics_size,
+            genetics_size=resolved_genetics_size,
             tractability_top_n=0,
             pathway_top_n=0,
             network_top_n=0,
@@ -621,7 +627,7 @@ def build_benchmark_knowledge_graph(
     mode: str = "strict",
     subset_id: str | None = None,
     candidate_limit: int = 500,
-    genetics_size: int = 200,
+    genetics_size: int | None = None,
     mechanistic_seed_top_n: int = 10,
     include_signaling: bool = True,
 ) -> dict[str, Any]:
@@ -880,7 +886,7 @@ def graph_feature_scores(
     mode: str = "strict",
     subset_id: str | None = None,
     candidate_limit: int = 500,
-    genetics_size: int = 200,
+    genetics_size: int | None = None,
     mechanistic_seed_top_n: int = 10,
 ) -> list[dict[str, Any]]:
     """Compute transparent graph features for genes in one benchmark slice."""
@@ -1084,7 +1090,7 @@ def graph_augmented_target_evidence(
     mode: str = "strict",
     subset_id: str | None = None,
     candidate_limit: int = 500,
-    genetics_size: int = 200,
+    genetics_size: int | None = None,
     mechanistic_seed_top_n: int = 10,
 ) -> list[dict[str, Any]]:
     """Combine core fused evidence with transparent graph support."""

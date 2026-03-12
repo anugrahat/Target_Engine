@@ -514,7 +514,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
         mechanistic_seed_top_n_raw = _single(query, "mechanistic_seed_top_n")
         try:
             candidate_limit = int(candidate_limit_raw) if candidate_limit_raw else 500
-            genetics_size = int(genetics_size_raw) if genetics_size_raw else 200
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else None
             mechanistic_seed_top_n = int(mechanistic_seed_top_n_raw) if mechanistic_seed_top_n_raw else 10
         except ValueError:
             return 400, {"error": "candidate_limit, genetics_size, and mechanistic_seed_top_n must be integers"}
@@ -538,7 +538,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
         genetics_size_raw = _single(query, "genetics_size")
         try:
             candidate_limit = int(candidate_limit_raw) if candidate_limit_raw else 500
-            genetics_size = int(genetics_size_raw) if genetics_size_raw else 200
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else None
         except ValueError:
             return 400, {"error": "candidate_limit and genetics_size must be integers"}
         return 200, {
@@ -576,7 +576,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
         genetics_size_raw = _single(query, "genetics_size")
         try:
             candidate_limit = int(candidate_limit_raw) if candidate_limit_raw else 500
-            genetics_size = int(genetics_size_raw) if genetics_size_raw else 200
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else None
         except ValueError:
             return 400, {"error": "candidate_limit and genetics_size must be integers"}
         return 200, {
@@ -614,7 +614,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
         genetics_size_raw = _single(query, "genetics_size")
         try:
             candidate_limit = int(candidate_limit_raw) if candidate_limit_raw else 500
-            genetics_size = int(genetics_size_raw) if genetics_size_raw else 200
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else None
         except ValueError:
             return 400, {"error": "candidate_limit and genetics_size must be integers"}
         return 200, {
@@ -677,7 +677,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
         mechanistic_seed_top_n_raw = _single(query, "mechanistic_seed_top_n")
         try:
             candidate_limit = int(candidate_limit_raw) if candidate_limit_raw else 500
-            genetics_size = int(genetics_size_raw) if genetics_size_raw else 200
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else None
             mechanistic_seed_top_n = int(mechanistic_seed_top_n_raw) if mechanistic_seed_top_n_raw else 10
         except ValueError:
             return 400, {"error": "candidate_limit, genetics_size, and mechanistic_seed_top_n must be integers"}
@@ -704,7 +704,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
         mechanistic_seed_top_n_raw = _single(query, "mechanistic_seed_top_n")
         try:
             candidate_limit = int(candidate_limit_raw) if candidate_limit_raw else 500
-            genetics_size = int(genetics_size_raw) if genetics_size_raw else 200
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else None
             mechanistic_seed_top_n = int(mechanistic_seed_top_n_raw) if mechanistic_seed_top_n_raw else 10
         except ValueError:
             return 400, {"error": "candidate_limit, genetics_size, and mechanistic_seed_top_n must be integers"}
@@ -731,7 +731,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
         mechanistic_seed_top_n_raw = _single(query, "mechanistic_seed_top_n")
         try:
             candidate_limit = int(candidate_limit_raw) if candidate_limit_raw else 500
-            genetics_size = int(genetics_size_raw) if genetics_size_raw else 200
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else None
             mechanistic_seed_top_n = int(mechanistic_seed_top_n_raw) if mechanistic_seed_top_n_raw else 10
         except ValueError:
             return 400, {"error": "candidate_limit, genetics_size, and mechanistic_seed_top_n must be integers"}

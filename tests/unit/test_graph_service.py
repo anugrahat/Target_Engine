@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import patch
 
 from prioritx_graph.service import (
+    _select_graph_candidates,
     build_benchmark_knowledge_graph,
     contrast_signaling_program_activity_scores,
     evaluate_graph_augmented_benchmark,
@@ -459,6 +460,40 @@ class GraphServiceTests(unittest.TestCase):
             )
 
         self.assertEqual(["TOP2A", "CDK20"], [item["gene_symbol"] for item in ranked])
+
+    def test_graph_candidate_selection_uses_mode_defaults_when_genetics_unset(self) -> None:
+        with patch(
+            "prioritx_graph.service.benchmark_mode_config",
+            return_value={
+                "mode": "exploratory",
+                "subset_id": "hcc_adult_extended",
+                "genetics_size": 0,
+                "tractability_top_n": 200,
+                "pathway_top_n": 80,
+                "network_top_n": 100,
+            },
+        ), patch(
+            "prioritx_graph.service.fused_target_evidence",
+            return_value=HCC_CORE_RANKED,
+        ) as fused, patch(
+            "prioritx_graph.service.mechanistic_support_scores",
+            return_value=[],
+        ):
+            selected, _ = _select_graph_candidates(
+                benchmark_id="hcc_cdk20",
+                mode="exploratory",
+                subset_id="hcc_adult_extended",
+                candidate_limit=1,
+                genetics_size=None,
+                mechanistic_seed_top_n=0,
+            )
+
+        self.assertEqual(["TOP2A"], [item["gene_symbol"] for item in selected])
+        _, kwargs = fused.call_args
+        self.assertEqual(0, kwargs["genetics_size"])
+        self.assertEqual(200, kwargs["tractability_top_n"])
+        self.assertEqual(80, kwargs["pathway_top_n"])
+        self.assertEqual(100, kwargs["network_top_n"])
 
     def test_signaling_support_can_promote_hcc_target(self) -> None:
         with patch("prioritx_graph.service.fused_target_evidence", return_value=HCC_CORE_RANKED), patch(

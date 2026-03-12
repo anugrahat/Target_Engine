@@ -305,13 +305,18 @@ What it found in `hcc_adult_extended` exploratory mode:
 - the `beta-catenin` proteo-phospho program is also weak, with score `0.2922`
 - both programs are currently driven by single protein-level hits (`RELA` and `AXIN2` respectively)
 - none of the curated activating phosphosites pass the current direction-aware support logic
-- `CDK20` still does not enter the bounded graph candidate slice through this layer
+- after fixing a graph-base inconsistency, `CDK20` now correctly re-enters the bounded graph candidate slice
+- but it still lands only at bounded graph rank `501`
 
 Interpretation:
 
 - the proteo-phospho layer is working and source-backed
 - it does not produce a false rescue for `CDK20`
 - in this public HCC cohort, the CCRK/CDK20 biology still looks weak at the bulk proteogenomic level
+- the earlier “missing from graph slice” behavior was partly a graph-base inconsistency:
+  - the graph path was forcing `genetics_size = 200`
+  - exploratory HCC benchmark mode intentionally uses `genetics_size = 0`
+  - once fixed, `CDK20` re-enters the slice but still remains weak
 - the next HCC gap is now even clearer:
   - either the relevant biology is cohort- or subtype-specific and diluted here
   - or we need a truer kinase-activity / causal phospho-signaling layer rather than marker-level abundance alone

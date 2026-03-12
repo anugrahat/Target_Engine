@@ -200,6 +200,7 @@ In the public HCC proteogenomic archive:
 - weak activity is present for the curated `IL-6 / STAT3` and `beta-catenin` programs
 - the current support is driven mostly by single protein markers like `RELA` or `AXIN2`
 - the curated activating phosphosites do not currently pass the direction-aware support rule
+- after fixing a graph-base inconsistency, `CDK20` re-enters the bounded graph slice but still only at rank `501`
 
 Implication:
 
