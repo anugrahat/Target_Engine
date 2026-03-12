@@ -79,6 +79,51 @@ PATHWAY_SCORES = [
     },
 ]
 
+HCC_CORE_RANKED = [
+    {
+        "ensembl_gene_id": "ENSG10",
+        "gene_symbol": "TOP2A",
+        "score": 0.6,
+        "components": {
+            "transcriptomics_component": 0.4,
+            "genetics_component": 0.0,
+            "tractability_component": 0.0,
+            "pathway_component": 0.0,
+            "network_component": 0.0,
+        },
+        "transcriptomics_available": True,
+        "genetics_available": False,
+        "tractability_available": False,
+        "pathway_available": False,
+        "network_available": False,
+        "transcriptomics_supporting_contrasts": 3,
+        "transcriptomics_direction_conflict": False,
+        "transcriptomics_provenance": {"source_contrast_ids": ["hcc_adult_core_gse1"]},
+        "genetics_provenance": None,
+    },
+    {
+        "ensembl_gene_id": "ENSG20",
+        "gene_symbol": "CDK20",
+        "score": 0.05,
+        "components": {
+            "transcriptomics_component": 0.05,
+            "genetics_component": 0.0,
+            "tractability_component": 0.0,
+            "pathway_component": 0.0,
+            "network_component": 0.0,
+        },
+        "transcriptomics_available": True,
+        "genetics_available": False,
+        "tractability_available": False,
+        "pathway_available": False,
+        "network_available": False,
+        "transcriptomics_supporting_contrasts": 1,
+        "transcriptomics_direction_conflict": False,
+        "transcriptomics_provenance": {"source_contrast_ids": ["hcc_adult_core_gse2"]},
+        "genetics_provenance": None,
+    },
+]
+
 MECHANISTIC_EDGES = [
     {
         "source": {"node_type": "disease", "ref": "ipf_tnik"},
@@ -93,6 +138,25 @@ MECHANISTIC_EDGES = [
         "target": {"ref": "myofibroblast_differentiation", "label": "Myofibroblast differentiation", "mechanism_kind": "cell_state_program"},
         "edge_type": "gene_mechanism_support",
         "weight": 0.92,
+        "leakage_risk": "medium",
+        "sources": [{"title": "paper"}],
+    },
+]
+
+HCC_MECHANISTIC_EDGES = [
+    {
+        "source": {"node_type": "disease", "ref": "hcc_cdk20"},
+        "target": {"ref": "beta_catenin_signaling", "label": "Beta-catenin signaling", "mechanism_kind": "signaling_program"},
+        "edge_type": "disease_mechanism_support",
+        "weight": 0.82,
+        "leakage_risk": "low",
+        "sources": [{"title": "paper"}],
+    },
+    {
+        "source": {"node_type": "gene", "ref": "CDK20"},
+        "target": {"ref": "beta_catenin_signaling", "label": "Beta-catenin signaling", "mechanism_kind": "signaling_program"},
+        "edge_type": "gene_mechanism_support",
+        "weight": 0.84,
         "leakage_risk": "medium",
         "sources": [{"title": "paper"}],
     },
@@ -276,6 +340,27 @@ class GraphServiceTests(unittest.TestCase):
 
         self.assertEqual("TNIK", ranked[0]["gene_symbol"])
         self.assertGreater(ranked[0]["graph_score"], ranked[1]["graph_score"])
+
+    def test_mechanistic_seed_can_include_low_rank_hcc_target(self) -> None:
+        with patch("prioritx_graph.service.fused_target_evidence", return_value=HCC_CORE_RANKED), patch(
+            "prioritx_graph.service.load_reactome_pathway_enrichment",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.load_reactome_membership_cache",
+            return_value={},
+        ), patch(
+            "prioritx_graph.service.load_mechanistic_edges",
+            return_value=HCC_MECHANISTIC_EDGES,
+        ):
+            ranked = graph_augmented_target_evidence(
+                "hcc_cdk20",
+                mode="exploratory",
+                candidate_limit=1,
+                genetics_size=0,
+                mechanistic_seed_top_n=1,
+            )
+
+        self.assertEqual(["TOP2A", "CDK20"], [item["gene_symbol"] for item in ranked])
 
 
 if __name__ == "__main__":

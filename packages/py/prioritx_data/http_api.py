@@ -499,17 +499,20 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
             return 400, {"error": "mode must be one of: strict, exploratory"}
         candidate_limit_raw = _single(query, "candidate_limit")
         genetics_size_raw = _single(query, "genetics_size")
+        mechanistic_seed_top_n_raw = _single(query, "mechanistic_seed_top_n")
         try:
             candidate_limit = int(candidate_limit_raw) if candidate_limit_raw else 500
             genetics_size = int(genetics_size_raw) if genetics_size_raw else 200
+            mechanistic_seed_top_n = int(mechanistic_seed_top_n_raw) if mechanistic_seed_top_n_raw else 10
         except ValueError:
-            return 400, {"error": "candidate_limit and genetics_size must be integers"}
+            return 400, {"error": "candidate_limit, genetics_size, and mechanistic_seed_top_n must be integers"}
         return 200, build_benchmark_knowledge_graph(
             benchmark_id,
             mode=mode or "strict",
             subset_id=_single(query, "subset_id"),
             candidate_limit=candidate_limit,
             genetics_size=genetics_size,
+            mechanistic_seed_top_n=mechanistic_seed_top_n,
         )
 
     if path == "/mechanistic-support":
@@ -545,11 +548,13 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
             return 400, {"error": "mode must be one of: strict, exploratory"}
         candidate_limit_raw = _single(query, "candidate_limit")
         genetics_size_raw = _single(query, "genetics_size")
+        mechanistic_seed_top_n_raw = _single(query, "mechanistic_seed_top_n")
         try:
             candidate_limit = int(candidate_limit_raw) if candidate_limit_raw else 500
             genetics_size = int(genetics_size_raw) if genetics_size_raw else 200
+            mechanistic_seed_top_n = int(mechanistic_seed_top_n_raw) if mechanistic_seed_top_n_raw else 10
         except ValueError:
-            return 400, {"error": "candidate_limit and genetics_size must be integers"}
+            return 400, {"error": "candidate_limit, genetics_size, and mechanistic_seed_top_n must be integers"}
         return 200, {
             "items": graph_feature_scores(
                 benchmark_id,
@@ -557,6 +562,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
                 subset_id=_single(query, "subset_id"),
                 candidate_limit=candidate_limit,
                 genetics_size=genetics_size,
+                mechanistic_seed_top_n=mechanistic_seed_top_n,
             )
         }
 
@@ -569,11 +575,13 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
             return 400, {"error": "mode must be one of: strict, exploratory"}
         candidate_limit_raw = _single(query, "candidate_limit")
         genetics_size_raw = _single(query, "genetics_size")
+        mechanistic_seed_top_n_raw = _single(query, "mechanistic_seed_top_n")
         try:
             candidate_limit = int(candidate_limit_raw) if candidate_limit_raw else 500
             genetics_size = int(genetics_size_raw) if genetics_size_raw else 200
+            mechanistic_seed_top_n = int(mechanistic_seed_top_n_raw) if mechanistic_seed_top_n_raw else 10
         except ValueError:
-            return 400, {"error": "candidate_limit and genetics_size must be integers"}
+            return 400, {"error": "candidate_limit, genetics_size, and mechanistic_seed_top_n must be integers"}
         return 200, {
             "items": graph_augmented_target_evidence(
                 benchmark_id,
@@ -581,6 +589,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
                 subset_id=_single(query, "subset_id"),
                 candidate_limit=candidate_limit,
                 genetics_size=genetics_size,
+                mechanistic_seed_top_n=mechanistic_seed_top_n,
             )
         }
 
@@ -593,17 +602,20 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
             return 400, {"error": "mode must be one of: strict, exploratory"}
         candidate_limit_raw = _single(query, "candidate_limit")
         genetics_size_raw = _single(query, "genetics_size")
+        mechanistic_seed_top_n_raw = _single(query, "mechanistic_seed_top_n")
         try:
             candidate_limit = int(candidate_limit_raw) if candidate_limit_raw else 500
             genetics_size = int(genetics_size_raw) if genetics_size_raw else 200
+            mechanistic_seed_top_n = int(mechanistic_seed_top_n_raw) if mechanistic_seed_top_n_raw else 10
         except ValueError:
-            return 400, {"error": "candidate_limit and genetics_size must be integers"}
+            return 400, {"error": "candidate_limit, genetics_size, and mechanistic_seed_top_n must be integers"}
         return 200, evaluate_graph_augmented_benchmark(
             benchmark_id,
             mode=mode or "strict",
             subset_id=_single(query, "subset_id"),
             candidate_limit=candidate_limit,
             genetics_size=genetics_size,
+            mechanistic_seed_top_n=mechanistic_seed_top_n,
         )
 
     if path == "/rl-benchmark-evaluation":

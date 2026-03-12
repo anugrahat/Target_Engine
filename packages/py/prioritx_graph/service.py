@@ -153,18 +153,22 @@ def mechanistic_support_scores(
     subset_id: str | None = None,
     candidate_limit: int = 500,
     genetics_size: int = 200,
+    ranked_items: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """Return typed mechanistic support over the current candidate slice."""
     mode_config = benchmark_mode_config(benchmark_id, mode=mode)
     chosen_subset_id = subset_id or mode_config["subset_id"]
-    core_ranked = fused_target_evidence(
-        benchmark_id=benchmark_id,
-        subset_id=chosen_subset_id,
-        genetics_size=genetics_size,
-        tractability_top_n=0,
-        pathway_top_n=0,
-        network_top_n=0,
-    )[: max(candidate_limit, 0)]
+    if ranked_items is None:
+        core_ranked = fused_target_evidence(
+            benchmark_id=benchmark_id,
+            subset_id=chosen_subset_id,
+            genetics_size=genetics_size,
+            tractability_top_n=0,
+            pathway_top_n=0,
+            network_top_n=0,
+        )[: max(candidate_limit, 0)]
+    else:
+        core_ranked = ranked_items[: max(candidate_limit, 0)]
     max_leakage_risk = _max_leakage_risk_for_mode(mode)
     edges = load_mechanistic_edges(benchmark_id, max_leakage_risk=max_leakage_risk)
     if not edges:
@@ -208,6 +212,46 @@ def mechanistic_support_scores(
     return scored
 
 
+def _select_graph_candidates(
+    *,
+    benchmark_id: str,
+    mode: str,
+    subset_id: str,
+    candidate_limit: int,
+    genetics_size: int,
+    mechanistic_seed_top_n: int,
+) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
+    ranked_full = fused_target_evidence(
+        benchmark_id=benchmark_id,
+        subset_id=subset_id,
+        genetics_size=genetics_size,
+        tractability_top_n=0,
+        pathway_top_n=0,
+        network_top_n=0,
+    )
+    ranked_by_gene_id = {item["ensembl_gene_id"]: item for item in ranked_full if item.get("ensembl_gene_id")}
+    selected_ids: list[str] = [
+        item["ensembl_gene_id"]
+        for item in ranked_full[: max(candidate_limit, 0)]
+        if item.get("ensembl_gene_id")
+    ]
+    mechanistic_ranked = mechanistic_support_scores(
+        benchmark_id,
+        mode=mode,
+        subset_id=subset_id,
+        candidate_limit=len(ranked_full),
+        genetics_size=genetics_size,
+        ranked_items=ranked_full,
+    )
+    for item in mechanistic_ranked[: max(mechanistic_seed_top_n, 0)]:
+        gene_id = item.get("ensembl_gene_id")
+        if gene_id and gene_id not in selected_ids:
+            selected_ids.append(gene_id)
+    return [ranked_by_gene_id[gene_id] for gene_id in selected_ids if gene_id in ranked_by_gene_id], {
+        item["ensembl_gene_id"]: item for item in mechanistic_ranked if item.get("ensembl_gene_id")
+    }
+
+
 def build_benchmark_knowledge_graph(
     benchmark_id: str,
     *,
@@ -215,20 +259,21 @@ def build_benchmark_knowledge_graph(
     subset_id: str | None = None,
     candidate_limit: int = 500,
     genetics_size: int = 200,
+    mechanistic_seed_top_n: int = 10,
 ) -> dict[str, Any]:
     """Build a provenance-first benchmark slice knowledge graph."""
     assertion = load_benchmark_assertion(benchmark_id)
     mode_config = benchmark_mode_config(benchmark_id, mode=mode)
     chosen_subset_id = subset_id or mode_config["subset_id"]
 
-    core_ranked = fused_target_evidence(
+    core_ranked, mechanistic_scores = _select_graph_candidates(
         benchmark_id=benchmark_id,
+        mode=mode,
         subset_id=chosen_subset_id,
+        candidate_limit=candidate_limit,
         genetics_size=genetics_size,
-        tractability_top_n=0,
-        pathway_top_n=0,
-        network_top_n=0,
-    )[: max(candidate_limit, 0)]
+        mechanistic_seed_top_n=mechanistic_seed_top_n,
+    )
     pathway_scores = [
         item
         for item in _cache_aware_pathway_scores(
@@ -239,17 +284,6 @@ def build_benchmark_knowledge_graph(
         )
         if item.get("ensembl_gene_id")
     ]
-    mechanistic_scores = {
-        item["ensembl_gene_id"]: item
-        for item in mechanistic_support_scores(
-            benchmark_id,
-            mode=mode,
-            subset_id=chosen_subset_id,
-            candidate_limit=candidate_limit,
-            genetics_size=genetics_size,
-        )
-        if item.get("ensembl_gene_id")
-    }
     mechanistic_edges = load_mechanistic_edges(benchmark_id, max_leakage_risk=_max_leakage_risk_for_mode(mode))
 
     disease_node_id = f"disease:{benchmark_id}"
@@ -438,6 +472,7 @@ def build_benchmark_knowledge_graph(
         "provenance": {
             "graph_kind": "benchmark_slice_knowledge_graph",
             "genetics_size": genetics_size,
+            "mechanistic_seed_top_n": mechanistic_seed_top_n,
             "candidate_source": "core_fused_target_evidence_without_graph_rerank",
         },
     }
@@ -481,6 +516,7 @@ def graph_feature_scores(
     subset_id: str | None = None,
     candidate_limit: int = 500,
     genetics_size: int = 200,
+    mechanistic_seed_top_n: int = 10,
 ) -> list[dict[str, Any]]:
     """Compute transparent graph features for genes in one benchmark slice."""
     kg = build_benchmark_knowledge_graph(
@@ -489,6 +525,7 @@ def graph_feature_scores(
         subset_id=subset_id,
         candidate_limit=candidate_limit,
         genetics_size=genetics_size,
+        mechanistic_seed_top_n=mechanistic_seed_top_n,
     )
     graph = kg["graph"]
     disease_node_id = f"disease:{benchmark_id}"
@@ -503,6 +540,17 @@ def graph_feature_scores(
             subset_id=kg["subset_id"],
             candidate_limit=candidate_limit,
             genetics_size=genetics_size,
+            ranked_items=[
+                {
+                    "ensembl_gene_id": node["attributes"]["ensembl_gene_id"],
+                    "gene_symbol": node["label"],
+                    "score": node["attributes"]["core_score"],
+                    "transcriptomics_available": node["attributes"]["transcriptomics_available"],
+                    "genetics_available": node["attributes"]["genetics_available"],
+                }
+                for node in graph["nodes"]
+                if node["type"] == "gene"
+            ],
         )
         if item.get("ensembl_gene_id")
     }
@@ -590,18 +638,19 @@ def graph_augmented_target_evidence(
     subset_id: str | None = None,
     candidate_limit: int = 500,
     genetics_size: int = 200,
+    mechanistic_seed_top_n: int = 10,
 ) -> list[dict[str, Any]]:
     """Combine core fused evidence with transparent graph support."""
     mode_config = benchmark_mode_config(benchmark_id, mode=mode)
     chosen_subset_id = subset_id or mode_config["subset_id"]
-    core_ranked = fused_target_evidence(
+    core_ranked, _ = _select_graph_candidates(
         benchmark_id=benchmark_id,
+        mode=mode,
         subset_id=chosen_subset_id,
+        candidate_limit=candidate_limit,
         genetics_size=genetics_size,
-        tractability_top_n=0,
-        pathway_top_n=0,
-        network_top_n=0,
-    )[: max(candidate_limit, 0)]
+        mechanistic_seed_top_n=mechanistic_seed_top_n,
+    )
     graph_scores = {
         item["ensembl_gene_id"]: item
         for item in graph_feature_scores(
@@ -610,6 +659,7 @@ def graph_augmented_target_evidence(
             subset_id=chosen_subset_id,
             candidate_limit=candidate_limit,
             genetics_size=genetics_size,
+            mechanistic_seed_top_n=mechanistic_seed_top_n,
         )
     }
     ranked = []
@@ -640,6 +690,7 @@ def evaluate_graph_augmented_benchmark(
     subset_id: str | None = None,
     candidate_limit: int = 500,
     genetics_size: int = 200,
+    mechanistic_seed_top_n: int = 10,
 ) -> dict[str, Any]:
     """Evaluate graph-augmented ranking against source-backed positives."""
     assertion = load_benchmark_assertion(benchmark_id)
@@ -651,6 +702,7 @@ def evaluate_graph_augmented_benchmark(
         subset_id=chosen_subset_id,
         candidate_limit=candidate_limit,
         genetics_size=genetics_size,
+        mechanistic_seed_top_n=mechanistic_seed_top_n,
     )
     by_symbol = {item["gene_symbol"]: (index + 1, item) for index, item in enumerate(ranked) if item.get("gene_symbol")}
     items = []
@@ -696,5 +748,6 @@ def evaluate_graph_augmented_benchmark(
             "ranking_kind": "graph_augmented_target_evidence",
             "candidate_limit": candidate_limit,
             "genetics_size": genetics_size,
+            "mechanistic_seed_top_n": mechanistic_seed_top_n,
         },
     }

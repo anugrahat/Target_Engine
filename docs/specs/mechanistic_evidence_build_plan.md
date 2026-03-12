@@ -216,4 +216,18 @@ The first typed-mechanistic benchmark result is encouraging for IPF:
 
 That is the first real indication that the benchmark miss was partly due to graph specificity rather than only missing bulk omics.
 
-The HCC mechanistic graph run is still computationally heavier because `CDK20` sits much deeper in the candidate universe, so HCC needs a bounded evaluation pass or a more efficient large-slice graph routine before claiming an equivalent rank shift.
+The bounded HCC result is more mixed:
+
+- `CDK20` base fused rank in `hcc_adult_extended` exploratory mode: `11069`
+- `CDK20` bounded graph rank with a `500`-candidate slice plus mechanistic seeding: `501`
+
+Interpretation:
+
+- mechanistic seeding is enough to admit `CDK20` into a practical graph slice
+- but the current HCC mechanistic evidence is not yet strong enough to make `CDK20` a true top candidate
+
+That means the mechanistic graph fixed one real problem:
+
+- `CDK20` is no longer excluded purely because it sits too deep in the bulk-ranked universe
+
+But it did not solve the full HCC benchmark yet. The next HCC-specific science layer still needs to be signaling-state evidence, not just typed literature edges.
