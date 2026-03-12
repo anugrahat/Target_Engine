@@ -24,10 +24,24 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(200, status)
         self.assertEqual(2, payload["benchmark_count"])
 
+    def test_materialized_benchmark_dashboard_summary_route(self) -> None:
+        mocked_result = {"benchmark_count": 2, "items": [{"benchmark_id": "ipf_tnik"}]}
+        with patch("prioritx_data.http_api._materialized_payload", return_value=mocked_result):
+            status, payload = handle_get("/materialized/benchmark-dashboard-summary", {})
+        self.assertEqual(200, status)
+        self.assertEqual(2, payload["benchmark_count"])
+
     def test_benchmark_health_summary_route(self) -> None:
         mocked_result = {"benchmark_count": 2, "items": [{"benchmark_id": "ipf_tnik"}]}
         with patch("prioritx_data.http_api.summarize_benchmark_health", return_value=mocked_result):
             status, payload = handle_get("/benchmark-health-summary", {"top_n": ["10"]})
+        self.assertEqual(200, status)
+        self.assertEqual(2, payload["benchmark_count"])
+
+    def test_materialized_benchmark_health_summary_route(self) -> None:
+        mocked_result = {"benchmark_count": 2, "items": [{"benchmark_id": "ipf_tnik"}]}
+        with patch("prioritx_data.http_api._materialized_payload", return_value=mocked_result):
+            status, payload = handle_get("/materialized/benchmark-health-summary", {})
         self.assertEqual(200, status)
         self.assertEqual(2, payload["benchmark_count"])
 
@@ -37,6 +51,30 @@ class HttpApiTests(unittest.TestCase):
             status, payload = handle_get("/benchmark-health-export", {"top_n": ["10"]})
         self.assertEqual(200, status)
         self.assertEqual(2, payload["row_count"])
+
+    def test_materialized_benchmark_health_export_route(self) -> None:
+        mocked_result = {"row_count": 2, "rows": [{"benchmark_id": "ipf_tnik"}]}
+        with patch("prioritx_data.http_api._materialized_payload", return_value=mocked_result):
+            status, payload = handle_get("/materialized/benchmark-health-export", {})
+        self.assertEqual(200, status)
+        self.assertEqual(2, payload["row_count"])
+
+    def test_materialized_benchmark_mode_comparison_route(self) -> None:
+        mocked_result = {"benchmark_id": "ipf_tnik", "benchmark_positive_comparison": []}
+        with patch("prioritx_data.http_api._materialized_benchmark_payload", return_value=mocked_result):
+            status, payload = handle_get("/materialized/benchmark-mode-comparison", {"benchmark_id": ["ipf_tnik"]})
+        self.assertEqual(200, status)
+        self.assertEqual("ipf_tnik", payload["benchmark_id"])
+
+    def test_materialized_target_shortlist_route(self) -> None:
+        mocked_result = {"benchmark_id": "ipf_tnik", "items": [{"gene_symbol": "TNIK"}]}
+        with patch("prioritx_data.http_api._materialized_benchmark_payload", return_value=mocked_result):
+            status, payload = handle_get(
+                "/materialized/target-shortlist-explanations",
+                {"benchmark_id": ["ipf_tnik"], "mode": ["exploratory"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("TNIK", payload["items"][0]["gene_symbol"])
 
     def test_subset_detail_route(self) -> None:
         status, payload = handle_get("/subsets/ipf_lung_core", {})
@@ -205,6 +243,25 @@ class HttpApiTests(unittest.TestCase):
 
     def test_benchmark_health_export_validates_top_n(self) -> None:
         status, payload = handle_get("/benchmark-health-export", {"top_n": ["bad"]})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
+    def test_materialized_benchmark_route_returns_not_found_when_missing(self) -> None:
+        with patch("prioritx_data.http_api._materialized_payload", return_value=None):
+            status, payload = handle_get("/materialized/benchmark-health-summary", {})
+        self.assertEqual(404, status)
+        self.assertIn("error", payload)
+
+    def test_materialized_target_shortlist_requires_benchmark_id(self) -> None:
+        status, payload = handle_get("/materialized/target-shortlist-explanations", {})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
+    def test_materialized_target_shortlist_validates_mode(self) -> None:
+        status, payload = handle_get(
+            "/materialized/target-shortlist-explanations",
+            {"benchmark_id": ["ipf_tnik"], "mode": ["invalid"]},
+        )
         self.assertEqual(400, status)
         self.assertIn("error", payload)
 

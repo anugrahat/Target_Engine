@@ -25,3 +25,7 @@ contrast-readiness:
 .PHONY: api-dev
 api-dev:
 	$(PYTHONPATH_RUN) $(PYTHON) apps/api/server.py
+
+.PHONY: web-dev
+web-dev:
+	cd apps/web && $(PYTHON) -m http.server 4173
