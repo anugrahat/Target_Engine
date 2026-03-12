@@ -34,6 +34,7 @@ from prioritx_eval.service import (
     summarize_benchmark_dashboard,
     target_evidence_graph,
 )
+from prioritx_rl.service import evaluate_bandit_agents
 
 ROOT = Path(__file__).resolve().parents[3]
 MATERIALIZED_EXPORTS_DIR = ROOT / "tmp" / "benchmark_exports" / "latest"
@@ -101,6 +102,7 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
                 "/target-shortlist-explanations",
                 "/target-evidence-graph",
                 "/target-audit",
+                "/rl-benchmark-evaluation",
                 "/transcriptomics-evidence",
                 "/transcriptomics-real-scores",
                 "/transcriptomics-fixture-scores",
@@ -470,6 +472,45 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
             mode=mode or "strict",
             subset_id=_single(query, "subset_id"),
             top_n=top_n,
+            genetics_size=genetics_size,
+            tractability_top_n=tractability_top_n,
+            pathway_top_n=pathway_top_n,
+            network_top_n=network_top_n,
+        )
+
+    if path == "/rl-benchmark-evaluation":
+        requested_modes = query.get("mode")
+        if requested_modes:
+            invalid_modes = [mode for mode in requested_modes if mode not in BENCHMARK_MODES]
+            if invalid_modes:
+                return 400, {"error": "mode must be one of: strict, exploratory"}
+        benchmark_ids = query.get("benchmark_id")
+        candidate_limit_raw = _single(query, "candidate_limit")
+        horizon_raw = _single(query, "horizon")
+        episodes_raw = _single(query, "episodes")
+        seed_raw = _single(query, "seed")
+        genetics_size_raw = _single(query, "genetics_size")
+        tractability_top_n_raw = _single(query, "tractability_top_n")
+        pathway_top_n_raw = _single(query, "pathway_top_n")
+        network_top_n_raw = _single(query, "network_top_n")
+        try:
+            candidate_limit = int(candidate_limit_raw) if candidate_limit_raw else 500
+            horizon = int(horizon_raw) if horizon_raw else 25
+            episodes = int(episodes_raw) if episodes_raw else 10
+            seed = int(seed_raw) if seed_raw else 0
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else 0
+            tractability_top_n = int(tractability_top_n_raw) if tractability_top_n_raw else 0
+            pathway_top_n = int(pathway_top_n_raw) if pathway_top_n_raw else 0
+            network_top_n = int(network_top_n_raw) if network_top_n_raw else 0
+        except ValueError:
+            return 400, {"error": "candidate_limit, horizon, episodes, seed, genetics_size, tractability_top_n, pathway_top_n, and network_top_n must be integers"}
+        return 200, evaluate_bandit_agents(
+            benchmark_ids=benchmark_ids,
+            modes=requested_modes or ["strict", "exploratory"],
+            candidate_limit=candidate_limit,
+            horizon=horizon,
+            episodes=episodes,
+            seed=seed,
             genetics_size=genetics_size,
             tractability_top_n=tractability_top_n,
             pathway_top_n=pathway_top_n,

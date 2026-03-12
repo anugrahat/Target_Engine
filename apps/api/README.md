@@ -40,6 +40,7 @@ Current routes:
 - `/target-shortlist-explanations?benchmark_id=...`
 - `/target-evidence-graph?benchmark_id=...&gene_symbol=...`
 - `/target-audit?benchmark_id=...&gene_symbol=...`
+- `/rl-benchmark-evaluation`
 - `/transcriptomics-evidence?subset_id=...`
 - `/transcriptomics-real-scores?contrast_id=...`
 - `/transcriptomics-fixture-scores?contrast_id=...`
@@ -59,6 +60,7 @@ Important:
 - `scripts/materialize_benchmark_exports.py` writes timestamped benchmark dashboard, health, and row exports under `tmp/benchmark_exports/` and refreshes `tmp/benchmark_exports/latest/`
 - the `/materialized/...` routes serve those latest JSON snapshots directly so the frontend can render immediately without blocking on full live recomputation
 - benchmark-specific materialized routes are available for strict-vs-exploratory comparison and target shortlist payloads so the frontend can stay responsive on first load
+- `rl-benchmark-evaluation` replays a small non-leaky contextual-bandit environment over current fused target evidence and source-backed benchmark positives; it is for honest bounded evaluation, not a claim of prospective RL performance
 - `benchmark-evaluation` and `target-audit` now accept `mode=strict|exploratory`; strict uses the benchmark core subset, while exploratory uses the broader curated subset when one exists
 - `benchmark-integrity` reports the subset, evidence-family leakage review, and benchmark-specific forbidden leakage items without running a full rank
 - `benchmark-mode-comparison` compares strict and exploratory shortlist behavior, including how source-backed positive targets move in rank when the broader curated subset is enabled
