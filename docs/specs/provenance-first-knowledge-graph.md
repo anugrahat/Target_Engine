@@ -62,6 +62,26 @@ The first graph-augmented ranker is a transparent rerank over the core fused can
 
 This weight is an engineering tradeoff, not a learned optimum.
 
+## Runtime Strategy
+
+Live Reactome membership lookups are too slow to support large benchmark slices.
+
+The KG therefore uses a local membership cache built from:
+
+- `scripts/build_reactome_membership_cache.py`
+- `tmp/graph_cache/reactome_gene_memberships.json`
+
+The cache is keyed by gene symbol and stores Reactome memberships so repeated benchmark runs stay local after the first warmup.
+
+## Current Measured Result
+
+The first cache-backed IPF exploratory benchmark run is informative:
+
+- base fused rank for `TNIK`: `1176`
+- graph-augmented rank for `TNIK`: `1208`
+
+So the current provenance-first KG implementation is faster and scientifically auditable, but it does not yet improve `TNIK` recovery. That is the correct result to keep until stronger graph evidence is added.
+
 ## Why This Before GNNs
 
 This phase should answer:

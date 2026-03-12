@@ -61,6 +61,7 @@ PATHWAY_SCORES = [
         "ensembl_gene_id": "ENSG1",
         "gene_symbol": "TNIK",
         "score": 0.9,
+        "overlap_count": 1,
         "top_overlap_pathways": [
             {"st_id": "R-HSA-1", "name": "Fibrosis pathway", "fdr": 1e-6},
         ],
@@ -70,6 +71,7 @@ PATHWAY_SCORES = [
         "ensembl_gene_id": "ENSG2",
         "gene_symbol": "MUC5B",
         "score": 0.1,
+        "overlap_count": 1,
         "top_overlap_pathways": [
             {"st_id": "R-HSA-1", "name": "Fibrosis pathway", "fdr": 1e-6},
         ],
@@ -81,8 +83,19 @@ PATHWAY_SCORES = [
 class GraphServiceTests(unittest.TestCase):
     def test_builds_provenance_first_graph(self) -> None:
         with patch("prioritx_graph.service.fused_target_evidence", return_value=CORE_RANKED), patch(
-            "prioritx_graph.service.reactome_pathway_scores",
-            return_value=PATHWAY_SCORES,
+            "prioritx_graph.service.load_reactome_membership_cache",
+            return_value={"TNIK": [], "MUC5B": []},
+        ), patch(
+            "prioritx_graph.service.load_reactome_pathway_enrichment",
+            return_value=[
+                {
+                    "pathway": {"st_id": "R-HSA-1", "name": "Fibrosis pathway", "species_name": "Homo sapiens"},
+                    "statistics": {"fdr": 1e-6},
+                }
+            ],
+        ), patch(
+            "prioritx_graph.service._score_pathway_overlap",
+            side_effect=PATHWAY_SCORES,
         ):
             payload = build_benchmark_knowledge_graph("ipf_tnik", candidate_limit=2, genetics_size=0)
 
@@ -98,8 +111,19 @@ class GraphServiceTests(unittest.TestCase):
 
     def test_scores_graph_features(self) -> None:
         with patch("prioritx_graph.service.fused_target_evidence", return_value=CORE_RANKED), patch(
-            "prioritx_graph.service.reactome_pathway_scores",
-            return_value=PATHWAY_SCORES,
+            "prioritx_graph.service.load_reactome_membership_cache",
+            return_value={"TNIK": [], "MUC5B": []},
+        ), patch(
+            "prioritx_graph.service.load_reactome_pathway_enrichment",
+            return_value=[
+                {
+                    "pathway": {"st_id": "R-HSA-1", "name": "Fibrosis pathway", "species_name": "Homo sapiens"},
+                    "statistics": {"fdr": 1e-6},
+                }
+            ],
+        ), patch(
+            "prioritx_graph.service._score_pathway_overlap",
+            side_effect=PATHWAY_SCORES,
         ):
             scores = graph_feature_scores("ipf_tnik", candidate_limit=2, genetics_size=0)
 
@@ -109,8 +133,19 @@ class GraphServiceTests(unittest.TestCase):
 
     def test_graph_augmented_ranking_can_reorder_candidates(self) -> None:
         with patch("prioritx_graph.service.fused_target_evidence", return_value=CORE_RANKED), patch(
-            "prioritx_graph.service.reactome_pathway_scores",
-            return_value=PATHWAY_SCORES,
+            "prioritx_graph.service.load_reactome_membership_cache",
+            return_value={"TNIK": [], "MUC5B": []},
+        ), patch(
+            "prioritx_graph.service.load_reactome_pathway_enrichment",
+            return_value=[
+                {
+                    "pathway": {"st_id": "R-HSA-1", "name": "Fibrosis pathway", "species_name": "Homo sapiens"},
+                    "statistics": {"fdr": 1e-6},
+                }
+            ],
+        ), patch(
+            "prioritx_graph.service._score_pathway_overlap",
+            side_effect=PATHWAY_SCORES,
         ):
             ranked = graph_augmented_target_evidence("ipf_tnik", candidate_limit=2, genetics_size=0)
 
@@ -119,13 +154,75 @@ class GraphServiceTests(unittest.TestCase):
 
     def test_evaluates_graph_augmented_benchmark(self) -> None:
         with patch("prioritx_graph.service.fused_target_evidence", return_value=CORE_RANKED), patch(
-            "prioritx_graph.service.reactome_pathway_scores",
-            return_value=PATHWAY_SCORES,
+            "prioritx_graph.service.load_reactome_membership_cache",
+            return_value={"TNIK": [], "MUC5B": []},
+        ), patch(
+            "prioritx_graph.service.load_reactome_pathway_enrichment",
+            return_value=[
+                {
+                    "pathway": {"st_id": "R-HSA-1", "name": "Fibrosis pathway", "species_name": "Homo sapiens"},
+                    "statistics": {"fdr": 1e-6},
+                }
+            ],
+        ), patch(
+            "prioritx_graph.service._score_pathway_overlap",
+            side_effect=PATHWAY_SCORES,
         ):
             result = evaluate_graph_augmented_benchmark("ipf_tnik", candidate_limit=2, genetics_size=0)
 
         self.assertEqual(1, result["metrics"]["best_rank"])
         self.assertTrue(result["items"][0]["found"])
+
+    def test_uses_cache_for_gene_pathways_when_available(self) -> None:
+        with patch("prioritx_graph.service.fused_target_evidence", return_value=CORE_RANKED), patch(
+            "prioritx_graph.service.load_reactome_membership_cache",
+            return_value={"TNIK": [{"pathway": {"st_id": "R-HSA-1"}}], "MUC5B": []},
+        ), patch(
+            "prioritx_graph.service.load_reactome_pathway_enrichment",
+            return_value=[
+                {
+                    "pathway": {"st_id": "R-HSA-1", "name": "Fibrosis pathway", "species_name": "Homo sapiens"},
+                    "statistics": {"fdr": 1e-6},
+                }
+            ],
+        ), patch(
+            "prioritx_graph.service._score_pathway_overlap",
+            side_effect=PATHWAY_SCORES,
+        ), patch(
+            "prioritx_graph.service.load_reactome_gene_pathways",
+        ) as load_gene_pathways, patch(
+            "prioritx_graph.service.save_reactome_membership_cache",
+        ) as save_cache:
+            build_benchmark_knowledge_graph("ipf_tnik", candidate_limit=1, genetics_size=0)
+
+        load_gene_pathways.assert_not_called()
+        save_cache.assert_not_called()
+
+    def test_falls_back_to_live_gene_membership_and_persists_cache(self) -> None:
+        with patch("prioritx_graph.service.fused_target_evidence", return_value=CORE_RANKED[:1]), patch(
+            "prioritx_graph.service.load_reactome_membership_cache",
+            return_value={},
+        ), patch(
+            "prioritx_graph.service.load_reactome_pathway_enrichment",
+            return_value=[
+                {
+                    "pathway": {"st_id": "R-HSA-1", "name": "Fibrosis pathway", "species_name": "Homo sapiens"},
+                    "statistics": {"fdr": 1e-6},
+                }
+            ],
+        ), patch(
+            "prioritx_graph.service._score_pathway_overlap",
+            return_value=PATHWAY_SCORES[0],
+        ), patch(
+            "prioritx_graph.service.load_reactome_gene_pathways",
+            return_value=[{"pathway": {"st_id": "R-HSA-1"}}],
+        ) as load_gene_pathways, patch(
+            "prioritx_graph.service.save_reactome_membership_cache",
+        ) as save_cache:
+            build_benchmark_knowledge_graph("ipf_tnik", candidate_limit=1, genetics_size=0)
+
+        load_gene_pathways.assert_called_once_with("TNIK")
+        save_cache.assert_called_once()
 
 
 if __name__ == "__main__":

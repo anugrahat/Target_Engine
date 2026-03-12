@@ -6,9 +6,13 @@ import math
 from collections import defaultdict
 from typing import Any
 
-from prioritx_data.service import fused_target_evidence, reactome_pathway_scores
+from prioritx_data.reactome import load_reactome_gene_pathways, load_reactome_pathway_enrichment
+from prioritx_data.service import fused_target_evidence
 from prioritx_eval.assertions import load_benchmark_assertion
 from prioritx_eval.policy import benchmark_mode_config
+from prioritx_features.pathway import derive_reactome_pathway_features
+from prioritx_graph.cache import load_reactome_membership_cache, save_reactome_membership_cache
+from prioritx_rank.baseline import score_reactome_pathway_support
 
 
 def _bounded_log_score(value: float, *, max_log: float = 10.0) -> float:
@@ -37,6 +41,105 @@ def _edge(
     }
 
 
+def _enrichment_gene_symbols(core_ranked: list[dict[str, Any]], *, limit: int) -> tuple[str, ...]:
+    symbols: list[str] = []
+    seen: set[str] = set()
+    for item in core_ranked:
+        gene_symbol = item.get("gene_symbol")
+        if not gene_symbol or not item.get("transcriptomics_available") or gene_symbol in seen:
+            continue
+        seen.add(gene_symbol)
+        symbols.append(gene_symbol)
+        if len(symbols) >= max(limit, 0):
+            break
+    return tuple(symbols)
+
+
+def _score_pathway_overlap(
+    *,
+    benchmark_id: str,
+    subset_id: str,
+    gene: dict[str, Any],
+    enriched_pathways: list[dict[str, Any]],
+    gene_pathways: list[dict[str, Any]],
+    enrichment_gene_count: int,
+    enrichment_fdr_max: float,
+) -> dict[str, Any]:
+    features = derive_reactome_pathway_features(
+        benchmark_id=benchmark_id,
+        subset_id=subset_id,
+        gene=gene,
+        enriched_pathways=enriched_pathways,
+        gene_pathways=gene_pathways,
+        enrichment_gene_count=enrichment_gene_count,
+        enrichment_fdr_max=enrichment_fdr_max,
+    )
+    return score_reactome_pathway_support(features)
+
+
+def _cache_aware_pathway_scores(
+    *,
+    benchmark_id: str,
+    subset_id: str,
+    core_ranked: list[dict[str, Any]],
+    candidate_limit: int,
+    enrichment_gene_limit: int = 300,
+    enrichment_fdr_max: float = 0.05,
+) -> list[dict[str, Any]]:
+    enrichment_gene_symbols = _enrichment_gene_symbols(core_ranked, limit=enrichment_gene_limit)
+    if not enrichment_gene_symbols:
+        return []
+
+    enriched_pathways = [
+        item
+        for item in load_reactome_pathway_enrichment(enrichment_gene_symbols)
+        if item["pathway"].get("species_name") == "Homo sapiens"
+        and float(item["statistics"]["fdr"]) <= enrichment_fdr_max
+    ]
+    if not enriched_pathways:
+        return []
+
+    cache = load_reactome_membership_cache()
+    cache_dirty = False
+    scored = []
+    for item in core_ranked[: max(candidate_limit, 0)]:
+        gene_symbol = item.get("gene_symbol")
+        ensembl_gene_id = item.get("ensembl_gene_id")
+        if not gene_symbol or not ensembl_gene_id:
+            continue
+
+        # Reuse local memberships first so live graph runs are mostly local after warmup.
+        gene_pathways = cache.get(gene_symbol)
+        cache_hit = gene_pathways is not None
+        if gene_pathways is None:
+            gene_pathways = load_reactome_gene_pathways(gene_symbol)
+            cache[gene_symbol] = gene_pathways
+            cache_dirty = True
+
+        score = _score_pathway_overlap(
+            benchmark_id=benchmark_id,
+            subset_id=subset_id,
+            gene={"ensembl_gene_id": ensembl_gene_id, "gene_symbol": gene_symbol},
+            enriched_pathways=enriched_pathways,
+            gene_pathways=gene_pathways,
+            enrichment_gene_count=len(enrichment_gene_symbols),
+            enrichment_fdr_max=enrichment_fdr_max,
+        )
+        score["provenance"] = {
+            "source_kind": "reactome_analysis_service",
+            "api_url": "https://reactome.org/AnalysisService/identifiers/projection",
+            "candidate_identifier": gene_symbol,
+            "cache_hit": cache_hit,
+        }
+        scored.append(score)
+
+    if cache_dirty:
+        save_reactome_membership_cache(cache)
+
+    scored.sort(key=lambda item: (item["score"], item["overlap_count"]), reverse=True)
+    return scored
+
+
 def build_benchmark_knowledge_graph(
     benchmark_id: str,
     *,
@@ -60,10 +163,11 @@ def build_benchmark_knowledge_graph(
     )[: max(candidate_limit, 0)]
     pathway_scores = [
         item
-        for item in reactome_pathway_scores(
+        for item in _cache_aware_pathway_scores(
             benchmark_id=benchmark_id,
             subset_id=chosen_subset_id,
-            candidate_top_n=candidate_limit,
+            core_ranked=core_ranked,
+            candidate_limit=candidate_limit,
         )
         if item.get("ensembl_gene_id")
     ]
