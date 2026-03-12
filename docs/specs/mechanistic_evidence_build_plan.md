@@ -231,3 +231,23 @@ That means the mechanistic graph fixed one real problem:
 - `CDK20` is no longer excluded purely because it sits too deep in the bulk-ranked universe
 
 But it did not solve the full HCC benchmark yet. The next HCC-specific science layer still needs to be signaling-state evidence, not just typed literature edges.
+
+## First HCC Signaling-state Result
+
+The first transcriptomics-derived HCC signaling-state layer is now implemented and benchmarked.
+
+What it found in `hcc_adult_extended` exploratory mode:
+
+- `IL-6 / PMN-MDSC` program activity is present but weak
+- `beta-catenin` program activity is effectively absent in the current public HCC slice
+- `CDK20` gets non-zero signaling support, but the bounded graph rank remains `501` in a `500`-candidate slice with mechanistic seeding
+
+Interpretation:
+
+- the signaling family is behaving correctly and transparently
+- but the current HCC cohorts do not show strong enough CDK20-linked program activation to rescue the benchmark
+
+This is still useful because it narrows the scientific gap further:
+
+- the remaining HCC miss is not just missing graph specificity
+- it is now more likely a cohort-context problem, a missing phosphoproteomic/kinase-activity layer, or both

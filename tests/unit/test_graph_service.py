@@ -162,6 +162,19 @@ HCC_MECHANISTIC_EDGES = [
     },
 ]
 
+HCC_SIGNALING_SUPPORT = [
+    {
+        "benchmark_id": "hcc_cdk20",
+        "subset_id": "hcc_adult_extended",
+        "ensembl_gene_id": "ENSG20",
+        "gene_symbol": "CDK20",
+        "score_name": "signaling_state_support_score",
+        "score": 0.92,
+        "program_support_count": 2,
+        "top_programs": [{"ref": "beta_catenin_signaling"}],
+    }
+]
+
 
 class GraphServiceTests(unittest.TestCase):
     def test_builds_provenance_first_graph(self) -> None:
@@ -361,6 +374,31 @@ class GraphServiceTests(unittest.TestCase):
             )
 
         self.assertEqual(["TOP2A", "CDK20"], [item["gene_symbol"] for item in ranked])
+
+    def test_signaling_support_can_promote_hcc_target(self) -> None:
+        with patch("prioritx_graph.service.fused_target_evidence", return_value=HCC_CORE_RANKED), patch(
+            "prioritx_graph.service.load_reactome_pathway_enrichment",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.load_reactome_membership_cache",
+            return_value={},
+        ), patch(
+            "prioritx_graph.service.load_mechanistic_edges",
+            return_value=HCC_MECHANISTIC_EDGES,
+        ), patch(
+            "prioritx_graph.service.signaling_support_scores",
+            return_value=HCC_SIGNALING_SUPPORT,
+        ):
+            ranked = graph_augmented_target_evidence(
+                "hcc_cdk20",
+                mode="exploratory",
+                candidate_limit=1,
+                genetics_size=0,
+                mechanistic_seed_top_n=1,
+            )
+
+        by_symbol = {item["gene_symbol"]: item for item in ranked}
+        self.assertGreater(by_symbol["CDK20"]["graph_score"], 0.0)
 
 
 if __name__ == "__main__":

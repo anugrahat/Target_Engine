@@ -40,6 +40,8 @@ from prioritx_graph.service import (
     graph_augmented_target_evidence,
     graph_feature_scores,
     mechanistic_support_scores,
+    signaling_program_activity_scores,
+    signaling_support_scores,
 )
 from prioritx_rl.service import evaluate_bandit_agents
 
@@ -111,6 +113,8 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
                 "/target-audit",
                 "/knowledge-graph",
                 "/mechanistic-support",
+                "/signaling-program-activity",
+                "/signaling-support",
                 "/graph-feature-scores",
                 "/graph-augmented-target-evidence",
                 "/graph-augmented-benchmark-evaluation",
@@ -531,6 +535,44 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
             return 400, {"error": "candidate_limit and genetics_size must be integers"}
         return 200, {
             "items": mechanistic_support_scores(
+                benchmark_id,
+                mode=mode or "strict",
+                subset_id=_single(query, "subset_id"),
+                candidate_limit=candidate_limit,
+                genetics_size=genetics_size,
+            )
+        }
+
+    if path == "/signaling-program-activity":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        subset_id = _single(query, "subset_id")
+        if not subset_id:
+            return 400, {"error": "subset_id query parameter is required"}
+        return 200, {
+            "items": signaling_program_activity_scores(
+                benchmark_id,
+                subset_id=subset_id,
+            )
+        }
+
+    if path == "/signaling-support":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        mode = _mode(query)
+        if mode == "__invalid__":
+            return 400, {"error": "mode must be one of: strict, exploratory"}
+        candidate_limit_raw = _single(query, "candidate_limit")
+        genetics_size_raw = _single(query, "genetics_size")
+        try:
+            candidate_limit = int(candidate_limit_raw) if candidate_limit_raw else 500
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else 200
+        except ValueError:
+            return 400, {"error": "candidate_limit and genetics_size must be integers"}
+        return 200, {
+            "items": signaling_support_scores(
                 benchmark_id,
                 mode=mode or "strict",
                 subset_id=_single(query, "subset_id"),

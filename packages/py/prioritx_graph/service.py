@@ -9,12 +9,23 @@ from typing import Any
 from prioritx_data.mechanistic import load_mechanistic_edges
 from prioritx_data.reactome import load_reactome_gene_pathways, load_reactome_pathway_enrichment
 from prioritx_data.service import fused_target_evidence
+from prioritx_data.service import transcriptomics_indication_evidence
+from prioritx_data.signaling import load_signaling_programs
 from prioritx_eval.assertions import load_benchmark_assertion
 from prioritx_eval.policy import benchmark_mode_config
 from prioritx_features.mechanistic import derive_mechanistic_support_features
 from prioritx_features.pathway import derive_reactome_pathway_features
+from prioritx_features.signaling import (
+    derive_gene_signaling_support_features,
+    derive_signaling_program_activity_features,
+)
 from prioritx_graph.cache import load_reactome_membership_cache, save_reactome_membership_cache
-from prioritx_rank.baseline import score_mechanistic_support, score_reactome_pathway_support
+from prioritx_rank.baseline import (
+    score_mechanistic_support,
+    score_reactome_pathway_support,
+    score_signaling_program_activity,
+    score_signaling_support,
+)
 
 
 def _bounded_log_score(value: float, *, max_log: float = 10.0) -> float:
@@ -252,6 +263,100 @@ def _select_graph_candidates(
     }
 
 
+def signaling_program_activity_scores(
+    benchmark_id: str,
+    *,
+    subset_id: str,
+    min_support: int = 1,
+) -> list[dict[str, Any]]:
+    """Return disease-specific signaling program activity derived from transcriptomics."""
+    programs = load_signaling_programs(benchmark_id)
+    if not programs:
+        return []
+    transcriptomics_items = transcriptomics_indication_evidence(
+        benchmark_id=benchmark_id,
+        subset_id=subset_id,
+        min_support=min_support,
+    )
+    transcriptomics_by_symbol = {
+        item["gene_symbol"]: item
+        for item in transcriptomics_items
+        if item.get("gene_symbol")
+    }
+    scored = []
+    for program in programs:
+        marker_hits = [
+            transcriptomics_by_symbol[marker]
+            for marker in program.get("marker_genes") or []
+            if marker in transcriptomics_by_symbol
+        ]
+        features = derive_signaling_program_activity_features(
+            benchmark_id=benchmark_id,
+            subset_id=subset_id,
+            program=program,
+            marker_hits=marker_hits,
+        )
+        scored.append(score_signaling_program_activity(features))
+    scored.sort(key=lambda item: (item["score"], item["positive_marker_count"]), reverse=True)
+    return scored
+
+
+def signaling_support_scores(
+    benchmark_id: str,
+    *,
+    mode: str = "strict",
+    subset_id: str | None = None,
+    candidate_limit: int = 500,
+    genetics_size: int = 200,
+    ranked_items: list[dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    """Return gene support from active signaling programs."""
+    mode_config = benchmark_mode_config(benchmark_id, mode=mode)
+    chosen_subset_id = subset_id or mode_config["subset_id"]
+    if ranked_items is None:
+        ranked_items = fused_target_evidence(
+            benchmark_id=benchmark_id,
+            subset_id=chosen_subset_id,
+            genetics_size=genetics_size,
+            tractability_top_n=0,
+            pathway_top_n=0,
+            network_top_n=0,
+        )
+    ranked_slice = ranked_items[: max(candidate_limit, 0)]
+    program_activity = signaling_program_activity_scores(
+        benchmark_id,
+        subset_id=chosen_subset_id,
+        min_support=1,
+    )
+    program_activity_by_ref = {item["program_ref"]: item for item in program_activity if item.get("program_ref")}
+    if not program_activity_by_ref:
+        return []
+
+    gene_edges_by_symbol: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for edge in load_mechanistic_edges(benchmark_id, max_leakage_risk=_max_leakage_risk_for_mode(mode)):
+        if edge["source"]["node_type"] == "gene":
+            gene_edges_by_symbol[edge["source"]["ref"]].append(edge)
+
+    scored = []
+    for item in ranked_slice:
+        gene_symbol = item.get("gene_symbol")
+        ensembl_gene_id = item.get("ensembl_gene_id")
+        if not gene_symbol or not ensembl_gene_id:
+            continue
+        features = derive_gene_signaling_support_features(
+            benchmark_id=benchmark_id,
+            subset_id=chosen_subset_id,
+            gene={"ensembl_gene_id": ensembl_gene_id, "gene_symbol": gene_symbol},
+            gene_edges=gene_edges_by_symbol.get(gene_symbol, []),
+            program_activity_by_ref=program_activity_by_ref,
+        )
+        if features["program_support_count"] <= 0:
+            continue
+        scored.append(score_signaling_support(features))
+    scored.sort(key=lambda item: (item["score"], item["program_support_count"]), reverse=True)
+    return scored
+
+
 def build_benchmark_knowledge_graph(
     benchmark_id: str,
     *,
@@ -260,6 +365,7 @@ def build_benchmark_knowledge_graph(
     candidate_limit: int = 500,
     genetics_size: int = 200,
     mechanistic_seed_top_n: int = 10,
+    include_signaling: bool = True,
 ) -> dict[str, Any]:
     """Build a provenance-first benchmark slice knowledge graph."""
     assertion = load_benchmark_assertion(benchmark_id)
@@ -473,6 +579,7 @@ def build_benchmark_knowledge_graph(
             "graph_kind": "benchmark_slice_knowledge_graph",
             "genetics_size": genetics_size,
             "mechanistic_seed_top_n": mechanistic_seed_top_n,
+            "include_signaling": include_signaling,
             "candidate_source": "core_fused_target_evidence_without_graph_rerank",
         },
     }
@@ -554,6 +661,30 @@ def graph_feature_scores(
         )
         if item.get("ensembl_gene_id")
     }
+    signaling_scores = {
+        item["ensembl_gene_id"]: item
+        for item in signaling_support_scores(
+            benchmark_id,
+            mode=mode,
+            subset_id=kg["subset_id"],
+            candidate_limit=len(
+                [node for node in graph["nodes"] if node["type"] == "gene"]
+            ),
+            genetics_size=genetics_size,
+            ranked_items=[
+                {
+                    "ensembl_gene_id": node["attributes"]["ensembl_gene_id"],
+                    "gene_symbol": node["label"],
+                    "score": node["attributes"]["core_score"],
+                    "transcriptomics_available": node["attributes"]["transcriptomics_available"],
+                    "genetics_available": node["attributes"]["genetics_available"],
+                }
+                for node in graph["nodes"]
+                if node["type"] == "gene"
+            ],
+        )
+        if item.get("ensembl_gene_id")
+    }
 
     disease_pathway_weights = {
         edge["target"]: float(edge["weight"])
@@ -592,13 +723,15 @@ def graph_feature_scores(
         )
         propagation_score = propagation.get(gene_node_id, 0.0)
         mechanistic_score = mechanistic_scores.get(node["attributes"]["ensembl_gene_id"], {}).get("score", 0.0)
+        signaling_score = signaling_scores.get(node["attributes"]["ensembl_gene_id"], {}).get("score", 0.0)
         graph_score = (
-            0.25 * min(propagation_score * 10.0, 1.0)
+            0.20 * min(propagation_score * 10.0, 1.0)
             + 0.20 * min(disease_pathway_connectivity / 3.0, 1.0)
-            + 0.10 * min(path_count / 5.0, 1.0)
+            + 0.05 * min(path_count / 5.0, 1.0)
             + 0.15 * min(neighborhood_support, 1.0)
             + 0.15 * min(disease_mechanism_connectivity / 3.0, 1.0)
             + 0.15 * min(float(mechanistic_score), 1.0)
+            + 0.10 * min(float(signaling_score), 1.0)
         )
         scores.append(
             {
@@ -610,18 +743,20 @@ def graph_feature_scores(
                 "score_name": "knowledge_graph_support_score",
                 "score": round(graph_score, 4),
                 "components": {
-                    "propagation_component": round(0.25 * min(propagation_score * 10.0, 1.0), 4),
+                    "propagation_component": round(0.20 * min(propagation_score * 10.0, 1.0), 4),
                     "disease_pathway_component": round(0.20 * min(disease_pathway_connectivity / 3.0, 1.0), 4),
-                    "path_count_component": round(0.10 * min(path_count / 5.0, 1.0), 4),
+                    "path_count_component": round(0.05 * min(path_count / 5.0, 1.0), 4),
                     "neighborhood_component": round(0.15 * min(neighborhood_support, 1.0), 4),
                     "disease_mechanism_component": round(0.15 * min(disease_mechanism_connectivity / 3.0, 1.0), 4),
                     "mechanistic_component": round(0.15 * min(float(mechanistic_score), 1.0), 4),
+                    "signaling_component": round(0.10 * min(float(signaling_score), 1.0), 4),
                 },
                 "pathway_neighbor_count": path_count,
                 "mechanism_neighbor_count": mechanism_count,
                 "gene_neighbor_count": len(gene_neighbors),
                 "disease_pathway_connectivity": round(disease_pathway_connectivity, 4),
                 "disease_mechanism_connectivity": round(disease_mechanism_connectivity, 4),
+                "signaling_score": round(float(signaling_score), 4),
                 "propagation_score": round(propagation_score, 6),
                 "provenance": kg["provenance"],
             }
