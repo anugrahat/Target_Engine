@@ -251,3 +251,24 @@ This is still useful because it narrows the scientific gap further:
 
 - the remaining HCC miss is not just missing graph specificity
 - it is now more likely a cohort-context problem, a missing phosphoproteomic/kinase-activity layer, or both
+
+## First IPF Cell-state Result
+
+The first single-cell-derived IPF cell-state layer is now implemented and benchmarked.
+
+What it found in `ipf_lung_extended` exploratory mode:
+
+- `myofibroblast` program activity is strong
+- `club cell` program activity is also strong
+- `cytotoxic T-cell` program activity is absent in the current bulk-cohort proxy
+- `TNIK` gets strong cell-state support from these active programs
+
+Measured effect:
+
+- previous graph-augmented `TNIK` rank after typed mechanistic edges: `308`
+- current graph-augmented `TNIK` rank after adding cell-state evidence: `257`
+
+Interpretation:
+
+- this is the second independent sign that the TNIK benchmark miss was caused by insufficient mechanistic specificity rather than a simple lack of public signal
+- IPF is now behaving the way the paper suggests: TNIK improves when fibrosis-relevant cell-state biology is represented explicitly

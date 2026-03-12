@@ -380,6 +380,26 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(200, status)
         self.assertEqual("signaling_state_support_score", payload["items"][0]["score_name"])
 
+    def test_cell_state_program_activity_route(self) -> None:
+        mocked_items = [{"program_ref": "ipf_myofibroblast_program", "score_name": "cell_state_program_activity_score"}]
+        with patch("prioritx_data.http_api.cell_state_program_activity_scores", return_value=mocked_items):
+            status, payload = handle_get(
+                "/cell-state-program-activity",
+                {"benchmark_id": ["ipf_tnik"], "subset_id": ["ipf_lung_extended"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("cell_state_program_activity_score", payload["items"][0]["score_name"])
+
+    def test_cell_state_support_route(self) -> None:
+        mocked_items = [{"gene_symbol": "TNIK", "score_name": "cell_state_support_score"}]
+        with patch("prioritx_data.http_api.cell_state_support_scores", return_value=mocked_items):
+            status, payload = handle_get(
+                "/cell-state-support",
+                {"benchmark_id": ["ipf_tnik"], "subset_id": ["ipf_lung_extended"], "mode": ["exploratory"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("cell_state_support_score", payload["items"][0]["score_name"])
+
     def test_graph_augmented_target_evidence_route(self) -> None:
         mocked_items = [{"gene_symbol": "TNIK", "score_name": "graph_augmented_target_evidence_score"}]
         with patch("prioritx_data.http_api.graph_augmented_target_evidence", return_value=mocked_items):
@@ -489,13 +509,13 @@ class HttpApiTests(unittest.TestCase):
         self.assertIn("error", payload)
 
     def test_graph_routes_require_benchmark_id(self) -> None:
-        for route in ("/knowledge-graph", "/mechanistic-support", "/signaling-program-activity", "/signaling-support", "/graph-feature-scores", "/graph-augmented-target-evidence", "/graph-augmented-benchmark-evaluation"):
+        for route in ("/knowledge-graph", "/mechanistic-support", "/cell-state-program-activity", "/cell-state-support", "/signaling-program-activity", "/signaling-support", "/graph-feature-scores", "/graph-augmented-target-evidence", "/graph-augmented-benchmark-evaluation"):
             status, payload = handle_get(route, {})
             self.assertEqual(400, status)
             self.assertIn("error", payload)
 
     def test_graph_routes_validate_mode(self) -> None:
-        for route in ("/knowledge-graph", "/mechanistic-support", "/signaling-support", "/graph-feature-scores", "/graph-augmented-target-evidence", "/graph-augmented-benchmark-evaluation"):
+        for route in ("/knowledge-graph", "/mechanistic-support", "/cell-state-support", "/signaling-support", "/graph-feature-scores", "/graph-augmented-target-evidence", "/graph-augmented-benchmark-evaluation"):
             status, payload = handle_get(route, {"benchmark_id": ["ipf_tnik"], "mode": ["bad"]})
             self.assertEqual(400, status)
             self.assertIn("error", payload)

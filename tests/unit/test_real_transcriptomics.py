@@ -248,6 +248,7 @@ class RealTranscriptomicsTests(unittest.TestCase):
             return gene_texts[url]
 
         hgnc_map = {"ENSG000001": {"symbol": "TESTGENE1", "hgnc_id": "HGNC:1000"}}
+        load_real_geo_gene_statistics.cache_clear()
         with patch("prioritx_data.real_transcriptomics.load_text_with_cache", side_effect=fake_load_text), patch(
             "prioritx_data.real_transcriptomics.load_hgnc_symbol_map",
             return_value=hgnc_map,
@@ -256,6 +257,7 @@ class RealTranscriptomicsTests(unittest.TestCase):
         self.assertEqual(3, len(records))
         mapped = next(record for record in records if record["gene"]["ensembl_gene_id"] == "ENSG000001")
         self.assertEqual("TESTGENE1", mapped["gene"]["symbol"])
+        load_real_geo_gene_statistics.cache_clear()
 
     def test_loads_real_ipf_microarray_gene_statistics_with_patched_downloads(self) -> None:
         matrix_text = "\n".join(

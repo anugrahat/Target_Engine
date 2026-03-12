@@ -1,0 +1,63 @@
+{
+  "schema_version": "0.1.0",
+  "benchmark_id": "ipf_tnik",
+  "programs": [
+    {
+      "ref": "ipf_myofibroblast_program",
+      "label": "IPF myofibroblast program",
+      "cell_state_kind": "myofibroblast",
+      "marker_genes": ["POSTN", "CTHRC1", "COL1A1", "COL3A1", "ACTA2", "TAGLN"],
+      "linked_targets": ["TNIK"],
+      "sources": [
+        {
+          "title": "Single-cell RNA-seq reveals ectopic and aberrant lung-resident cell populations in idiopathic pulmonary fibrosis",
+          "url": "https://explore.data.humancellatlas.org/projects/c16a754f-5da3-46ed-8c1e-6426af2ef625",
+          "note": "The GSE136831 atlas reports activated IPF myofibroblasts as a core stromal disease population."
+        },
+        {
+          "title": "A small-molecule TNIK inhibitor targets fibrosis in preclinical and clinical models",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11738990/",
+          "note": "The TNIK IPF paper highlights myofibroblasts as a key TNIK-enriched cell state."
+        }
+      ]
+    },
+    {
+      "ref": "ipf_club_cell_program",
+      "label": "IPF club cell program",
+      "cell_state_kind": "club_cell",
+      "marker_genes": ["SCGB1A1", "SCGB3A1", "SCGB3A2", "BPIFB1", "KRT19"],
+      "linked_targets": ["TNIK"],
+      "sources": [
+        {
+          "title": "Dysregulation of club cell biology in idiopathic pulmonary fibrosis",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7498242/",
+          "note": "SCGB1A1 and related club-cell markers are dysregulated in IPF and associated with MUC5B-positive club-cell biology."
+        },
+        {
+          "title": "A small-molecule TNIK inhibitor targets fibrosis in preclinical and clinical models",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11738990/",
+          "note": "The TNIK IPF paper reports elevated TNIK expression in club cells."
+        }
+      ]
+    },
+    {
+      "ref": "ipf_cytotoxic_t_program",
+      "label": "IPF cytotoxic T-cell program",
+      "cell_state_kind": "cytotoxic_t_cell",
+      "marker_genes": ["NKG7", "CCL5", "GNLY", "PRF1", "GZMB", "CTSW"],
+      "linked_targets": ["TNIK"],
+      "sources": [
+        {
+          "title": "A small-molecule TNIK inhibitor targets fibrosis in preclinical and clinical models",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11738990/",
+          "note": "The TNIK IPF paper reports elevated TNIK expression in cytotoxic T cells."
+        },
+        {
+          "title": "NKG7 is a stable marker of cytotoxicity across immune contexts",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12179582/",
+          "note": "NKG7, GNLY, PRF1, and related genes define cytotoxic lymphocyte programs."
+        }
+      ]
+    }
+  ]
+}

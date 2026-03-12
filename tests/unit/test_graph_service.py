@@ -175,6 +175,19 @@ HCC_SIGNALING_SUPPORT = [
     }
 ]
 
+IPF_CELL_STATE_SUPPORT = [
+    {
+        "benchmark_id": "ipf_tnik",
+        "subset_id": "ipf_lung_extended",
+        "ensembl_gene_id": "ENSG1",
+        "gene_symbol": "TNIK",
+        "score_name": "cell_state_support_score",
+        "score": 0.88,
+        "program_support_count": 3,
+        "top_programs": [{"ref": "ipf_myofibroblast_program"}],
+    }
+]
+
 
 class GraphServiceTests(unittest.TestCase):
     def test_builds_provenance_first_graph(self) -> None:
@@ -399,6 +412,33 @@ class GraphServiceTests(unittest.TestCase):
 
         by_symbol = {item["gene_symbol"]: item for item in ranked}
         self.assertGreater(by_symbol["CDK20"]["graph_score"], 0.0)
+
+    def test_cell_state_support_can_promote_tnik(self) -> None:
+        with patch("prioritx_graph.service.fused_target_evidence", return_value=CORE_RANKED), patch(
+            "prioritx_graph.service.load_reactome_pathway_enrichment",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.load_reactome_membership_cache",
+            return_value={},
+        ), patch(
+            "prioritx_graph.service.load_mechanistic_edges",
+            return_value=MECHANISTIC_EDGES,
+        ), patch(
+            "prioritx_graph.service.cell_state_support_scores",
+            return_value=IPF_CELL_STATE_SUPPORT,
+        ), patch(
+            "prioritx_graph.service.signaling_support_scores",
+            return_value=[],
+        ):
+            ranked = graph_augmented_target_evidence(
+                "ipf_tnik",
+                mode="exploratory",
+                candidate_limit=2,
+                genetics_size=0,
+            )
+
+        by_symbol = {item["gene_symbol"]: item for item in ranked}
+        self.assertGreater(by_symbol["TNIK"]["graph_score"], by_symbol["MUC5B"]["graph_score"])
 
 
 if __name__ == "__main__":
