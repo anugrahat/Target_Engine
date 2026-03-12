@@ -9,6 +9,7 @@ from prioritx_graph.service import (
     evaluate_graph_augmented_benchmark,
     graph_augmented_target_evidence,
     graph_feature_scores,
+    proteophospho_support_scores,
     signaling_support_scores,
 )
 
@@ -177,6 +178,19 @@ HCC_SIGNALING_SUPPORT = [
     }
 ]
 
+HCC_PROTEOPHOSPHO_SUPPORT = [
+    {
+        "benchmark_id": "hcc_cdk20",
+        "subset_id": "hcc_adult_extended",
+        "ensembl_gene_id": "ENSG20",
+        "gene_symbol": "CDK20",
+        "score_name": "proteophospho_support_score",
+        "score": 0.96,
+        "program_support_count": 2,
+        "top_programs": [{"ref": "beta_catenin_signaling"}],
+    }
+]
+
 HCC_CONTRAST_SIGNALING = [
     {
         "program_ref": "beta_catenin_signaling",
@@ -252,6 +266,15 @@ class GraphServiceTests(unittest.TestCase):
         ), patch(
             "prioritx_graph.service.load_mechanistic_edges",
             return_value=[],
+        ), patch(
+            "prioritx_graph.service.signaling_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.cell_state_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.proteophospho_support_scores",
+            return_value=[],
         ):
             scores = graph_feature_scores("ipf_tnik", candidate_limit=2, genetics_size=0)
 
@@ -277,6 +300,15 @@ class GraphServiceTests(unittest.TestCase):
         ), patch(
             "prioritx_graph.service.load_mechanistic_edges",
             return_value=[],
+        ), patch(
+            "prioritx_graph.service.signaling_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.cell_state_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.proteophospho_support_scores",
+            return_value=[],
         ):
             ranked = graph_augmented_target_evidence("ipf_tnik", candidate_limit=2, genetics_size=0)
 
@@ -300,6 +332,15 @@ class GraphServiceTests(unittest.TestCase):
             side_effect=PATHWAY_SCORES,
         ), patch(
             "prioritx_graph.service.load_mechanistic_edges",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.signaling_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.cell_state_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.proteophospho_support_scores",
             return_value=[],
         ):
             result = evaluate_graph_augmented_benchmark("ipf_tnik", candidate_limit=2, genetics_size=0)
@@ -374,6 +415,15 @@ class GraphServiceTests(unittest.TestCase):
         ), patch(
             "prioritx_graph.service.load_mechanistic_edges",
             return_value=MECHANISTIC_EDGES,
+        ), patch(
+            "prioritx_graph.service.signaling_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.cell_state_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.proteophospho_support_scores",
+            return_value=[],
         ):
             ranked = graph_augmented_target_evidence("ipf_tnik", mode="exploratory", candidate_limit=2, genetics_size=0)
 
@@ -390,6 +440,15 @@ class GraphServiceTests(unittest.TestCase):
         ), patch(
             "prioritx_graph.service.load_mechanistic_edges",
             return_value=HCC_MECHANISTIC_EDGES,
+        ), patch(
+            "prioritx_graph.service.signaling_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.cell_state_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.proteophospho_support_scores",
+            return_value=[],
         ):
             ranked = graph_augmented_target_evidence(
                 "hcc_cdk20",
@@ -414,6 +473,9 @@ class GraphServiceTests(unittest.TestCase):
         ), patch(
             "prioritx_graph.service.signaling_support_scores",
             return_value=HCC_SIGNALING_SUPPORT,
+        ), patch(
+            "prioritx_graph.service.proteophospho_support_scores",
+            return_value=[],
         ):
             ranked = graph_augmented_target_evidence(
                 "hcc_cdk20",
@@ -448,6 +510,34 @@ class GraphServiceTests(unittest.TestCase):
         cdk20 = next(item for item in support if item["gene_symbol"] == "CDK20")
         self.assertGreater(cdk20["score"], 0.0)
 
+    def test_proteophospho_support_can_promote_hcc_target(self) -> None:
+        with patch("prioritx_graph.service.fused_target_evidence", return_value=HCC_CORE_RANKED), patch(
+            "prioritx_graph.service.load_reactome_pathway_enrichment",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.load_reactome_membership_cache",
+            return_value={},
+        ), patch(
+            "prioritx_graph.service.load_mechanistic_edges",
+            return_value=HCC_MECHANISTIC_EDGES,
+        ), patch(
+            "prioritx_graph.service.signaling_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.proteophospho_support_scores",
+            return_value=HCC_PROTEOPHOSPHO_SUPPORT,
+        ):
+            ranked = graph_augmented_target_evidence(
+                "hcc_cdk20",
+                mode="exploratory",
+                candidate_limit=1,
+                genetics_size=0,
+                mechanistic_seed_top_n=1,
+            )
+
+        by_symbol = {item["gene_symbol"]: item for item in ranked}
+        self.assertGreater(by_symbol["CDK20"]["graph_score"], 0.0)
+
     def test_cell_state_support_can_promote_tnik(self) -> None:
         with patch("prioritx_graph.service.fused_target_evidence", return_value=CORE_RANKED), patch(
             "prioritx_graph.service.load_reactome_pathway_enrichment",
@@ -463,6 +553,9 @@ class GraphServiceTests(unittest.TestCase):
             return_value=IPF_CELL_STATE_SUPPORT,
         ), patch(
             "prioritx_graph.service.signaling_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.proteophospho_support_scores",
             return_value=[],
         ):
             ranked = graph_augmented_target_evidence(

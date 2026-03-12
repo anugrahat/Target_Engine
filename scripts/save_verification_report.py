@@ -49,7 +49,7 @@ def _git_value(args: list[str]) -> str:
 
 def main() -> int:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    timestamp = dt.datetime.now(dt.UTC).strftime("%Y%m%dT%H%M%SZ")
+    timestamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     branch = _git_value(["rev-parse", "--abbrev-ref", "HEAD"])
     commit = _git_value(["rev-parse", "--short", "HEAD"])
 

@@ -380,6 +380,26 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(200, status)
         self.assertEqual("signaling_state_support_score", payload["items"][0]["score_name"])
 
+    def test_proteophospho_program_activity_route(self) -> None:
+        mocked_items = [{"program_ref": "beta_catenin_signaling", "score_name": "proteophospho_program_activity_score"}]
+        with patch("prioritx_data.http_api.proteophospho_program_activity_scores", return_value=mocked_items):
+            status, payload = handle_get(
+                "/proteophospho-program-activity",
+                {"benchmark_id": ["hcc_cdk20"], "subset_id": ["hcc_adult_extended"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("proteophospho_program_activity_score", payload["items"][0]["score_name"])
+
+    def test_proteophospho_support_route(self) -> None:
+        mocked_items = [{"gene_symbol": "CDK20", "score_name": "proteophospho_support_score"}]
+        with patch("prioritx_data.http_api.proteophospho_support_scores", return_value=mocked_items):
+            status, payload = handle_get(
+                "/proteophospho-support",
+                {"benchmark_id": ["hcc_cdk20"], "subset_id": ["hcc_adult_extended"], "mode": ["exploratory"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("proteophospho_support_score", payload["items"][0]["score_name"])
+
     def test_cell_state_program_activity_route(self) -> None:
         mocked_items = [{"program_ref": "ipf_myofibroblast_program", "score_name": "cell_state_program_activity_score"}]
         with patch("prioritx_data.http_api.cell_state_program_activity_scores", return_value=mocked_items):

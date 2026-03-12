@@ -191,6 +191,21 @@ Implication:
 
 - kinase targets like CDK20 are more likely to emerge from signaling-state methods than from bulk RNA alone
 
+### Public proteogenomic readout is still weak for CDK20
+
+The first public HCC proteo-phospho layer in PrioriTx now confirms that this is not just a missing-loader problem.
+
+In the public HCC proteogenomic archive:
+
+- weak activity is present for the curated `IL-6 / STAT3` and `beta-catenin` programs
+- the current support is driven mostly by single protein markers like `RELA` or `AXIN2`
+- the curated activating phosphosites do not currently pass the direction-aware support rule
+
+Implication:
+
+- a proteomics layer is necessary, but marker-level bulk proteomics is still not enough to rescue `CDK20`
+- the remaining likely gap is subtype-aware kinase-activity or causal phospho-network inference, not just another abundance matrix
+
 ### Functional and perturbation screens
 
 In HCC and other diseases, target discovery often uses:

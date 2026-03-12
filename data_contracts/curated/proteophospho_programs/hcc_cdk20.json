@@ -1,0 +1,64 @@
+{
+  "schema_version": "0.1.0",
+  "benchmark_id": "hcc_cdk20",
+  "programs": [
+    {
+      "ref": "beta_catenin_signaling",
+      "label": "Beta-catenin signaling proteo-phospho program",
+      "linked_targets": ["CDK20"],
+      "protein_markers": [
+        {"gene_symbol": "CTNNB1", "expected_direction": "up"},
+        {"gene_symbol": "AXIN2", "expected_direction": "up"},
+        {"gene_symbol": "CCND1", "expected_direction": "up"},
+        {"gene_symbol": "EGFR", "expected_direction": "up"}
+      ],
+      "phosphosite_markers": [
+        {"gene_symbol": "CTNNB1", "site": "S675", "expected_direction": "up"},
+        {"gene_symbol": "CTNNB1", "site": "S552", "expected_direction": "up"},
+        {"gene_symbol": "EGFR", "site": "Y1172", "expected_direction": "up"},
+        {"gene_symbol": "EGFR", "site": "Y1197", "expected_direction": "up"}
+      ],
+      "sources": [
+        {
+          "title": "Cell cycle-related kinase is a crucial inducer of androgen receptor-mediated hepatocarcinogenesis",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3148736/",
+          "note": "The CCRK paper links hepatocarcinogenesis to beta-catenin and downstream proliferative signaling."
+        },
+        {
+          "title": "Integrated proteogenomic characterization of hepatocellular carcinoma",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/31585088/",
+          "note": "The Zenodo copheemap archive provides the public HCC tumor and normal proteomic and phosphosite matrices used here."
+        }
+      ]
+    },
+    {
+      "ref": "il6_pmn_mdsc_program",
+      "label": "IL-6 / STAT3 proteo-phospho program",
+      "linked_targets": ["CDK20"],
+      "protein_markers": [
+        {"gene_symbol": "STAT3", "expected_direction": "up"},
+        {"gene_symbol": "IL6ST", "expected_direction": "up"},
+        {"gene_symbol": "EGFR", "expected_direction": "up"},
+        {"gene_symbol": "RELA", "expected_direction": "up"}
+      ],
+      "phosphosite_markers": [
+        {"gene_symbol": "STAT3", "site": "Y705", "expected_direction": "up"},
+        {"gene_symbol": "STAT3", "site": "S727", "expected_direction": "up"},
+        {"gene_symbol": "EGFR", "site": "Y1172", "expected_direction": "up"},
+        {"gene_symbol": "EGFR", "site": "Y1197", "expected_direction": "up"}
+      ],
+      "sources": [
+        {
+          "title": "Cell cycle-related kinase promotes immunosuppressive microenvironment in hepatocellular carcinoma",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8115036/",
+          "note": "The HCC immunology paper ties CCRK to IL-6 signaling, PMN-MDSC accumulation, and immunosuppressive signaling programs."
+        },
+        {
+          "title": "Integrated proteogenomic characterization of hepatocellular carcinoma",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/31585088/",
+          "note": "The public proteogenomic archive exposes STAT3- and EGFR-related protein and phosphosite measurements across HCC tumor and normal samples."
+        }
+      ]
+    }
+  ]
+}

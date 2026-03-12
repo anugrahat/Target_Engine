@@ -294,3 +294,24 @@ Interpretation:
 
 - this is the second independent sign that the TNIK benchmark miss was caused by insufficient mechanistic specificity rather than a simple lack of public signal
 - IPF is now behaving the way the paper suggests: TNIK improves when fibrosis-relevant cell-state biology is represented explicitly
+
+## First HCC Proteo-phospho Result
+
+The first public HCC proteomic and phosphosite layer is now implemented from the Zenodo `copheemap_hcc` archive linked to the published proteogenomic HCC study.
+
+What it found in `hcc_adult_extended` exploratory mode:
+
+- the `IL-6 / STAT3` proteo-phospho program is present but weak, with score `0.2953`
+- the `beta-catenin` proteo-phospho program is also weak, with score `0.2922`
+- both programs are currently driven by single protein-level hits (`RELA` and `AXIN2` respectively)
+- none of the curated activating phosphosites pass the current direction-aware support logic
+- `CDK20` still does not enter the bounded graph candidate slice through this layer
+
+Interpretation:
+
+- the proteo-phospho layer is working and source-backed
+- it does not produce a false rescue for `CDK20`
+- in this public HCC cohort, the CCRK/CDK20 biology still looks weak at the bulk proteogenomic level
+- the next HCC gap is now even clearer:
+  - either the relevant biology is cohort- or subtype-specific and diluted here
+  - or we need a truer kinase-activity / causal phospho-signaling layer rather than marker-level abundance alone
