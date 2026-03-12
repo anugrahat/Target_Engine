@@ -6,13 +6,15 @@ import math
 from collections import defaultdict
 from typing import Any
 
+from prioritx_data.mechanistic import load_mechanistic_edges
 from prioritx_data.reactome import load_reactome_gene_pathways, load_reactome_pathway_enrichment
 from prioritx_data.service import fused_target_evidence
 from prioritx_eval.assertions import load_benchmark_assertion
 from prioritx_eval.policy import benchmark_mode_config
+from prioritx_features.mechanistic import derive_mechanistic_support_features
 from prioritx_features.pathway import derive_reactome_pathway_features
 from prioritx_graph.cache import load_reactome_membership_cache, save_reactome_membership_cache
-from prioritx_rank.baseline import score_reactome_pathway_support
+from prioritx_rank.baseline import score_mechanistic_support, score_reactome_pathway_support
 
 
 def _bounded_log_score(value: float, *, max_log: float = 10.0) -> float:
@@ -39,6 +41,10 @@ def _edge(
         "leakage_risk": leakage_risk,
         "provenance": provenance,
     }
+
+
+def _max_leakage_risk_for_mode(mode: str) -> str:
+    return "low" if mode == "strict" else "medium"
 
 
 def _enrichment_gene_symbols(core_ranked: list[dict[str, Any]], *, limit: int) -> tuple[str, ...]:
@@ -140,6 +146,68 @@ def _cache_aware_pathway_scores(
     return scored
 
 
+def mechanistic_support_scores(
+    benchmark_id: str,
+    *,
+    mode: str = "strict",
+    subset_id: str | None = None,
+    candidate_limit: int = 500,
+    genetics_size: int = 200,
+) -> list[dict[str, Any]]:
+    """Return typed mechanistic support over the current candidate slice."""
+    mode_config = benchmark_mode_config(benchmark_id, mode=mode)
+    chosen_subset_id = subset_id or mode_config["subset_id"]
+    core_ranked = fused_target_evidence(
+        benchmark_id=benchmark_id,
+        subset_id=chosen_subset_id,
+        genetics_size=genetics_size,
+        tractability_top_n=0,
+        pathway_top_n=0,
+        network_top_n=0,
+    )[: max(candidate_limit, 0)]
+    max_leakage_risk = _max_leakage_risk_for_mode(mode)
+    edges = load_mechanistic_edges(benchmark_id, max_leakage_risk=max_leakage_risk)
+    if not edges:
+        return []
+
+    disease_edge_weights = {
+        edge["target"]["ref"]: float(edge["weight"])
+        for edge in edges
+        if edge["source"]["node_type"] == "disease"
+    }
+    gene_edges_by_symbol: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for edge in edges:
+        if edge["source"]["node_type"] != "gene":
+            continue
+        gene_edges_by_symbol[edge["source"]["ref"]].append(edge)
+
+    scored = []
+    for item in core_ranked:
+        gene_symbol = item.get("gene_symbol")
+        ensembl_gene_id = item.get("ensembl_gene_id")
+        if not gene_symbol or not ensembl_gene_id:
+            continue
+        gene_edges = gene_edges_by_symbol.get(gene_symbol, [])
+        features = derive_mechanistic_support_features(
+            benchmark_id=benchmark_id,
+            subset_id=chosen_subset_id,
+            gene={"ensembl_gene_id": ensembl_gene_id, "gene_symbol": gene_symbol},
+            disease_edge_weights=disease_edge_weights,
+            gene_edges=gene_edges,
+            max_leakage_risk=max_leakage_risk,
+        )
+        score = score_mechanistic_support(features)
+        score["provenance"] = {
+            "source_kind": "curated_mechanistic_edges",
+            "max_leakage_risk": max_leakage_risk,
+            "matched_mechanism_count": features["mechanistic_support_count"],
+        }
+        scored.append(score)
+
+    scored.sort(key=lambda item: (item["score"], item["mechanistic_support_count"]), reverse=True)
+    return scored
+
+
 def build_benchmark_knowledge_graph(
     benchmark_id: str,
     *,
@@ -171,6 +239,18 @@ def build_benchmark_knowledge_graph(
         )
         if item.get("ensembl_gene_id")
     ]
+    mechanistic_scores = {
+        item["ensembl_gene_id"]: item
+        for item in mechanistic_support_scores(
+            benchmark_id,
+            mode=mode,
+            subset_id=chosen_subset_id,
+            candidate_limit=candidate_limit,
+            genetics_size=genetics_size,
+        )
+        if item.get("ensembl_gene_id")
+    }
+    mechanistic_edges = load_mechanistic_edges(benchmark_id, max_leakage_risk=_max_leakage_risk_for_mode(mode))
 
     disease_node_id = f"disease:{benchmark_id}"
     nodes = {
@@ -189,12 +269,14 @@ def build_benchmark_knowledge_graph(
     graph_gene_ids: set[str] = set()
     pathway_gene_weights: dict[str, dict[str, float]] = defaultdict(dict)
     disease_pathway_weights: dict[str, float] = {}
+    gene_ids_by_symbol: dict[str, str] = {}
 
     for index, item in enumerate(core_ranked, start=1):
         gene_id = item["ensembl_gene_id"]
         if not gene_id or not item.get("gene_symbol"):
             continue
         graph_gene_ids.add(gene_id)
+        gene_ids_by_symbol[item["gene_symbol"]] = gene_id
         gene_node_id = f"gene:{gene_id}"
         nodes[gene_node_id] = {
             "id": gene_node_id,
@@ -228,6 +310,47 @@ def build_benchmark_knowledge_graph(
                     weight=float(item["components"]["genetics_component"]),
                     evidence_family="genetics",
                     provenance=item["genetics_provenance"] or {},
+                )
+            )
+
+    for edge in mechanistic_edges:
+        source_meta = edge["source"]
+        target_meta = edge["target"]
+        mechanism_node_id = f"mechanism:{target_meta['ref']}"
+        nodes[mechanism_node_id] = {
+            "id": mechanism_node_id,
+            "type": "mechanism",
+            "label": target_meta["label"],
+            "attributes": {
+                "mechanism_ref": target_meta["ref"],
+                "mechanism_kind": target_meta.get("mechanism_kind", "unknown"),
+            },
+        }
+        if source_meta["node_type"] == "disease":
+            edges.append(
+                _edge(
+                    disease_node_id,
+                    mechanism_node_id,
+                    edge["edge_type"],
+                    weight=float(edge["weight"]),
+                    evidence_family="mechanistic_graph",
+                    provenance={"sources": edge.get("sources", [])},
+                    leakage_risk=edge["leakage_risk"],
+                )
+            )
+        elif source_meta["node_type"] == "gene":
+            gene_id = gene_ids_by_symbol.get(source_meta["ref"])
+            if not gene_id:
+                continue
+            edges.append(
+                _edge(
+                    f"gene:{gene_id}",
+                    mechanism_node_id,
+                    edge["edge_type"],
+                    weight=float(edge["weight"]),
+                    evidence_family="mechanistic_graph",
+                    provenance={"sources": edge.get("sources", [])},
+                    leakage_risk=edge["leakage_risk"],
                 )
             )
 
@@ -372,11 +495,27 @@ def graph_feature_scores(
     propagation = _propagation_scores(graph, seed_node_id=disease_node_id)
     nodes_by_id = {node["id"]: node for node in graph["nodes"]}
     adjacency = _adjacency(graph)
+    mechanistic_scores = {
+        item["ensembl_gene_id"]: item
+        for item in mechanistic_support_scores(
+            benchmark_id,
+            mode=mode,
+            subset_id=kg["subset_id"],
+            candidate_limit=candidate_limit,
+            genetics_size=genetics_size,
+        )
+        if item.get("ensembl_gene_id")
+    }
 
     disease_pathway_weights = {
         edge["target"]: float(edge["weight"])
         for edge in graph["edges"]
         if edge["type"] == "disease_pathway_enrichment"
+    }
+    disease_mechanism_weights = {
+        edge["target"]: float(edge["weight"])
+        for edge in graph["edges"]
+        if edge["type"] == "disease_mechanism_support"
     }
     gene_base_scores = {
         node["id"]: float(node["attributes"]["core_score"])
@@ -391,21 +530,27 @@ def graph_feature_scores(
         gene_node_id = node["id"]
         neighbors = adjacency.get(gene_node_id, [])
         pathway_neighbors = [neighbor_id for neighbor_id, _ in neighbors if nodes_by_id[neighbor_id]["type"] == "pathway"]
+        mechanism_neighbors = [neighbor_id for neighbor_id, _ in neighbors if nodes_by_id[neighbor_id]["type"] == "mechanism"]
         gene_neighbors = [neighbor_id for neighbor_id, _ in neighbors if nodes_by_id[neighbor_id]["type"] == "gene"]
 
         disease_pathway_connectivity = sum(disease_pathway_weights.get(pathway_id, 0.0) for pathway_id in pathway_neighbors)
+        disease_mechanism_connectivity = sum(disease_mechanism_weights.get(mechanism_id, 0.0) for mechanism_id in mechanism_neighbors)
         path_count = len(pathway_neighbors)
+        mechanism_count = len(mechanism_neighbors)
         neighborhood_support = (
             sum(gene_base_scores.get(neighbor_id, 0.0) for neighbor_id in gene_neighbors) / len(gene_neighbors)
             if gene_neighbors
             else 0.0
         )
         propagation_score = propagation.get(gene_node_id, 0.0)
+        mechanistic_score = mechanistic_scores.get(node["attributes"]["ensembl_gene_id"], {}).get("score", 0.0)
         graph_score = (
-            0.35 * min(propagation_score * 10.0, 1.0)
-            + 0.30 * min(disease_pathway_connectivity / 3.0, 1.0)
-            + 0.20 * min(path_count / 5.0, 1.0)
+            0.25 * min(propagation_score * 10.0, 1.0)
+            + 0.20 * min(disease_pathway_connectivity / 3.0, 1.0)
+            + 0.10 * min(path_count / 5.0, 1.0)
             + 0.15 * min(neighborhood_support, 1.0)
+            + 0.15 * min(disease_mechanism_connectivity / 3.0, 1.0)
+            + 0.15 * min(float(mechanistic_score), 1.0)
         )
         scores.append(
             {
@@ -417,14 +562,18 @@ def graph_feature_scores(
                 "score_name": "knowledge_graph_support_score",
                 "score": round(graph_score, 4),
                 "components": {
-                    "propagation_component": round(0.35 * min(propagation_score * 10.0, 1.0), 4),
-                    "disease_pathway_component": round(0.30 * min(disease_pathway_connectivity / 3.0, 1.0), 4),
-                    "path_count_component": round(0.20 * min(path_count / 5.0, 1.0), 4),
+                    "propagation_component": round(0.25 * min(propagation_score * 10.0, 1.0), 4),
+                    "disease_pathway_component": round(0.20 * min(disease_pathway_connectivity / 3.0, 1.0), 4),
+                    "path_count_component": round(0.10 * min(path_count / 5.0, 1.0), 4),
                     "neighborhood_component": round(0.15 * min(neighborhood_support, 1.0), 4),
+                    "disease_mechanism_component": round(0.15 * min(disease_mechanism_connectivity / 3.0, 1.0), 4),
+                    "mechanistic_component": round(0.15 * min(float(mechanistic_score), 1.0), 4),
                 },
                 "pathway_neighbor_count": path_count,
+                "mechanism_neighbor_count": mechanism_count,
                 "gene_neighbor_count": len(gene_neighbors),
                 "disease_pathway_connectivity": round(disease_pathway_connectivity, 4),
+                "disease_mechanism_connectivity": round(disease_mechanism_connectivity, 4),
                 "propagation_score": round(propagation_score, 6),
                 "provenance": kg["provenance"],
             }

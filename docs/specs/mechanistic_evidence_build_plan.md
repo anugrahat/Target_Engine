@@ -1,0 +1,219 @@
+# Mechanistic Evidence Build Plan
+
+## Goal
+
+Improve benchmark recovery for `TNIK` in IPF and `CDK20/CCRK` in HCC without lowering scientific standards.
+
+The current system is strong on:
+
+- bulk transcriptomics
+- Open Targets genetics
+- tractability
+- generic pathway overlap
+- STRING-style neighborhood support
+
+The next system must add the evidence families that these benchmark targets actually depend on:
+
+- cell-state evidence
+- typed causal-mechanistic edges
+- signaling-state and kinase-activity evidence
+- disease-context stratification
+
+## Recommended Design
+
+### Option A: Mechanistic Evidence Layering
+
+Build the next science phase as three new evidence modules on top of the current stack:
+
+1. `cell_state_evidence`
+2. `typed_causal_graph`
+3. `signaling_activity_evidence`
+
+This keeps the existing repo shape:
+
+- `prioritx_data` for source loaders
+- `prioritx_features` for transparent feature derivation
+- `prioritx_graph` for typed graph assembly
+- `prioritx_rank` for additive fusion
+- `prioritx_eval` for benchmark ablations
+
+This is the recommended design because it fits the current codebase and directly addresses the observed scientific gap.
+
+### Option B: Full Multi-omics Expansion First
+
+Broaden immediately into proteomics, phosphoproteomics, metabolomics, CRISPR screens, and disease-wide KG ingestion before tightening the benchmark logic.
+
+This could ultimately be powerful, but it is not the best next step. It adds too many moving parts before we know which missing evidence family is actually decisive.
+
+### Option C: Model-first Graph Learning
+
+Add graph embeddings or GNNs now and let the model discover latent mechanistic structure.
+
+This is not recommended yet. The graph is not rich enough, the labels are too sparse, and a learned model would make it harder to see whether the recovery gain is biologically legitimate.
+
+## Why Option A Wins
+
+- it attacks the actual benchmark miss, not a hypothetical one
+- it stays interpretable
+- it can be benchmarked with ablations
+- it preserves discovery-time validity and leakage controls
+- it reuses the current repository architecture instead of restarting
+
+## Build Order
+
+### Phase 1: Typed Mechanistic Graph
+
+Add literature-backed typed edges that are currently missing from the KG.
+
+Examples:
+
+- `TNIK -> TEAD/YAP-TAZ`
+- `TNIK -> SMAD`
+- `TNIK -> myofibroblast differentiation`
+- `AR -> CCRK`
+- `CCRK -> GSK3B`
+- `CCRK -> CTNNB1`
+- `CCRK -> mTORC1`
+- `CCRK -> IL6`
+- `CCRK -> PMN-MDSC`
+
+Implementation shape:
+
+- `data_contracts/schemas/mechanistic_edge.schema.json`
+- `data_contracts/curated/mechanistic_edges/*.json`
+- `packages/py/prioritx_data/mechanistic_edges.py`
+- `packages/py/prioritx_graph/service.py`
+
+Rules:
+
+- every edge must have source paper provenance
+- every edge must have edge type and polarity where known
+- every edge must have `discovery_time_valid` and `leakage_risk`
+- validation-only or post-discovery edges stay excluded from ranking
+
+Success criterion:
+
+- graph ablation shows whether typed edges move `TNIK` or `CDK20` upward relative to the current generic KG
+
+### Phase 2: IPF Cell-state Evidence
+
+Add single-cell and, if recoverable, spatial evidence for IPF.
+
+Primary target:
+
+- `GSE136831`
+
+Evidence products:
+
+- cell-type-specific expression support
+- myofibroblast-specific target support
+- fibroblast activation / ECM program alignment
+- optional GRN or virtual-knockout-derived perturbation support if the source inputs are recoverable without leakage
+
+Implementation shape:
+
+- `packages/py/prioritx_data/single_cell_ipf.py`
+- `packages/py/prioritx_features/cell_state.py`
+- `packages/py/prioritx_rank/baseline.py`
+- `packages/py/prioritx_eval/service.py`
+
+Scoring principle:
+
+- do not average the signal back into bulk
+- keep cell-state evidence as a separate component
+- reward pathogenic-cell enrichment more than global abundance
+
+Success criterion:
+
+- `TNIK` gains measurable support specifically from pathogenic IPF cell states
+
+### Phase 3: HCC Signaling-state Evidence
+
+Add HCC kinase and signaling-context evidence rather than more bulk cohorts only.
+
+Primary evidence types:
+
+- phosphoproteomics if public data are cleanly recoverable
+- kinase activity inference from transcriptomics where phosphoproteomics are absent
+- subtype / etiology context flags:
+  - HBV-associated
+  - NASH/obesity-associated
+  - male/AR-linked
+  - immune-suppressive microenvironment
+
+Implementation shape:
+
+- `packages/py/prioritx_data/hcc_signaling.py`
+- `packages/py/prioritx_features/signaling_activity.py`
+- `packages/py/prioritx_rank/baseline.py`
+- `packages/py/prioritx_eval/service.py`
+
+Scoring principle:
+
+- treat signaling-state evidence as orthogonal to bulk RNA
+- prefer pathway or kinase-activity support over raw abundance for `CDK20`
+
+Success criterion:
+
+- `CDK20/CCRK` gets support from pathway-activity or kinase-circuit evidence even when bulk differential expression remains weak
+
+## Fusion Strategy
+
+Do not replace the existing fused score. Extend it.
+
+New additive components:
+
+- `cell_state_component`
+- `mechanistic_graph_component`
+- `signaling_activity_component`
+
+Rules:
+
+- all components remain explicit
+- each new family gets a benchmark ablation
+- no component gets tuned just to rescue the positive target in one disease
+
+## Evaluation Strategy
+
+For each phase, run:
+
+1. base fused benchmark
+2. base plus new evidence family
+3. base plus all mechanistic families added so far
+
+Required outputs:
+
+- rank shift for `TNIK`
+- rank shift for `CDK20`
+- hit@k and MRR
+- evidence-family attribution on the moved target
+- leakage review
+
+## What Not To Do Yet
+
+- no GNN-first rewrite
+- no threshold loosening designed around the benchmark positives
+- no broad multi-omics ingestion without disease-fit review
+- no literature-count fusion into the main score
+
+## Immediate Next Task
+
+Build `Phase 1: Typed Mechanistic Graph` first.
+
+Reason:
+
+- lowest implementation risk
+- highest reuse of current infrastructure
+- directly tests whether the current graph is too generic
+- creates the scaffold needed for both IPF cell-state and HCC signaling edges later
+
+## First Measured Outcome
+
+The first typed-mechanistic benchmark result is encouraging for IPF:
+
+- `TNIK` base fused rank in `ipf_lung_extended` exploratory mode: `1176`
+- `TNIK` graph-augmented rank after adding typed mechanistic edges: `308`
+
+That is the first real indication that the benchmark miss was partly due to graph specificity rather than only missing bulk omics.
+
+The HCC mechanistic graph run is still computationally heavier because `CDK20` sits much deeper in the candidate universe, so HCC needs a bounded evaluation pass or a more efficient large-slice graph routine before claiming an equivalent rank shift.

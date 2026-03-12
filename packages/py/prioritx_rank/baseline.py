@@ -255,6 +255,32 @@ def score_reactome_pathway_support(features: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def score_mechanistic_support(features: dict[str, Any]) -> dict[str, Any]:
+    """Score curated typed mechanistic support for one candidate gene."""
+    strongest_component = 0.5 * min(float(features["strongest_path_strength"]), 1.0)
+    mean_component = 0.35 * min(float(features["mean_path_strength"]), 1.0)
+    count_component = 0.15 * min(int(features["mechanistic_support_count"]) / 4.0, 1.0)
+    score = strongest_component + mean_component + count_component
+    return {
+        "benchmark_id": features["benchmark_id"],
+        "subset_id": features["subset_id"],
+        "ensembl_gene_id": features["ensembl_gene_id"],
+        "gene_symbol": features["gene_symbol"],
+        "score_name": "mechanistic_support_score",
+        "score": round(score, 4),
+        "components": {
+            "strongest_component": round(strongest_component, 4),
+            "mean_component": round(mean_component, 4),
+            "count_component": round(count_component, 4),
+        },
+        "mechanistic_support_count": features["mechanistic_support_count"],
+        "top_mechanisms": features["top_mechanisms"],
+        "mechanism_kinds": features["mechanism_kinds"],
+        "max_leakage_risk": features["max_leakage_risk"],
+        "evidence_kind": features["evidence_kind"],
+    }
+
+
 def score_pubmed_literature_support(features: dict[str, Any]) -> dict[str, Any]:
     """Score disease-gene PubMed support without fusing it into ranking yet."""
     count_component = min(float(features["log_count"]) / 2.0, 1.0)

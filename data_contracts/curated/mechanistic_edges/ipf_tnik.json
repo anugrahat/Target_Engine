@@ -1,0 +1,108 @@
+{
+  "schema_version": "0.1.0",
+  "benchmark_id": "ipf_tnik",
+  "edges": [
+    {
+      "id": "ipf_disease_myofibroblast_differentiation",
+      "source": {"ref_kind": "disease", "ref": "ipf_tnik", "label": "Idiopathic pulmonary fibrosis", "node_type": "disease"},
+      "target": {"ref_kind": "mechanism", "ref": "myofibroblast_differentiation", "label": "Myofibroblast differentiation", "node_type": "mechanism", "mechanism_kind": "cell_state_program"},
+      "edge_type": "disease_mechanism_support",
+      "polarity": "up",
+      "weight": 0.95,
+      "discovery_time_valid": true,
+      "leakage_risk": "low",
+      "sources": [
+        {
+          "title": "A small-molecule TNIK inhibitor targets fibrosis in preclinical and clinical models",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11738990/",
+          "note": "The IPF case study describes fibrosis biology through myofibroblast differentiation, focal adhesion, and mesenchymal migration programs."
+        }
+      ]
+    },
+    {
+      "id": "ipf_disease_focal_adhesion",
+      "source": {"ref_kind": "disease", "ref": "ipf_tnik", "label": "Idiopathic pulmonary fibrosis", "node_type": "disease"},
+      "target": {"ref_kind": "mechanism", "ref": "focal_adhesion_program", "label": "Focal adhesion program", "node_type": "mechanism", "mechanism_kind": "pathway_program"},
+      "edge_type": "disease_mechanism_support",
+      "polarity": "up",
+      "weight": 0.86,
+      "discovery_time_valid": true,
+      "leakage_risk": "low",
+      "sources": [
+        {
+          "title": "A small-molecule TNIK inhibitor targets fibrosis in preclinical and clinical models",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11738990/",
+          "note": "The transparency section links TNIK to focal adhesion and mesenchymal programs that are central to fibrosis."
+        }
+      ]
+    },
+    {
+      "id": "ipf_disease_yap_taz",
+      "source": {"ref_kind": "disease", "ref": "ipf_tnik", "label": "Idiopathic pulmonary fibrosis", "node_type": "disease"},
+      "target": {"ref_kind": "mechanism", "ref": "yap_taz_signaling", "label": "YAP/TAZ signaling", "node_type": "mechanism", "mechanism_kind": "signaling_program"},
+      "edge_type": "disease_mechanism_support",
+      "polarity": "up",
+      "weight": 0.78,
+      "discovery_time_valid": true,
+      "leakage_risk": "low",
+      "sources": [
+        {
+          "title": "A small-molecule TNIK inhibitor targets fibrosis in preclinical and clinical models",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11738990/",
+          "note": "Single-cell virtual knockout analysis in IPF myofibroblasts connected TNIK to Hippo and YAP/TAZ signaling."
+        }
+      ]
+    },
+    {
+      "id": "tnik_myofibroblast_differentiation",
+      "source": {"ref_kind": "gene_symbol", "ref": "TNIK", "label": "TNIK", "node_type": "gene"},
+      "target": {"ref_kind": "mechanism", "ref": "myofibroblast_differentiation", "label": "Myofibroblast differentiation", "node_type": "mechanism", "mechanism_kind": "cell_state_program"},
+      "edge_type": "gene_mechanism_support",
+      "polarity": "up",
+      "weight": 0.92,
+      "discovery_time_valid": true,
+      "leakage_risk": "medium",
+      "sources": [
+        {
+          "title": "A small-molecule TNIK inhibitor targets fibrosis in preclinical and clinical models",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11738990/",
+          "note": "TNIK was linked to myofibroblast biology and pharmacologic inhibition reversed fibrotic features."
+        }
+      ]
+    },
+    {
+      "id": "tnik_focal_adhesion",
+      "source": {"ref_kind": "gene_symbol", "ref": "TNIK", "label": "TNIK", "node_type": "gene"},
+      "target": {"ref_kind": "mechanism", "ref": "focal_adhesion_program", "label": "Focal adhesion program", "node_type": "mechanism", "mechanism_kind": "pathway_program"},
+      "edge_type": "gene_mechanism_support",
+      "polarity": "up",
+      "weight": 0.84,
+      "discovery_time_valid": true,
+      "leakage_risk": "medium",
+      "sources": [
+        {
+          "title": "A small-molecule TNIK inhibitor targets fibrosis in preclinical and clinical models",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11738990/",
+          "note": "The paper explicitly lists focal adhesion as a mechanistic bridge between TNIK and fibrosis."
+        }
+      ]
+    },
+    {
+      "id": "tnik_yap_taz",
+      "source": {"ref_kind": "gene_symbol", "ref": "TNIK", "label": "TNIK", "node_type": "gene"},
+      "target": {"ref_kind": "mechanism", "ref": "yap_taz_signaling", "label": "YAP/TAZ signaling", "node_type": "mechanism", "mechanism_kind": "signaling_program"},
+      "edge_type": "gene_mechanism_support",
+      "polarity": "up",
+      "weight": 0.8,
+      "discovery_time_valid": true,
+      "leakage_risk": "medium",
+      "sources": [
+        {
+          "title": "A small-molecule TNIK inhibitor targets fibrosis in preclinical and clinical models",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11738990/",
+          "note": "Single-cell virtual knockout linked TNIK to Hippo and YAP/TAZ signaling in IPF myofibroblasts."
+        }
+      ]
+    }
+  ]
+}

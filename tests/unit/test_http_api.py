@@ -353,6 +353,13 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(200, status)
         self.assertEqual("knowledge_graph_support_score", payload["items"][0]["score_name"])
 
+    def test_mechanistic_support_route(self) -> None:
+        mocked_items = [{"gene_symbol": "TNIK", "score_name": "mechanistic_support_score"}]
+        with patch("prioritx_data.http_api.mechanistic_support_scores", return_value=mocked_items):
+            status, payload = handle_get("/mechanistic-support", {"benchmark_id": ["ipf_tnik"], "mode": ["exploratory"]})
+        self.assertEqual(200, status)
+        self.assertEqual("mechanistic_support_score", payload["items"][0]["score_name"])
+
     def test_graph_augmented_target_evidence_route(self) -> None:
         mocked_items = [{"gene_symbol": "TNIK", "score_name": "graph_augmented_target_evidence_score"}]
         with patch("prioritx_data.http_api.graph_augmented_target_evidence", return_value=mocked_items):
@@ -462,13 +469,13 @@ class HttpApiTests(unittest.TestCase):
         self.assertIn("error", payload)
 
     def test_graph_routes_require_benchmark_id(self) -> None:
-        for route in ("/knowledge-graph", "/graph-feature-scores", "/graph-augmented-target-evidence", "/graph-augmented-benchmark-evaluation"):
+        for route in ("/knowledge-graph", "/mechanistic-support", "/graph-feature-scores", "/graph-augmented-target-evidence", "/graph-augmented-benchmark-evaluation"):
             status, payload = handle_get(route, {})
             self.assertEqual(400, status)
             self.assertIn("error", payload)
 
     def test_graph_routes_validate_mode(self) -> None:
-        for route in ("/knowledge-graph", "/graph-feature-scores", "/graph-augmented-target-evidence", "/graph-augmented-benchmark-evaluation"):
+        for route in ("/knowledge-graph", "/mechanistic-support", "/graph-feature-scores", "/graph-augmented-target-evidence", "/graph-augmented-benchmark-evaluation"):
             status, payload = handle_get(route, {"benchmark_id": ["ipf_tnik"], "mode": ["bad"]})
             self.assertEqual(400, status)
             self.assertIn("error", payload)
