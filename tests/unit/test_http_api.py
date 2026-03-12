@@ -329,6 +329,16 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(200, status)
         self.assertEqual("MUC5B", payload["items"][0]["gene_symbol"])
 
+    def test_rl_benchmark_evaluation_route(self) -> None:
+        mocked_result = {"evaluation_kind": "offline_contextual_bandit_replay", "agents": []}
+        with patch("prioritx_data.http_api.evaluate_bandit_agents", return_value=mocked_result):
+            status, payload = handle_get(
+                "/rl-benchmark-evaluation",
+                {"candidate_limit": ["250"], "episodes": ["3"], "mode": ["strict"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("offline_contextual_bandit_replay", payload["evaluation_kind"])
+
     def test_target_audit_requires_benchmark_id_and_gene_symbol(self) -> None:
         status, payload = handle_get("/target-audit", {"benchmark_id": ["ipf_tnik"]})
         self.assertEqual(400, status)
@@ -404,6 +414,16 @@ class HttpApiTests(unittest.TestCase):
             "/target-shortlist-explanations",
             {"benchmark_id": ["ipf_tnik"], "top_n": ["bad"]},
         )
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
+    def test_rl_benchmark_evaluation_validates_mode(self) -> None:
+        status, payload = handle_get("/rl-benchmark-evaluation", {"mode": ["bad"]})
+        self.assertEqual(400, status)
+        self.assertIn("error", payload)
+
+    def test_rl_benchmark_evaluation_validates_int_params(self) -> None:
+        status, payload = handle_get("/rl-benchmark-evaluation", {"episodes": ["bad"]})
         self.assertEqual(400, status)
         self.assertIn("error", payload)
 
