@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import functools
 from typing import Any
+from urllib.error import HTTPError, URLError
 
 from prioritx_data.remote_cache import load_json_text_post_with_cache
 
@@ -83,11 +84,14 @@ def load_reactome_gene_pathways(identifier: str) -> list[dict[str, Any]]:
     normalized = identifier.strip()
     if not normalized:
         return []
-    payload = load_json_text_post_with_cache(
-        _analysis_url(),
-        namespace="reactome_cache",
-        payload=_identifier_payload((normalized,)),
-    )
+    try:
+        payload = load_json_text_post_with_cache(
+            _analysis_url(),
+            namespace="reactome_cache",
+            payload=_identifier_payload((normalized,)),
+        )
+    except (HTTPError, URLError, TimeoutError):
+        return []
     return [
         _normalize_pathway_record(
             row,
