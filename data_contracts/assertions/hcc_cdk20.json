@@ -5,6 +5,8 @@
   "default_subset_id": "hcc_adult_core",
   "exploratory_subset_id": "hcc_adult_extended",
   "indication_name": "hepatocellular carcinoma",
+  "recovery_tier": "mechanistic_stress_test",
+  "recovery_tier_note": "CDK20 is source-backed but remains weak under the current public discovery-time stack; treat it as a mechanistic stress test rather than a standard recovery benchmark.",
   "target_assertions": [
     {
       "gene_symbol": "CDK20",

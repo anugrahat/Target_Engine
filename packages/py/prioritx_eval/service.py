@@ -140,6 +140,8 @@ def evaluate_fused_benchmark(
         "mode": mode,
         "subset_id": chosen_subset_id,
         "indication_name": assertion["indication_name"],
+        "recovery_tier": assertion.get("recovery_tier"),
+        "recovery_tier_note": assertion.get("recovery_tier_note"),
         "target_universe_size": len(ranked),
         "positive_target_count": len(assertion["target_assertions"]),
         "positive_targets_found": found_count,
@@ -752,6 +754,7 @@ def compare_benchmark_modes(
     *,
     top_n: int = 10,
 ) -> dict[str, Any]:
+    assertion = load_benchmark_assertion(benchmark_id)
     strict = explain_target_shortlist(benchmark_id, mode="strict", top_n=top_n)
     exploratory = explain_target_shortlist(benchmark_id, mode="exploratory", top_n=top_n)
 
@@ -800,6 +803,8 @@ def compare_benchmark_modes(
     return {
         "benchmark_id": benchmark_id,
         "indication_name": strict["indication_name"],
+        "recovery_tier": assertion.get("recovery_tier"),
+        "recovery_tier_note": assertion.get("recovery_tier_note"),
         "top_n": top_n,
         "strict": {
             "subset_id": strict["subset_id"],
@@ -842,6 +847,8 @@ def summarize_benchmark_dashboard(*, top_n: int = 5) -> dict[str, Any]:
             {
                 "benchmark_id": benchmark_id,
                 "indication_name": comparison["indication_name"],
+                "recovery_tier": comparison.get("recovery_tier"),
+                "recovery_tier_note": comparison.get("recovery_tier_note"),
                 "strict_subset_id": comparison["strict"]["subset_id"],
                 "exploratory_subset_id": comparison["exploratory"]["subset_id"],
                 "strict_top_targets": comparison["strict"]["top_targets"],
@@ -900,6 +907,8 @@ def summarize_benchmark_health(*, top_n: int = 10) -> dict[str, Any]:
             {
                 "benchmark_id": item["benchmark_id"],
                 "indication_name": item["indication_name"],
+                "recovery_tier": item.get("recovery_tier"),
+                "recovery_tier_note": item.get("recovery_tier_note"),
                 "positive_target_count": positive_count,
                 "strict_recovered_in_top_n_count": strict_hits,
                 "exploratory_recovered_in_top_n_count": exploratory_hits,

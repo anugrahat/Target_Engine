@@ -5,6 +5,8 @@
   "default_subset_id": "ipf_lung_core",
   "exploratory_subset_id": "ipf_lung_extended",
   "indication_name": "idiopathic pulmonary fibrosis",
+  "recovery_tier": "partial_public_recovery",
+  "recovery_tier_note": "TNIK is recoverable only after mechanistic and cell-state specificity are added; it is not a simple bulk-expression benchmark.",
   "target_assertions": [
     {
       "gene_symbol": "TNIK",
