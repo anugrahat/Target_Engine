@@ -27,6 +27,12 @@ def derive_proteophospho_program_activity_features(
     coverage = weighted_support / max(max_weighted_support, 1.0)
     weighted_score_sum = sum(weight * float(item["score"]) for weight, item in all_supported)
     mean_marker_score = weighted_score_sum / weighted_support if weighted_support > 0.0 else 0.0
+    context_scores = [
+        min(max(float(item.get("outlier_shift") or 0.0), 0.0) / 1.0, 1.0)
+        * min(float(item.get("outlier_fraction") or 0.0) / 0.15, 1.0)
+        for _, item in all_supported
+    ]
+    context_strength = sum(context_scores) / len(context_scores) if context_scores else 0.0
     mean_effect = (
         sum(abs(float(item["mean_difference"])) for _, item in all_supported) / len(all_supported)
         if all_supported
@@ -43,6 +49,7 @@ def derive_proteophospho_program_activity_features(
         "supported_phosphosite_count": len(supported_phosphosites),
         "coverage": round(coverage, 6),
         "mean_marker_score": round(mean_marker_score, 6),
+        "context_strength": round(context_strength, 6),
         "effect_strength": round(min(mean_effect / 1.0, 1.0), 6),
         "top_markers": [
             {
@@ -52,6 +59,8 @@ def derive_proteophospho_program_activity_features(
                 "site": item.get("site"),
                 "score": item["score"],
                 "mean_difference": item["mean_difference"],
+                "outlier_fraction": item.get("outlier_fraction"),
+                "outlier_shift": item.get("outlier_shift"),
                 "adjusted_p_value": item["statistics"]["adjusted_p_value"],
             }
             for _, item in sorted(all_supported, key=lambda entry: (entry[1]["score"], abs(float(entry[1]["mean_difference"]))), reverse=True)[:6]

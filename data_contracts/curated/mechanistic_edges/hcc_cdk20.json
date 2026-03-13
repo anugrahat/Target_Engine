@@ -71,6 +71,23 @@
       ]
     },
     {
+      "id": "hcc_disease_nfkb_inflammatory",
+      "source": {"ref_kind": "disease", "ref": "hcc_cdk20", "label": "Hepatocellular carcinoma", "node_type": "disease"},
+      "target": {"ref_kind": "mechanism", "ref": "nfkb_inflammatory_program", "label": "NF-kB inflammatory program", "node_type": "mechanism", "mechanism_kind": "immune_program"},
+      "edge_type": "disease_mechanism_support",
+      "polarity": "up",
+      "weight": 0.78,
+      "discovery_time_valid": true,
+      "leakage_risk": "low",
+      "sources": [
+        {
+          "title": "Cell cycle-related kinase reprograms the liver immune microenvironment to promote cancer metastasis",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8115036/",
+          "note": "The CCRK metastasis paper reports NF-kB-dependent CXCL1 production and inflammatory microenvironment remodeling in HCC."
+        }
+      ]
+    },
+    {
       "id": "cdk20_ar_signaling",
       "source": {"ref_kind": "gene_symbol", "ref": "CDK20", "label": "CDK20", "node_type": "gene"},
       "target": {"ref_kind": "mechanism", "ref": "androgen_receptor_signaling", "label": "Androgen receptor signaling", "node_type": "mechanism", "mechanism_kind": "signaling_program"},
@@ -135,6 +152,23 @@
           "title": "Cell cycle-related kinase promotes immunosuppressive microenvironment in hepatocellular carcinoma",
           "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8115036/",
           "note": "The HCC immunology paper ties CCRK to IL-6-driven PMN-MDSC accumulation."
+        }
+      ]
+    },
+    {
+      "id": "cdk20_nfkb_inflammatory",
+      "source": {"ref_kind": "gene_symbol", "ref": "CDK20", "label": "CDK20", "node_type": "gene"},
+      "target": {"ref_kind": "mechanism", "ref": "nfkb_inflammatory_program", "label": "NF-kB inflammatory program", "node_type": "mechanism", "mechanism_kind": "immune_program"},
+      "edge_type": "gene_mechanism_support",
+      "polarity": "up",
+      "weight": 0.8,
+      "discovery_time_valid": true,
+      "leakage_risk": "medium",
+      "sources": [
+        {
+          "title": "Cell cycle-related kinase reprograms the liver immune microenvironment to promote cancer metastasis",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8115036/",
+          "note": "The metastasis paper links CCRK to NF-kB-dependent inflammatory signaling and PMN-MDSC accumulation."
         }
       ]
     }

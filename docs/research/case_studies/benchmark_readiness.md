@@ -10,7 +10,7 @@ Rank the first candidate indication case studies by how ready they are for Prior
 | --- | --- | --- | --- |
 | IPF / TNIK | Nature Biotechnology 2024 | High | The discovery GEO cohorts are explicitly listed in `Data availability`, and validation is unusually strong. |
 | ALS | Frontiers in Aging Neuroscience 2022 | Medium-High | Multiple accession-coded datasets are named, and the disease framing is cleaner than the public HCC pool, though part of the stack is consortium-based (`Answer ALS`). |
-| HCC / CDK20 | Chemical Science 2023 | Medium | The 10 discovery cohorts are explicitly listed, but the public pool is heterogeneous and includes hepatoblastoma and mixed liver-disease cohorts. |
+| HCC / CDK20 | Chemical Science 2023 | Medium-Low | The cohorts are public, but the live PrioriTx stack still recovers CDK20 only as a weak mechanistic/stress-test target, not a strong public discovery-time hit. |
 | AD / phase separation | PNAS 2023 | Medium | The paper is scientifically useful and exposes structured supplements, but accession-level recovery is still unresolved. |
 
 ## Recommended Build Order
@@ -33,6 +33,8 @@ Rank the first candidate indication case studies by how ready they are for Prior
 - at least two disclosed cohorts are hepatoblastoma, not HCC
 - several controls are adjacent-normal or mixed liver-disease comparators rather than clean healthy controls
 - target-discovery evaluation is at higher risk of label leakage from downstream chemistry success
+- even after adding typed mechanistic edges, signaling context, proteo-phospho context, and corrected graph-candidate defaults, `CDK20` still only reaches bounded graph rank `501`
+- that makes `CDK20` a useful mechanistic stress test, but not yet a strong public recovery benchmark
 
 ## What Needs To Happen Before Other Cases Graduate
 

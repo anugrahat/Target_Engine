@@ -333,11 +333,12 @@ def score_signaling_support(features: dict[str, Any]) -> dict[str, Any]:
 
 def score_proteophospho_program_activity(features: dict[str, Any]) -> dict[str, Any]:
     """Score proteomic and phosphosite activity for one curated program."""
-    marker_component = 0.45 * min(float(features["mean_marker_score"]), 1.0)
-    coverage_component = 0.2 * min(float(features["coverage"]), 1.0)
+    marker_component = 0.35 * min(float(features["mean_marker_score"]), 1.0)
+    coverage_component = 0.15 * min(float(features["coverage"]), 1.0)
     effect_component = 0.15 * min(float(features["effect_strength"]), 1.0)
-    phospho_component = 0.2 * min(float(features["supported_phosphosite_count"]) / 2.0, 1.0)
-    score = marker_component + coverage_component + effect_component + phospho_component
+    phospho_component = 0.15 * min(float(features["supported_phosphosite_count"]) / 2.0, 1.0)
+    context_component = 0.2 * min(float(features["context_strength"]), 1.0)
+    score = marker_component + coverage_component + effect_component + phospho_component + context_component
     return {
         "benchmark_id": features["benchmark_id"],
         "subset_id": features["subset_id"],
@@ -350,6 +351,7 @@ def score_proteophospho_program_activity(features: dict[str, Any]) -> dict[str, 
             "coverage_component": round(coverage_component, 4),
             "effect_component": round(effect_component, 4),
             "phospho_component": round(phospho_component, 4),
+            "context_component": round(context_component, 4),
         },
         "supported_protein_count": features["supported_protein_count"],
         "supported_phosphosite_count": features["supported_phosphosite_count"],

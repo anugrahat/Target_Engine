@@ -10,6 +10,7 @@ import math
 import tarfile
 from collections import defaultdict
 from pathlib import Path
+from statistics import pstdev
 from typing import Any, Callable
 
 from prioritx_data.hgnc import load_hgnc_symbol_reverse_map
@@ -116,6 +117,26 @@ def _mean_difference(case_values: list[float], control_values: list[float]) -> f
     return (sum(case_values) / len(case_values)) - (sum(control_values) / len(control_values))
 
 
+def _outlier_metrics(case_values: list[float], control_values: list[float], *, expected_direction: str) -> tuple[float, float]:
+    if not case_values or not control_values:
+        return 0.0, 0.0
+    control_mean = sum(control_values) / len(control_values)
+    control_sd = pstdev(control_values) if len(control_values) > 1 else 0.0
+    if expected_direction == "up":
+        threshold = control_mean + (2.0 * control_sd)
+        outlier_fraction = sum(value > threshold for value in case_values) / len(case_values)
+        sorted_case = sorted(case_values)
+        q90_index = max(0, math.ceil(0.9 * len(sorted_case)) - 1)
+        q90_shift = sorted_case[q90_index] - control_mean
+    else:
+        threshold = control_mean - (2.0 * control_sd)
+        outlier_fraction = sum(value < threshold for value in case_values) / len(case_values)
+        sorted_case = sorted(case_values)
+        q10_index = max(0, math.floor(0.1 * len(sorted_case)))
+        q90_shift = control_mean - sorted_case[q10_index]
+    return round(outlier_fraction, 6), round(q90_shift, 6)
+
+
 def _marker_score(mean_difference: float, adjusted_p_value: float, *, expected_direction: str) -> tuple[float, bool]:
     expected_sign = 1.0 if expected_direction == "up" else -1.0
     directional_effect = expected_sign * mean_difference
@@ -186,6 +207,11 @@ def load_benchmark_proteophospho_statistics(benchmark_id: str) -> dict[str, Any]
         if len(tumor_values) < 3 or len(normal_values) < 3:
             continue
         statistic, p_value, degrees_of_freedom = _safe_ttest_ind(tumor_values, normal_values)
+        outlier_fraction, outlier_shift = _outlier_metrics(
+            tumor_values,
+            normal_values,
+            expected_direction=marker["expected_direction"],
+        )
         records.append(
             {
                 "marker_kind": "protein",
@@ -199,6 +225,8 @@ def load_benchmark_proteophospho_statistics(benchmark_id: str) -> dict[str, Any]
                     "p_value": round(p_value, 12),
                 },
                 "mean_difference": round(_mean_difference(tumor_values, normal_values), 6),
+                "outlier_fraction": outlier_fraction,
+                "outlier_shift": outlier_shift,
                 "tumor_sample_count": len(tumor_values),
                 "normal_sample_count": len(normal_values),
             }
@@ -210,6 +238,11 @@ def load_benchmark_proteophospho_statistics(benchmark_id: str) -> dict[str, Any]
         if len(tumor_values) < 3 or len(normal_values) < 3:
             continue
         statistic, p_value, degrees_of_freedom = _safe_ttest_ind(tumor_values, normal_values)
+        outlier_fraction, outlier_shift = _outlier_metrics(
+            tumor_values,
+            normal_values,
+            expected_direction=marker["expected_direction"],
+        )
         records.append(
             {
                 "marker_kind": "phosphosite",
@@ -224,6 +257,8 @@ def load_benchmark_proteophospho_statistics(benchmark_id: str) -> dict[str, Any]
                     "p_value": round(p_value, 12),
                 },
                 "mean_difference": round(_mean_difference(tumor_values, normal_values), 6),
+                "outlier_fraction": outlier_fraction,
+                "outlier_shift": outlier_shift,
                 "tumor_sample_count": len(tumor_values),
                 "normal_sample_count": len(normal_values),
             }

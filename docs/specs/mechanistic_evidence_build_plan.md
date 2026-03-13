@@ -303,6 +303,10 @@ What it found in `hcc_adult_extended` exploratory mode:
 
 - the `IL-6 / STAT3` proteo-phospho program is present but weak, with score `0.2953`
 - the `beta-catenin` proteo-phospho program is also weak, with score `0.2922`
+- after adding subtype-aware upper-tail scoring and an explicit `NF-kB inflammatory` program:
+  - `beta-catenin` rises to `0.4477`
+  - `NF-kB inflammatory` scores `0.4010`
+  - `IL-6 / STAT3` remains modest at `0.3420`
 - both programs are currently driven by single protein-level hits (`RELA` and `AXIN2` respectively)
 - none of the curated activating phosphosites pass the current direction-aware support logic
 - after fixing a graph-base inconsistency, `CDK20` now correctly re-enters the bounded graph candidate slice

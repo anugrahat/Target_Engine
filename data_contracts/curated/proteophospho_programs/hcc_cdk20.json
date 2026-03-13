@@ -59,6 +59,28 @@
           "note": "The public proteogenomic archive exposes STAT3- and EGFR-related protein and phosphosite measurements across HCC tumor and normal samples."
         }
       ]
+    },
+    {
+      "ref": "nfkb_inflammatory_program",
+      "label": "NF-kB inflammatory proteo-phospho program",
+      "linked_targets": ["CDK20"],
+      "protein_markers": [
+        {"gene_symbol": "RELA", "expected_direction": "up"},
+        {"gene_symbol": "NFKB1", "expected_direction": "up"}
+      ],
+      "phosphosite_markers": [],
+      "sources": [
+        {
+          "title": "Cell cycle-related kinase reprograms the liver immune microenvironment to promote cancer metastasis",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8115036/",
+          "note": "The metastasis paper reports CCRK drives NF-kB-dependent CXCL1 production and inflammatory microenvironment remodeling."
+        },
+        {
+          "title": "Phosphorylation of NF-kBp65 drives inflammation-mediated hepatocellular carcinogenesis and is a novel therapeutic target",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8359590/",
+          "note": "Independent HCC work supports NF-kB/p65 as an activated inflammatory driver in hepatocarcinogenesis."
+        }
+      ]
     }
   ]
 }

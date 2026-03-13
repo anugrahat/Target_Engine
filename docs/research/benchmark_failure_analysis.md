@@ -201,6 +201,7 @@ In the public HCC proteogenomic archive:
 - the current support is driven mostly by single protein markers like `RELA` or `AXIN2`
 - the curated activating phosphosites do not currently pass the direction-aware support rule
 - after fixing a graph-base inconsistency, `CDK20` re-enters the bounded graph slice but still only at rank `501`
+- adding subtype-aware upper-tail scoring and an explicit `NF-kB inflammatory` program raises the HCC proteo-phospho context signal, but still does not move `CDK20` above rank `501`
 
 Implication:
 
