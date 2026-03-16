@@ -84,6 +84,54 @@
       "reason": "Explicit Table 1 spinal motor-neuron comparison with accession-coded counts."
     },
     {
+      "id": "GSE67196_c9_fcx",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Familial ALS C9ORF72 frontal cortex samples",
+      "control_definition": "Healthy frontal cortex samples",
+      "sample_counts": {
+        "case": 8,
+        "control": 9
+      },
+      "reason": "Split from GSE67196 Table 1 frontal-cortex C9ORF72 comparison using the public rawcount matrix."
+    },
+    {
+      "id": "GSE67196_c9_cereb",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Familial ALS C9ORF72 cerebellum samples",
+      "control_definition": "Healthy cerebellum samples",
+      "sample_counts": {
+        "case": 8,
+        "control": 8
+      },
+      "reason": "Split from GSE67196 Table 1 cerebellar C9ORF72 comparison using the public rawcount matrix."
+    },
+    {
+      "id": "GSE67196_sals_fcx",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Sporadic ALS frontal cortex samples",
+      "control_definition": "Healthy frontal cortex samples",
+      "sample_counts": {
+        "case": 10,
+        "control": 9
+      },
+      "reason": "Split from GSE67196 Table 1 frontal-cortex sporadic ALS comparison using the public rawcount matrix."
+    },
+    {
+      "id": "GSE67196_sals_cereb",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Sporadic ALS cerebellum samples",
+      "control_definition": "Healthy cerebellum samples",
+      "sample_counts": {
+        "case": 10,
+        "control": 8
+      },
+      "reason": "Split from GSE67196 Table 1 cerebellar sporadic ALS comparison using the public rawcount matrix."
+    },
+    {
       "id": "Answer ALS transcriptomics",
       "source": "Answer ALS",
       "selection_mode": "requires_subsetting",
@@ -112,10 +160,6 @@
     {
       "id": "A-MEXP-2246",
       "reason": "Control-reference accession for the E-MTAB-1925 comparison rather than a standalone ALS discovery cohort."
-    },
-    {
-      "id": "GSE67196",
-      "reason": "Multiple tissue-specific comparisons are bundled under one accession and should be split into per-comparison manifests before admission."
     },
     {
       "id": "GSE124439",

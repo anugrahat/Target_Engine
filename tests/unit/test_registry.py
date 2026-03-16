@@ -16,17 +16,17 @@ class RegistryFixtureTests(unittest.TestCase):
 
     def test_dataset_manifests_are_generated(self) -> None:
         manifests = list_dataset_manifests()
-        self.assertEqual(31, len(manifests))
+        self.assertEqual(35, len(manifests))
         grouped = group_by_benchmark(manifests)
-        self.assertEqual(14, len(grouped["als_pandaomics"]))
+        self.assertEqual(18, len(grouped["als_pandaomics"]))
         self.assertEqual(9, len(grouped["ipf_tnik"]))
         self.assertEqual(8, len(grouped["hcc_cdk20"]))
 
     def test_study_contrasts_are_generated(self) -> None:
         contrasts = list_study_contrasts()
-        self.assertEqual(31, len(contrasts))
+        self.assertEqual(35, len(contrasts))
         grouped = group_by_benchmark(contrasts)
-        self.assertEqual(14, len(grouped["als_pandaomics"]))
+        self.assertEqual(18, len(grouped["als_pandaomics"]))
         self.assertEqual(9, len(grouped["ipf_tnik"]))
         self.assertEqual(8, len(grouped["hcc_cdk20"]))
 

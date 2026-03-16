@@ -99,6 +99,54 @@ REAL_CONTRASTS: dict[str, dict[str, str]] = {
         "control_label": "non-neurological control",
         "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE122nnn/GSE122649/suppl/GSE122649_RAW.tar",
     },
+    "als_cns_dimn_extended_gse67196_c9_fcx": {
+        "source_type": "geo_symbol_count_matrix",
+        "series_accession": "GSE67196",
+        "benchmark_id": "als_pandaomics",
+        "dataset_id": "GSE67196_c9_fcx",
+        "case_label": "c9als",
+        "control_label": "healthy",
+        "tissue_label": "frontal cortex",
+        "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE67nnn/GSE67196/suppl/GSE67196_Petrucelli2015_ALS_genes.rawcount.txt.gz",
+        "gene_symbol_column": "GeneID",
+        "sample_id_strategy": "gse67196_title_to_rawcount",
+    },
+    "als_cns_dimn_extended_gse67196_c9_cereb": {
+        "source_type": "geo_symbol_count_matrix",
+        "series_accession": "GSE67196",
+        "benchmark_id": "als_pandaomics",
+        "dataset_id": "GSE67196_c9_cereb",
+        "case_label": "c9als",
+        "control_label": "healthy",
+        "tissue_label": "cerebellum",
+        "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE67nnn/GSE67196/suppl/GSE67196_Petrucelli2015_ALS_genes.rawcount.txt.gz",
+        "gene_symbol_column": "GeneID",
+        "sample_id_strategy": "gse67196_title_to_rawcount",
+    },
+    "als_cns_dimn_extended_gse67196_sals_fcx": {
+        "source_type": "geo_symbol_count_matrix",
+        "series_accession": "GSE67196",
+        "benchmark_id": "als_pandaomics",
+        "dataset_id": "GSE67196_sals_fcx",
+        "case_label": "sals",
+        "control_label": "healthy",
+        "tissue_label": "frontal cortex",
+        "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE67nnn/GSE67196/suppl/GSE67196_Petrucelli2015_ALS_genes.rawcount.txt.gz",
+        "gene_symbol_column": "GeneID",
+        "sample_id_strategy": "gse67196_title_to_rawcount",
+    },
+    "als_cns_dimn_extended_gse67196_sals_cereb": {
+        "source_type": "geo_symbol_count_matrix",
+        "series_accession": "GSE67196",
+        "benchmark_id": "als_pandaomics",
+        "dataset_id": "GSE67196_sals_cereb",
+        "case_label": "sals",
+        "control_label": "healthy",
+        "tissue_label": "cerebellum",
+        "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE67nnn/GSE67196/suppl/GSE67196_Petrucelli2015_ALS_genes.rawcount.txt.gz",
+        "gene_symbol_column": "GeneID",
+        "sample_id_strategy": "gse67196_title_to_rawcount",
+    },
     "ipf_lung_core_gse52463": {
         "source_type": "geo_rnaseq_counts",
         "series_accession": "GSE52463",
@@ -317,6 +365,8 @@ def parse_geo_series_samples(series_matrix_text: str) -> list[GeoSample]:
             or characteristics[index].get("disease status")
             or characteristics[index].get("diagnosis")
             or characteristics[index].get("patient group")
+            or characteristics[index].get("sample group")
+            or characteristics[index].get("genotype")
             or characteristics[index].get("mutation")
             or characteristics[index].get("tissue type")
             or characteristics[index].get("tissue")
@@ -489,6 +539,19 @@ def _select_samples(samples: list[GeoSample], label: str) -> list[GeoSample]:
         sample
         for sample in samples
         if expected in sample.phenotype.lower() or expected in sample.title.lower()
+    ]
+
+
+def _filter_samples_by_tissue(samples: list[GeoSample], tissue_label: str | None) -> list[GeoSample]:
+    if not tissue_label:
+        return samples
+    expected = tissue_label.lower()
+    return [
+        sample
+        for sample in samples
+        if expected in sample.metadata.get("tissue", "").lower()
+        or expected in sample.phenotype.lower()
+        or expected in sample.title.lower()
     ]
 
 
@@ -1185,6 +1248,15 @@ def _gse122649_subject_id(sample: GeoSample) -> str | None:
     return match.group(1) if match else None
 
 
+def _gse67196_sample_column_from_title(title: str) -> str | None:
+    match = re.match(r"(?P<subject>\d+)_?(?P<tissue>FCX|cereb)", title, re.IGNORECASE)
+    if not match:
+        return None
+    subject = int(match.group("subject"))
+    tissue = match.group("tissue").lower()
+    return f"ALS{subject:03d}_{tissue}"
+
+
 def _load_supplement_expression_matrix_contrast(config: dict[str, str], contrast_id: str) -> list[dict[str, Any]]:
     series_text = load_text_with_cache(_series_matrix_url(config["series_accession"]), namespace="geo_cache")
     samples = parse_geo_series_samples(series_text)
@@ -1362,6 +1434,76 @@ def _load_tar_rnaseq_count_contrast(config: dict[str, str], contrast_id: str) ->
     return records
 
 
+def _load_symbol_count_matrix_contrast(config: dict[str, str], contrast_id: str) -> list[dict[str, Any]]:
+    series_text = load_text_with_cache(_series_matrix_url(config["series_accession"]), namespace="geo_cache")
+    samples = parse_geo_series_samples(series_text)
+    case_samples = _filter_samples_by_tissue(_select_samples(samples, config["case_label"]), config.get("tissue_label"))
+    control_samples = _filter_samples_by_tissue(_select_samples(samples, config["control_label"]), config.get("tissue_label"))
+    selected_samples = case_samples + control_samples
+    if not selected_samples:
+        raise ValueError(f"Failed to recover case/control samples for {contrast_id}")
+
+    if config.get("sample_id_strategy") != "gse67196_title_to_rawcount":
+        raise ValueError(f"Unsupported symbol-count matrix strategy for {contrast_id}")
+
+    column_names = []
+    for sample in selected_samples:
+        column_name = _gse67196_sample_column_from_title(sample.title)
+        if column_name is None:
+            raise ValueError(f"Failed to map sample title to rawcount column for {contrast_id}: {sample.title}")
+        column_names.append(column_name)
+
+    reader = csv.DictReader(
+        io.StringIO(load_text_with_cache(config["supplementary_url"], namespace="geo_cache")),
+        delimiter="\t",
+    )
+    available_columns = set(reader.fieldnames or [])
+    if not set(column_names).issubset(available_columns):
+        missing = sorted(set(column_names) - available_columns)
+        raise ValueError(f"Missing rawcount columns for {contrast_id}: {missing}")
+
+    symbol_to_gene = load_hgnc_symbol_reverse_map()
+    sample_counts = {sample.geo_accession: {} for sample in selected_samples}
+    for row in reader:
+        symbol = (row.get(config["gene_symbol_column"], "") or "").strip()
+        gene = symbol_to_gene.get(symbol)
+        if gene is None:
+            continue
+        ensembl_gene_id = gene["ensembl_gene_id"]
+        for sample, column_name in zip(selected_samples, column_names):
+            try:
+                value = int((row.get(column_name, "") or "0").strip())
+            except ValueError:
+                continue
+            sample_counts[sample.geo_accession][ensembl_gene_id] = value
+
+    records = build_real_gene_statistics(
+        contrast_id=contrast_id,
+        benchmark_id=config["benchmark_id"],
+        dataset_id=config["dataset_id"],
+        case_samples=case_samples,
+        control_samples=control_samples,
+        sample_counts=sample_counts,
+    )
+    symbol_map = load_hgnc_symbol_map()
+    for record in records:
+        mapping = symbol_map.get(record["gene"]["ensembl_gene_id"])
+        if mapping is not None:
+            record["gene"]["symbol"] = mapping["symbol"]
+            record["gene"]["hgnc_id"] = mapping["hgnc_id"]
+            record["provenance"]["identifier_mapping"] = {
+                "source": "HGNC complete set",
+                "hgnc_id": mapping["hgnc_id"],
+            }
+        record["provenance"]["source_kind"] = "geo_symbol_count_matrix"
+        record["provenance"]["supplementary_url"] = config["supplementary_url"]
+        record["provenance"]["analysis_notes"] = (
+            "Computed from the official GEO rawcount matrix after tissue-specific sample selection and HGNC-backed gene mapping, using log2(CPM+1) Welch t-tests and BH FDR."
+        )
+        record["provenance"]["sample_selection_tissue"] = config.get("tissue_label")
+    return records
+
+
 def _load_microarray_series_contrast(config: dict[str, str], contrast_id: str) -> list[dict[str, Any]]:
     series_text = load_text_with_cache(_series_matrix_url(config["series_accession"]), namespace="geo_cache")
     samples = parse_geo_series_samples(series_text)
@@ -1402,6 +1544,8 @@ def load_real_geo_gene_statistics(contrast_id: str) -> list[dict[str, Any]]:
         return _load_supplement_expression_matrix_contrast(config, contrast_id)
     if source_type == "geo_tar_rnaseq_counts":
         return _load_tar_rnaseq_count_contrast(config, contrast_id)
+    if source_type == "geo_symbol_count_matrix":
+        return _load_symbol_count_matrix_contrast(config, contrast_id)
     if source_type == "geo_microarray_series":
         return _load_microarray_series_contrast(config, contrast_id)
     raise ValueError(f"Unsupported real contrast source type: {source_type}")

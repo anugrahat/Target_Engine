@@ -51,6 +51,54 @@ datasets:
       Used in multiple tissue-specific comparisons in Table 1:
       cerebellum fALS_C9orf72 8/8, frontal cortex fALS_C9orf72 8/9,
       cerebellum sALS 10/8, frontal cortex sALS 10/9.
+  - id: GSE67196_c9_fcx
+    source: GEO
+    role: discovery_cns
+    modality: transcriptomics
+    tissue: frontal_cortex
+    case_group: fALS_C9orf72
+    control_group: matched_control
+    sample_counts:
+      case: 8
+      control: 9
+    status: verified
+    notes: Split from GSE67196 Table 1 frontal-cortex C9ORF72 comparison.
+  - id: GSE67196_c9_cereb
+    source: GEO
+    role: discovery_cns
+    modality: transcriptomics
+    tissue: cerebellum
+    case_group: fALS_C9orf72
+    control_group: matched_control
+    sample_counts:
+      case: 8
+      control: 8
+    status: verified
+    notes: Split from GSE67196 Table 1 cerebellar C9ORF72 comparison.
+  - id: GSE67196_sals_fcx
+    source: GEO
+    role: discovery_cns
+    modality: transcriptomics
+    tissue: frontal_cortex
+    case_group: sALS
+    control_group: matched_control
+    sample_counts:
+      case: 10
+      control: 9
+    status: verified
+    notes: Split from GSE67196 Table 1 frontal-cortex sporadic ALS comparison.
+  - id: GSE67196_sals_cereb
+    source: GEO
+    role: discovery_cns
+    modality: transcriptomics
+    tissue: cerebellum
+    case_group: sALS
+    control_group: matched_control
+    sample_counts:
+      case: 10
+      control: 8
+    status: verified
+    notes: Split from GSE67196 Table 1 cerebellar sporadic ALS comparison.
   - id: GSE68605
     source: GEO
     role: discovery_cns
@@ -160,5 +208,5 @@ validation:
   notes: Eight prioritized genes were reported to rescue neurodegeneration in the fly model.
 open_questions:
   - Recover stable public identifiers and exact subsets for the Answer ALS data used in the study.
-  - Separate tissue-specific comparisons for GSE67196 and GSE124439 in the formal manifest.
+  - Separate tissue-specific comparisons for GSE124439 in the formal manifest.
   - Define how Drosophila rescue should map to benchmark labels without overstating translational certainty.

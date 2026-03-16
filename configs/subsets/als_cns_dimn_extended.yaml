@@ -7,7 +7,7 @@ readiness: candidate
 inclusion_principles:
   - Preserve the accession-coded CNS core as the strict benchmark anchor.
   - Add induced motor-neuron evidence only when the paper provides explicit counts and the provenance gaps are clearly flagged.
-  - Keep unresolved multi-comparison CNS accessions excluded until per-comparison manifests are modeled explicitly.
+  - Keep unresolved multi-comparison CNS accessions excluded until per-comparison manifests are modeled explicitly; split `GSE67196` comparisons are now admitted, while `GSE124439` remains excluded.
 included_datasets:
   - id: E-MTAB-1925
     source: ArrayExpress
@@ -63,6 +63,42 @@ included_datasets:
       case: 13
       control: 8
     reason: Explicit Table 1 spinal motor-neuron comparison with accession-coded counts.
+  - id: GSE67196_c9_fcx
+    source: GEO
+    selection_mode: direct
+    case_definition: Familial ALS C9ORF72 frontal cortex samples
+    control_definition: Healthy frontal cortex samples
+    sample_counts:
+      case: 8
+      control: 9
+    reason: Split from GSE67196 Table 1 frontal-cortex C9ORF72 comparison using the public rawcount matrix.
+  - id: GSE67196_c9_cereb
+    source: GEO
+    selection_mode: direct
+    case_definition: Familial ALS C9ORF72 cerebellum samples
+    control_definition: Healthy cerebellum samples
+    sample_counts:
+      case: 8
+      control: 8
+    reason: Split from GSE67196 Table 1 cerebellar C9ORF72 comparison using the public rawcount matrix.
+  - id: GSE67196_sals_fcx
+    source: GEO
+    selection_mode: direct
+    case_definition: Sporadic ALS frontal cortex samples
+    control_definition: Healthy frontal cortex samples
+    sample_counts:
+      case: 10
+      control: 9
+    reason: Split from GSE67196 Table 1 frontal-cortex sporadic ALS comparison using the public rawcount matrix.
+  - id: GSE67196_sals_cereb
+    source: GEO
+    selection_mode: direct
+    case_definition: Sporadic ALS cerebellum samples
+    control_definition: Healthy cerebellum samples
+    sample_counts:
+      case: 10
+      control: 8
+    reason: Split from GSE67196 Table 1 cerebellar sporadic ALS comparison using the public rawcount matrix.
   - id: Answer ALS transcriptomics
     source: Answer ALS
     selection_mode: requires_subsetting
@@ -84,8 +120,6 @@ included_datasets:
 excluded_datasets:
   - id: A-MEXP-2246
     reason: Control-reference accession for the E-MTAB-1925 comparison rather than a standalone ALS discovery cohort.
-  - id: GSE67196
-    reason: Multiple tissue-specific comparisons are bundled under one accession and should be split into per-comparison manifests before admission.
   - id: GSE124439
     reason: Frontal and motor cortex comparisons are bundled under one accession and should be split into per-comparison manifests before admission.
 notes: This exploratory subset broadens ALS context with induced motor-neuron evidence while keeping unresolved public-identifier gaps explicit.

@@ -7,6 +7,7 @@ from unittest.mock import patch
 from prioritx_data.real_transcriptomics import (
     GeoSample,
     _gse122649_subject_id,
+    _gse67196_sample_column_from_title,
     _gse76220_sample_column_from_title,
     _student_t_two_sided_p_value,
     build_microarray_gene_statistics,
@@ -62,6 +63,11 @@ class RealTranscriptomicsTests(unittest.TestCase):
             metadata={"subject id": "JR9"},
         )
         self.assertEqual("JR9", _gse122649_subject_id(sample))
+
+    def test_maps_gse67196_titles_to_rawcount_columns(self) -> None:
+        self.assertEqual("ALS001_fcx", _gse67196_sample_column_from_title("1_FCX"))
+        self.assertEqual("ALS007_cereb", _gse67196_sample_column_from_title("7_cereb_b"))
+        self.assertIsNone(_gse67196_sample_column_from_title("bad_title"))
 
     def test_parses_gene_count_text(self) -> None:
         text = (self.fixture_dir / "gsm_norm1.genes.txt").read_text()
