@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from urllib.error import HTTPError
 from unittest.mock import patch
 
 from prioritx_data.reactome import load_reactome_gene_pathways, load_reactome_pathway_enrichment
@@ -59,6 +60,15 @@ class ReactomeTests(unittest.TestCase):
 
         self.assertEqual(1, len(items))
         self.assertEqual("reactome_gene_membership", items[0]["evidence_kind"])
+
+    def test_gene_pathway_lookup_gracefully_handles_http_error(self) -> None:
+        load_reactome_gene_pathways.cache_clear()
+        with patch(
+            "prioritx_data.reactome.load_json_text_post_with_cache",
+            side_effect=HTTPError("https://reactome.org", 500, "boom", hdrs=None, fp=None),
+        ):
+            items = load_reactome_gene_pathways("TNIK")
+        self.assertEqual([], items)
 
     def test_scores_reactome_pathway_overlap(self) -> None:
         enriched = [

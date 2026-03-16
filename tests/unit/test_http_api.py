@@ -15,7 +15,7 @@ class HttpApiTests(unittest.TestCase):
     def test_benchmarks_route(self) -> None:
         status, payload = handle_get("/benchmarks", {})
         self.assertEqual(200, status)
-        self.assertEqual(2, len(payload["items"]))
+        self.assertEqual(3, len(payload["items"]))
 
     def test_benchmark_dashboard_summary_route(self) -> None:
         mocked_result = {"benchmark_count": 2, "items": [{"benchmark_id": "ipf_tnik"}]}
@@ -339,6 +339,107 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(200, status)
         self.assertEqual("offline_contextual_bandit_replay", payload["evaluation_kind"])
 
+    def test_knowledge_graph_route(self) -> None:
+        mocked_result = {"benchmark_id": "ipf_tnik", "graph": {"nodes": [], "edges": []}}
+        with patch("prioritx_data.http_api.build_benchmark_knowledge_graph", return_value=mocked_result):
+            status, payload = handle_get("/knowledge-graph", {"benchmark_id": ["ipf_tnik"], "mode": ["strict"]})
+        self.assertEqual(200, status)
+        self.assertEqual("ipf_tnik", payload["benchmark_id"])
+
+    def test_graph_feature_scores_route(self) -> None:
+        mocked_items = [{"gene_symbol": "TNIK", "score_name": "knowledge_graph_support_score"}]
+        with patch("prioritx_data.http_api.graph_feature_scores", return_value=mocked_items):
+            status, payload = handle_get("/graph-feature-scores", {"benchmark_id": ["ipf_tnik"], "mode": ["strict"]})
+        self.assertEqual(200, status)
+        self.assertEqual("knowledge_graph_support_score", payload["items"][0]["score_name"])
+
+    def test_mechanistic_support_route(self) -> None:
+        mocked_items = [{"gene_symbol": "TNIK", "score_name": "mechanistic_support_score"}]
+        with patch("prioritx_data.http_api.mechanistic_support_scores", return_value=mocked_items):
+            status, payload = handle_get("/mechanistic-support", {"benchmark_id": ["ipf_tnik"], "mode": ["exploratory"]})
+        self.assertEqual(200, status)
+        self.assertEqual("mechanistic_support_score", payload["items"][0]["score_name"])
+
+    def test_signaling_program_activity_route(self) -> None:
+        mocked_items = [{"program_ref": "beta_catenin_signaling", "score_name": "signaling_program_activity_score"}]
+        with patch("prioritx_data.http_api.signaling_program_activity_scores", return_value=mocked_items):
+            status, payload = handle_get(
+                "/signaling-program-activity",
+                {"benchmark_id": ["hcc_cdk20"], "subset_id": ["hcc_adult_extended"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("signaling_program_activity_score", payload["items"][0]["score_name"])
+
+    def test_signaling_support_route(self) -> None:
+        mocked_items = [{"gene_symbol": "CDK20", "score_name": "signaling_state_support_score"}]
+        with patch("prioritx_data.http_api.signaling_support_scores", return_value=mocked_items):
+            status, payload = handle_get(
+                "/signaling-support",
+                {"benchmark_id": ["hcc_cdk20"], "subset_id": ["hcc_adult_extended"], "mode": ["exploratory"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("signaling_state_support_score", payload["items"][0]["score_name"])
+
+    def test_proteophospho_program_activity_route(self) -> None:
+        mocked_items = [{"program_ref": "beta_catenin_signaling", "score_name": "proteophospho_program_activity_score"}]
+        with patch("prioritx_data.http_api.proteophospho_program_activity_scores", return_value=mocked_items):
+            status, payload = handle_get(
+                "/proteophospho-program-activity",
+                {"benchmark_id": ["hcc_cdk20"], "subset_id": ["hcc_adult_extended"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("proteophospho_program_activity_score", payload["items"][0]["score_name"])
+
+    def test_proteophospho_support_route(self) -> None:
+        mocked_items = [{"gene_symbol": "CDK20", "score_name": "proteophospho_support_score"}]
+        with patch("prioritx_data.http_api.proteophospho_support_scores", return_value=mocked_items):
+            status, payload = handle_get(
+                "/proteophospho-support",
+                {"benchmark_id": ["hcc_cdk20"], "subset_id": ["hcc_adult_extended"], "mode": ["exploratory"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("proteophospho_support_score", payload["items"][0]["score_name"])
+
+    def test_cell_state_program_activity_route(self) -> None:
+        mocked_items = [{"program_ref": "ipf_myofibroblast_program", "score_name": "cell_state_program_activity_score"}]
+        with patch("prioritx_data.http_api.cell_state_program_activity_scores", return_value=mocked_items):
+            status, payload = handle_get(
+                "/cell-state-program-activity",
+                {"benchmark_id": ["ipf_tnik"], "subset_id": ["ipf_lung_extended"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("cell_state_program_activity_score", payload["items"][0]["score_name"])
+
+    def test_cell_state_support_route(self) -> None:
+        mocked_items = [{"gene_symbol": "TNIK", "score_name": "cell_state_support_score"}]
+        with patch("prioritx_data.http_api.cell_state_support_scores", return_value=mocked_items):
+            status, payload = handle_get(
+                "/cell-state-support",
+                {"benchmark_id": ["ipf_tnik"], "subset_id": ["ipf_lung_extended"], "mode": ["exploratory"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("cell_state_support_score", payload["items"][0]["score_name"])
+
+    def test_graph_augmented_target_evidence_route(self) -> None:
+        mocked_items = [{"gene_symbol": "TNIK", "score_name": "graph_augmented_target_evidence_score"}]
+        with patch("prioritx_data.http_api.graph_augmented_target_evidence", return_value=mocked_items):
+            status, payload = handle_get(
+                "/graph-augmented-target-evidence",
+                {"benchmark_id": ["ipf_tnik"], "mode": ["strict"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("graph_augmented_target_evidence_score", payload["items"][0]["score_name"])
+
+    def test_graph_augmented_benchmark_evaluation_route(self) -> None:
+        mocked_result = {"benchmark_id": "ipf_tnik", "metrics": {"best_rank": 1}}
+        with patch("prioritx_data.http_api.evaluate_graph_augmented_benchmark", return_value=mocked_result):
+            status, payload = handle_get(
+                "/graph-augmented-benchmark-evaluation",
+                {"benchmark_id": ["ipf_tnik"], "mode": ["strict"]},
+            )
+        self.assertEqual(200, status)
+        self.assertEqual("ipf_tnik", payload["benchmark_id"])
+
     def test_target_audit_requires_benchmark_id_and_gene_symbol(self) -> None:
         status, payload = handle_get("/target-audit", {"benchmark_id": ["ipf_tnik"]})
         self.assertEqual(400, status)
@@ -426,6 +527,18 @@ class HttpApiTests(unittest.TestCase):
         status, payload = handle_get("/rl-benchmark-evaluation", {"episodes": ["bad"]})
         self.assertEqual(400, status)
         self.assertIn("error", payload)
+
+    def test_graph_routes_require_benchmark_id(self) -> None:
+        for route in ("/knowledge-graph", "/mechanistic-support", "/cell-state-program-activity", "/cell-state-support", "/signaling-program-activity", "/signaling-support", "/graph-feature-scores", "/graph-augmented-target-evidence", "/graph-augmented-benchmark-evaluation"):
+            status, payload = handle_get(route, {})
+            self.assertEqual(400, status)
+            self.assertIn("error", payload)
+
+    def test_graph_routes_validate_mode(self) -> None:
+        for route in ("/knowledge-graph", "/mechanistic-support", "/cell-state-support", "/signaling-support", "/graph-feature-scores", "/graph-augmented-target-evidence", "/graph-augmented-benchmark-evaluation"):
+            status, payload = handle_get(route, {"benchmark_id": ["ipf_tnik"], "mode": ["bad"]})
+            self.assertEqual(400, status)
+            self.assertIn("error", payload)
 
     def test_transcriptomics_evidence_requires_scope(self) -> None:
         status, payload = handle_get("/transcriptomics-evidence", {})

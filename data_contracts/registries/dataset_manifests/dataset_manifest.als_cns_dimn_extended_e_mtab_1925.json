@@ -1,0 +1,55 @@
+{
+  "schema_version": "0.1.0",
+  "dataset_id": "als_cns_dimn_extended_e_mtab_1925",
+  "benchmark_id": "als_pandaomics",
+  "accession": {
+    "database": "ArrayExpress",
+    "id": "E-MTAB-1925",
+    "url": "https://www.ebi.ac.uk/biostudies/arrayexpress/studies/E-MTAB-1925"
+  },
+  "source_publication_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9273868/",
+  "disease_context": {
+    "name": "amyotrophic lateral sclerosis",
+    "ontology_ids": {
+      "efo": null,
+      "mesh": null,
+      "doid": null,
+      "open_targets": "MONDO_0004976"
+    }
+  },
+  "modality": "transcriptomics",
+  "tissue": "motor_cortex",
+  "platform": null,
+  "species": "Homo sapiens",
+  "role": "discovery_cns",
+  "sample_units": "bulk_sample",
+  "cohorts": [
+    {
+      "cohort_id": "case",
+      "label": "Motor cortex samples from familial ALS C9ORF72 expansion carriers",
+      "case_control_status": "case",
+      "disease_subtype": null,
+      "sample_count": 3,
+      "status": "verified",
+      "notes": "Explicit Table 1 motor cortex comparison with accession-coded case and control counts."
+    },
+    {
+      "cohort_id": "control",
+      "label": "Matched control motor cortex samples",
+      "case_control_status": "control",
+      "disease_subtype": null,
+      "sample_count": 3,
+      "status": "verified",
+      "notes": null
+    }
+  ],
+  "manifest_status": "verified",
+  "provenance": {
+    "primary_source_url": "https://www.ebi.ac.uk/biostudies/arrayexpress/studies/E-MTAB-1925",
+    "extraction_method": "generated_from_curated_subset_config",
+    "extracted_from_section": "configs/subsets/als_cns_dimn_extended.yaml"
+  },
+  "open_questions": [
+    "Cross-check the generated registry record against the benchmark-pack note: Explicitly listed in Table 1 of the paper."
+  ]
+}

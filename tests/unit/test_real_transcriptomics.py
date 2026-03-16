@@ -6,6 +6,10 @@ from unittest.mock import patch
 
 from prioritx_data.real_transcriptomics import (
     GeoSample,
+    _filter_samples_by_tissue,
+    _gse122649_subject_id,
+    _gse67196_sample_column_from_title,
+    _gse76220_sample_column_from_title,
     _student_t_two_sided_p_value,
     build_microarray_gene_statistics,
     build_real_gene_statistics,
@@ -15,6 +19,7 @@ from prioritx_data.real_transcriptomics import (
     parse_geo_platform_gene_symbols,
     parse_geo_series_matrix_table,
     parse_geo_series_samples,
+    parse_symbol_count_text,
     parse_xlsx_expression_sheet,
 )
 from prioritx_features.transcriptomics import derive_real_gene_transcriptomics_features
@@ -33,11 +38,77 @@ class RealTranscriptomicsTests(unittest.TestCase):
         self.assertEqual("normal", samples[0].phenotype)
         self.assertTrue(samples[0].supplementary_gene_url.startswith("https://ftp.ncbi.nlm.nih.gov"))
 
+    def test_parses_geo_series_samples_with_patient_group_fields(self) -> None:
+        text = "\n".join(
+            [
+                '!Sample_geo_accession\t"GSM1"\t"GSM2"',
+                '!Sample_title\t"ALS sample"\t"Control sample"',
+                '!Sample_characteristics_ch1\t"patient group: ALS due to mutated C9ORF72"\t"patient group: Neurologically healthy, non-disease control"',
+            ]
+        )
+        samples = parse_geo_series_samples(text)
+        self.assertEqual("ALS due to mutated C9ORF72", samples[0].phenotype)
+        self.assertEqual("Neurologically healthy, non-disease control", samples[1].phenotype)
+
+    def test_maps_gse76220_titles_to_supplement_columns(self) -> None:
+        self.assertEqual("60a", _gse76220_sample_column_from_title("60_sALS"))
+        self.assertEqual("10c", _gse76220_sample_column_from_title("10_Control"))
+        self.assertIsNone(_gse76220_sample_column_from_title("unexpected_title"))
+
+    def test_maps_gse122649_subject_id(self) -> None:
+        sample = GeoSample(
+            geo_accession="GSM1",
+            title="sALS patient JR9 replicate 1",
+            phenotype="sALS",
+            supplementary_gene_url="",
+            metadata={"subject id": "JR9"},
+        )
+        self.assertEqual("JR9", _gse122649_subject_id(sample))
+
+    def test_maps_gse67196_titles_to_rawcount_columns(self) -> None:
+        self.assertEqual("ALS001_fcx", _gse67196_sample_column_from_title("1_FCX"))
+        self.assertEqual("ALS007_cereb", _gse67196_sample_column_from_title("7_cereb_b"))
+        self.assertIsNone(_gse67196_sample_column_from_title("bad_title"))
+
+    def test_filters_samples_by_cns_subregion(self) -> None:
+        samples = [
+            GeoSample(
+                geo_accession="GSM1",
+                title="sample one",
+                phenotype="ALS Spectrum MND",
+                supplementary_gene_url="",
+                metadata={"cns subregion": "Frontal Cortex"},
+            ),
+            GeoSample(
+                geo_accession="GSM2",
+                title="sample two",
+                phenotype="ALS Spectrum MND",
+                supplementary_gene_url="",
+                metadata={"cns subregion": "Motor Cortex (Medial)"},
+            ),
+        ]
+        filtered = _filter_samples_by_tissue(samples, "motor cortex")
+        self.assertEqual(["GSM2"], [sample.geo_accession for sample in filtered])
+
     def test_parses_gene_count_text(self) -> None:
         text = (self.fixture_dir / "gsm_norm1.genes.txt").read_text()
         counts = parse_gene_count_text(text)
         self.assertEqual(100, counts["ENSG000001"])
         self.assertEqual(3, len(counts))
+
+    def test_parses_symbol_count_text(self) -> None:
+        text = "\n".join(
+            [
+                "gene/TE\t/path/sample.bam",
+                '"A1BG"\t41',
+                '"A2M"\t4085',
+                '"BAD"\tnot_a_number',
+            ]
+        )
+        counts = parse_symbol_count_text(text)
+        self.assertEqual(41, counts["A1BG"])
+        self.assertEqual(4085, counts["A2M"])
+        self.assertNotIn("BAD", counts)
 
     def test_parses_gene_count_matrix_text(self) -> None:
         text = "\n".join(
@@ -248,6 +319,7 @@ class RealTranscriptomicsTests(unittest.TestCase):
             return gene_texts[url]
 
         hgnc_map = {"ENSG000001": {"symbol": "TESTGENE1", "hgnc_id": "HGNC:1000"}}
+        load_real_geo_gene_statistics.cache_clear()
         with patch("prioritx_data.real_transcriptomics.load_text_with_cache", side_effect=fake_load_text), patch(
             "prioritx_data.real_transcriptomics.load_hgnc_symbol_map",
             return_value=hgnc_map,
@@ -256,6 +328,7 @@ class RealTranscriptomicsTests(unittest.TestCase):
         self.assertEqual(3, len(records))
         mapped = next(record for record in records if record["gene"]["ensembl_gene_id"] == "ENSG000001")
         self.assertEqual("TESTGENE1", mapped["gene"]["symbol"])
+        load_real_geo_gene_statistics.cache_clear()
 
     def test_loads_real_ipf_microarray_gene_statistics_with_patched_downloads(self) -> None:
         matrix_text = "\n".join(

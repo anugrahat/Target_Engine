@@ -1,0 +1,608 @@
+from __future__ import annotations
+
+import unittest
+from unittest.mock import patch
+
+from prioritx_graph.service import (
+    _select_graph_candidates,
+    build_benchmark_knowledge_graph,
+    contrast_signaling_program_activity_scores,
+    evaluate_graph_augmented_benchmark,
+    graph_augmented_target_evidence,
+    graph_feature_scores,
+    proteophospho_support_scores,
+    signaling_support_scores,
+)
+
+
+CORE_RANKED = [
+    {
+        "ensembl_gene_id": "ENSG1",
+        "gene_symbol": "TNIK",
+        "score": 0.2,
+        "components": {
+            "transcriptomics_component": 0.2,
+            "genetics_component": 0.0,
+            "tractability_component": 0.0,
+            "pathway_component": 0.0,
+            "network_component": 0.0,
+        },
+        "transcriptomics_available": True,
+        "genetics_available": False,
+        "tractability_available": False,
+        "pathway_available": False,
+        "network_available": False,
+        "transcriptomics_supporting_contrasts": 1,
+        "transcriptomics_direction_conflict": False,
+        "transcriptomics_provenance": {"source_contrast_ids": ["ipf_lung_core_gse1"]},
+        "genetics_provenance": None,
+    },
+    {
+        "ensembl_gene_id": "ENSG2",
+        "gene_symbol": "MUC5B",
+        "score": 0.15,
+        "components": {
+            "transcriptomics_component": 0.15,
+            "genetics_component": 0.0,
+            "tractability_component": 0.0,
+            "pathway_component": 0.0,
+            "network_component": 0.0,
+        },
+        "transcriptomics_available": True,
+        "genetics_available": False,
+        "tractability_available": False,
+        "pathway_available": False,
+        "network_available": False,
+        "transcriptomics_supporting_contrasts": 2,
+        "transcriptomics_direction_conflict": False,
+        "transcriptomics_provenance": {"source_contrast_ids": ["ipf_lung_core_gse1"]},
+        "genetics_provenance": None,
+    },
+]
+
+PATHWAY_SCORES = [
+    {
+        "ensembl_gene_id": "ENSG1",
+        "gene_symbol": "TNIK",
+        "score": 0.9,
+        "overlap_count": 1,
+        "top_overlap_pathways": [
+            {"st_id": "R-HSA-1", "name": "Fibrosis pathway", "fdr": 1e-6},
+        ],
+        "provenance": {"source_kind": "reactome_analysis_service"},
+    },
+    {
+        "ensembl_gene_id": "ENSG2",
+        "gene_symbol": "MUC5B",
+        "score": 0.1,
+        "overlap_count": 1,
+        "top_overlap_pathways": [
+            {"st_id": "R-HSA-1", "name": "Fibrosis pathway", "fdr": 1e-6},
+        ],
+        "provenance": {"source_kind": "reactome_analysis_service"},
+    },
+]
+
+HCC_CORE_RANKED = [
+    {
+        "ensembl_gene_id": "ENSG10",
+        "gene_symbol": "TOP2A",
+        "score": 0.6,
+        "components": {
+            "transcriptomics_component": 0.4,
+            "genetics_component": 0.0,
+            "tractability_component": 0.0,
+            "pathway_component": 0.0,
+            "network_component": 0.0,
+        },
+        "transcriptomics_available": True,
+        "genetics_available": False,
+        "tractability_available": False,
+        "pathway_available": False,
+        "network_available": False,
+        "transcriptomics_supporting_contrasts": 3,
+        "transcriptomics_direction_conflict": False,
+        "transcriptomics_provenance": {"source_contrast_ids": ["hcc_adult_core_gse1"]},
+        "genetics_provenance": None,
+    },
+    {
+        "ensembl_gene_id": "ENSG20",
+        "gene_symbol": "CDK20",
+        "score": 0.05,
+        "components": {
+            "transcriptomics_component": 0.05,
+            "genetics_component": 0.0,
+            "tractability_component": 0.0,
+            "pathway_component": 0.0,
+            "network_component": 0.0,
+        },
+        "transcriptomics_available": True,
+        "genetics_available": False,
+        "tractability_available": False,
+        "pathway_available": False,
+        "network_available": False,
+        "transcriptomics_supporting_contrasts": 1,
+        "transcriptomics_direction_conflict": False,
+        "transcriptomics_provenance": {"source_contrast_ids": ["hcc_adult_core_gse2"]},
+        "genetics_provenance": None,
+    },
+]
+
+MECHANISTIC_EDGES = [
+    {
+        "source": {"node_type": "disease", "ref": "ipf_tnik"},
+        "target": {"ref": "myofibroblast_differentiation", "label": "Myofibroblast differentiation", "mechanism_kind": "cell_state_program"},
+        "edge_type": "disease_mechanism_support",
+        "weight": 0.95,
+        "leakage_risk": "low",
+        "sources": [{"title": "paper"}],
+    },
+    {
+        "source": {"node_type": "gene", "ref": "TNIK"},
+        "target": {"ref": "myofibroblast_differentiation", "label": "Myofibroblast differentiation", "mechanism_kind": "cell_state_program"},
+        "edge_type": "gene_mechanism_support",
+        "weight": 0.92,
+        "leakage_risk": "medium",
+        "sources": [{"title": "paper"}],
+    },
+]
+
+HCC_MECHANISTIC_EDGES = [
+    {
+        "source": {"node_type": "disease", "ref": "hcc_cdk20"},
+        "target": {"ref": "beta_catenin_signaling", "label": "Beta-catenin signaling", "mechanism_kind": "signaling_program"},
+        "edge_type": "disease_mechanism_support",
+        "weight": 0.82,
+        "leakage_risk": "low",
+        "sources": [{"title": "paper"}],
+    },
+    {
+        "source": {"node_type": "gene", "ref": "CDK20"},
+        "target": {"ref": "beta_catenin_signaling", "label": "Beta-catenin signaling", "mechanism_kind": "signaling_program"},
+        "edge_type": "gene_mechanism_support",
+        "weight": 0.84,
+        "leakage_risk": "medium",
+        "sources": [{"title": "paper"}],
+    },
+]
+
+HCC_SIGNALING_SUPPORT = [
+    {
+        "benchmark_id": "hcc_cdk20",
+        "subset_id": "hcc_adult_extended",
+        "ensembl_gene_id": "ENSG20",
+        "gene_symbol": "CDK20",
+        "score_name": "signaling_state_support_score",
+        "score": 0.92,
+        "program_support_count": 2,
+        "top_programs": [{"ref": "beta_catenin_signaling"}],
+    }
+]
+
+HCC_PROTEOPHOSPHO_SUPPORT = [
+    {
+        "benchmark_id": "hcc_cdk20",
+        "subset_id": "hcc_adult_extended",
+        "ensembl_gene_id": "ENSG20",
+        "gene_symbol": "CDK20",
+        "score_name": "proteophospho_support_score",
+        "score": 0.96,
+        "program_support_count": 2,
+        "top_programs": [{"ref": "beta_catenin_signaling"}],
+    }
+]
+
+HCC_CONTRAST_SIGNALING = [
+    {
+        "program_ref": "beta_catenin_signaling",
+        "program_label": "Beta-catenin signaling",
+        "score": 0.7,
+        "positive_marker_count": 3,
+        "top_markers": [{"gene_symbol": "AXIN2"}],
+        "contrast_id": "hcc_adult_extended_gse36376",
+    }
+]
+
+IPF_CELL_STATE_SUPPORT = [
+    {
+        "benchmark_id": "ipf_tnik",
+        "subset_id": "ipf_lung_extended",
+        "ensembl_gene_id": "ENSG1",
+        "gene_symbol": "TNIK",
+        "score_name": "cell_state_support_score",
+        "score": 0.88,
+        "program_support_count": 3,
+        "top_programs": [{"ref": "ipf_myofibroblast_program"}],
+    }
+]
+
+
+class GraphServiceTests(unittest.TestCase):
+    def test_builds_provenance_first_graph(self) -> None:
+        with patch("prioritx_graph.service.fused_target_evidence", return_value=CORE_RANKED), patch(
+            "prioritx_graph.service.load_reactome_membership_cache",
+            return_value={"TNIK": [], "MUC5B": []},
+        ), patch(
+            "prioritx_graph.service.load_reactome_pathway_enrichment",
+            return_value=[
+                {
+                    "pathway": {"st_id": "R-HSA-1", "name": "Fibrosis pathway", "species_name": "Homo sapiens"},
+                    "statistics": {"fdr": 1e-6},
+                }
+            ],
+        ), patch(
+            "prioritx_graph.service._score_pathway_overlap",
+            side_effect=PATHWAY_SCORES,
+        ), patch(
+            "prioritx_graph.service.load_mechanistic_edges",
+            return_value=[],
+        ):
+            payload = build_benchmark_knowledge_graph("ipf_tnik", candidate_limit=2, genetics_size=0)
+
+        node_ids = {node["id"] for node in payload["graph"]["nodes"]}
+        self.assertIn("disease:ipf_tnik", node_ids)
+        self.assertIn("gene:ENSG1", node_ids)
+        self.assertIn("pathway:R-HSA-1", node_ids)
+        edge_types = {edge["type"] for edge in payload["graph"]["edges"]}
+        self.assertIn("disease_gene_transcriptomics", edge_types)
+        self.assertIn("disease_pathway_enrichment", edge_types)
+        self.assertIn("pathway_gene_membership", edge_types)
+        self.assertIn("shared_pathway_neighbor", edge_types)
+
+    def test_scores_graph_features(self) -> None:
+        with patch("prioritx_graph.service.fused_target_evidence", return_value=CORE_RANKED), patch(
+            "prioritx_graph.service.load_reactome_membership_cache",
+            return_value={"TNIK": [], "MUC5B": []},
+        ), patch(
+            "prioritx_graph.service.load_reactome_pathway_enrichment",
+            return_value=[
+                {
+                    "pathway": {"st_id": "R-HSA-1", "name": "Fibrosis pathway", "species_name": "Homo sapiens"},
+                    "statistics": {"fdr": 1e-6},
+                }
+            ],
+        ), patch(
+            "prioritx_graph.service._score_pathway_overlap",
+            side_effect=PATHWAY_SCORES,
+        ), patch(
+            "prioritx_graph.service.load_mechanistic_edges",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.signaling_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.cell_state_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.proteophospho_support_scores",
+            return_value=[],
+        ):
+            scores = graph_feature_scores("ipf_tnik", candidate_limit=2, genetics_size=0)
+
+        self.assertEqual("knowledge_graph_support_score", scores[0]["score_name"])
+        by_symbol = {item["gene_symbol"]: item for item in scores}
+        self.assertGreater(by_symbol["TNIK"]["score"], by_symbol["MUC5B"]["score"])
+
+    def test_graph_augmented_ranking_can_reorder_candidates(self) -> None:
+        with patch("prioritx_graph.service.fused_target_evidence", return_value=CORE_RANKED), patch(
+            "prioritx_graph.service.load_reactome_membership_cache",
+            return_value={"TNIK": [], "MUC5B": []},
+        ), patch(
+            "prioritx_graph.service.load_reactome_pathway_enrichment",
+            return_value=[
+                {
+                    "pathway": {"st_id": "R-HSA-1", "name": "Fibrosis pathway", "species_name": "Homo sapiens"},
+                    "statistics": {"fdr": 1e-6},
+                }
+            ],
+        ), patch(
+            "prioritx_graph.service._score_pathway_overlap",
+            side_effect=PATHWAY_SCORES,
+        ), patch(
+            "prioritx_graph.service.load_mechanistic_edges",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.signaling_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.cell_state_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.proteophospho_support_scores",
+            return_value=[],
+        ):
+            ranked = graph_augmented_target_evidence("ipf_tnik", candidate_limit=2, genetics_size=0)
+
+        self.assertEqual("TNIK", ranked[0]["gene_symbol"])
+        self.assertEqual("graph_augmented_target_evidence_score", ranked[0]["score_name"])
+
+    def test_evaluates_graph_augmented_benchmark(self) -> None:
+        with patch("prioritx_graph.service.fused_target_evidence", return_value=CORE_RANKED), patch(
+            "prioritx_graph.service.load_reactome_membership_cache",
+            return_value={"TNIK": [], "MUC5B": []},
+        ), patch(
+            "prioritx_graph.service.load_reactome_pathway_enrichment",
+            return_value=[
+                {
+                    "pathway": {"st_id": "R-HSA-1", "name": "Fibrosis pathway", "species_name": "Homo sapiens"},
+                    "statistics": {"fdr": 1e-6},
+                }
+            ],
+        ), patch(
+            "prioritx_graph.service._score_pathway_overlap",
+            side_effect=PATHWAY_SCORES,
+        ), patch(
+            "prioritx_graph.service.load_mechanistic_edges",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.signaling_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.cell_state_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.proteophospho_support_scores",
+            return_value=[],
+        ):
+            result = evaluate_graph_augmented_benchmark("ipf_tnik", candidate_limit=2, genetics_size=0)
+
+        self.assertEqual(1, result["metrics"]["best_rank"])
+        self.assertTrue(result["items"][0]["found"])
+
+    def test_uses_cache_for_gene_pathways_when_available(self) -> None:
+        with patch("prioritx_graph.service.fused_target_evidence", return_value=CORE_RANKED), patch(
+            "prioritx_graph.service.load_reactome_membership_cache",
+            return_value={"TNIK": [{"pathway": {"st_id": "R-HSA-1"}}], "MUC5B": []},
+        ), patch(
+            "prioritx_graph.service.load_reactome_pathway_enrichment",
+            return_value=[
+                {
+                    "pathway": {"st_id": "R-HSA-1", "name": "Fibrosis pathway", "species_name": "Homo sapiens"},
+                    "statistics": {"fdr": 1e-6},
+                }
+            ],
+        ), patch(
+            "prioritx_graph.service._score_pathway_overlap",
+            side_effect=PATHWAY_SCORES,
+        ), patch(
+            "prioritx_graph.service.load_mechanistic_edges",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.load_reactome_gene_pathways",
+        ) as load_gene_pathways, patch(
+            "prioritx_graph.service.save_reactome_membership_cache",
+        ) as save_cache:
+            build_benchmark_knowledge_graph("ipf_tnik", candidate_limit=1, genetics_size=0)
+
+        load_gene_pathways.assert_not_called()
+        save_cache.assert_not_called()
+
+    def test_falls_back_to_live_gene_membership_and_persists_cache(self) -> None:
+        with patch("prioritx_graph.service.fused_target_evidence", return_value=CORE_RANKED[:1]), patch(
+            "prioritx_graph.service.load_reactome_membership_cache",
+            return_value={},
+        ), patch(
+            "prioritx_graph.service.load_reactome_pathway_enrichment",
+            return_value=[
+                {
+                    "pathway": {"st_id": "R-HSA-1", "name": "Fibrosis pathway", "species_name": "Homo sapiens"},
+                    "statistics": {"fdr": 1e-6},
+                }
+            ],
+        ), patch(
+            "prioritx_graph.service._score_pathway_overlap",
+            return_value=PATHWAY_SCORES[0],
+        ), patch(
+            "prioritx_graph.service.load_mechanistic_edges",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.load_reactome_gene_pathways",
+            return_value=[{"pathway": {"st_id": "R-HSA-1"}}],
+        ) as load_gene_pathways, patch(
+            "prioritx_graph.service.save_reactome_membership_cache",
+        ) as save_cache:
+            build_benchmark_knowledge_graph("ipf_tnik", candidate_limit=1, genetics_size=0)
+
+        load_gene_pathways.assert_called_once_with("TNIK")
+        save_cache.assert_called_once()
+
+    def test_exploratory_mechanistic_edges_can_raise_tnik(self) -> None:
+        with patch("prioritx_graph.service.fused_target_evidence", return_value=CORE_RANKED), patch(
+            "prioritx_graph.service.load_reactome_pathway_enrichment",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.load_reactome_membership_cache",
+            return_value={},
+        ), patch(
+            "prioritx_graph.service.load_mechanistic_edges",
+            return_value=MECHANISTIC_EDGES,
+        ), patch(
+            "prioritx_graph.service.signaling_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.cell_state_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.proteophospho_support_scores",
+            return_value=[],
+        ):
+            ranked = graph_augmented_target_evidence("ipf_tnik", mode="exploratory", candidate_limit=2, genetics_size=0)
+
+        self.assertEqual("TNIK", ranked[0]["gene_symbol"])
+        self.assertGreater(ranked[0]["graph_score"], ranked[1]["graph_score"])
+
+    def test_mechanistic_seed_can_include_low_rank_hcc_target(self) -> None:
+        with patch("prioritx_graph.service.fused_target_evidence", return_value=HCC_CORE_RANKED), patch(
+            "prioritx_graph.service.load_reactome_pathway_enrichment",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.load_reactome_membership_cache",
+            return_value={},
+        ), patch(
+            "prioritx_graph.service.load_mechanistic_edges",
+            return_value=HCC_MECHANISTIC_EDGES,
+        ), patch(
+            "prioritx_graph.service.signaling_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.cell_state_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.proteophospho_support_scores",
+            return_value=[],
+        ):
+            ranked = graph_augmented_target_evidence(
+                "hcc_cdk20",
+                mode="exploratory",
+                candidate_limit=1,
+                genetics_size=0,
+                mechanistic_seed_top_n=1,
+            )
+
+        self.assertEqual(["TOP2A", "CDK20"], [item["gene_symbol"] for item in ranked])
+
+    def test_graph_candidate_selection_uses_mode_defaults_when_genetics_unset(self) -> None:
+        with patch(
+            "prioritx_graph.service.benchmark_mode_config",
+            return_value={
+                "mode": "exploratory",
+                "subset_id": "hcc_adult_extended",
+                "genetics_size": 0,
+                "tractability_top_n": 200,
+                "pathway_top_n": 80,
+                "network_top_n": 100,
+            },
+        ), patch(
+            "prioritx_graph.service.fused_target_evidence",
+            return_value=HCC_CORE_RANKED,
+        ) as fused, patch(
+            "prioritx_graph.service.mechanistic_support_scores",
+            return_value=[],
+        ):
+            selected, _ = _select_graph_candidates(
+                benchmark_id="hcc_cdk20",
+                mode="exploratory",
+                subset_id="hcc_adult_extended",
+                candidate_limit=1,
+                genetics_size=None,
+                mechanistic_seed_top_n=0,
+            )
+
+        self.assertEqual(["TOP2A"], [item["gene_symbol"] for item in selected])
+        _, kwargs = fused.call_args
+        self.assertEqual(0, kwargs["genetics_size"])
+        self.assertEqual(200, kwargs["tractability_top_n"])
+        self.assertEqual(80, kwargs["pathway_top_n"])
+        self.assertEqual(100, kwargs["network_top_n"])
+
+    def test_signaling_support_can_promote_hcc_target(self) -> None:
+        with patch("prioritx_graph.service.fused_target_evidence", return_value=HCC_CORE_RANKED), patch(
+            "prioritx_graph.service.load_reactome_pathway_enrichment",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.load_reactome_membership_cache",
+            return_value={},
+        ), patch(
+            "prioritx_graph.service.load_mechanistic_edges",
+            return_value=HCC_MECHANISTIC_EDGES,
+        ), patch(
+            "prioritx_graph.service.signaling_support_scores",
+            return_value=HCC_SIGNALING_SUPPORT,
+        ), patch(
+            "prioritx_graph.service.proteophospho_support_scores",
+            return_value=[],
+        ):
+            ranked = graph_augmented_target_evidence(
+                "hcc_cdk20",
+                mode="exploratory",
+                candidate_limit=1,
+                genetics_size=0,
+                mechanistic_seed_top_n=1,
+            )
+
+        by_symbol = {item["gene_symbol"]: item for item in ranked}
+        self.assertGreater(by_symbol["CDK20"]["graph_score"], 0.0)
+
+    def test_context_selective_signaling_support_uses_best_contrast(self) -> None:
+        with patch("prioritx_graph.service.fused_target_evidence", return_value=HCC_CORE_RANKED), patch(
+            "prioritx_graph.service.signaling_program_activity_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.contrast_signaling_program_activity_scores",
+            return_value=HCC_CONTRAST_SIGNALING,
+        ), patch(
+            "prioritx_graph.service.load_mechanistic_edges",
+            return_value=HCC_MECHANISTIC_EDGES,
+        ):
+            support = signaling_support_scores(
+                "hcc_cdk20",
+                mode="exploratory",
+                subset_id="hcc_adult_extended",
+                candidate_limit=2,
+                genetics_size=0,
+            )
+
+        cdk20 = next(item for item in support if item["gene_symbol"] == "CDK20")
+        self.assertGreater(cdk20["score"], 0.0)
+
+    def test_proteophospho_support_can_promote_hcc_target(self) -> None:
+        with patch("prioritx_graph.service.fused_target_evidence", return_value=HCC_CORE_RANKED), patch(
+            "prioritx_graph.service.load_reactome_pathway_enrichment",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.load_reactome_membership_cache",
+            return_value={},
+        ), patch(
+            "prioritx_graph.service.load_mechanistic_edges",
+            return_value=HCC_MECHANISTIC_EDGES,
+        ), patch(
+            "prioritx_graph.service.signaling_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.proteophospho_support_scores",
+            return_value=HCC_PROTEOPHOSPHO_SUPPORT,
+        ):
+            ranked = graph_augmented_target_evidence(
+                "hcc_cdk20",
+                mode="exploratory",
+                candidate_limit=1,
+                genetics_size=0,
+                mechanistic_seed_top_n=1,
+            )
+
+        by_symbol = {item["gene_symbol"]: item for item in ranked}
+        self.assertGreater(by_symbol["CDK20"]["graph_score"], 0.0)
+
+    def test_cell_state_support_can_promote_tnik(self) -> None:
+        with patch("prioritx_graph.service.fused_target_evidence", return_value=CORE_RANKED), patch(
+            "prioritx_graph.service.load_reactome_pathway_enrichment",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.load_reactome_membership_cache",
+            return_value={},
+        ), patch(
+            "prioritx_graph.service.load_mechanistic_edges",
+            return_value=MECHANISTIC_EDGES,
+        ), patch(
+            "prioritx_graph.service.cell_state_support_scores",
+            return_value=IPF_CELL_STATE_SUPPORT,
+        ), patch(
+            "prioritx_graph.service.signaling_support_scores",
+            return_value=[],
+        ), patch(
+            "prioritx_graph.service.proteophospho_support_scores",
+            return_value=[],
+        ):
+            ranked = graph_augmented_target_evidence(
+                "ipf_tnik",
+                mode="exploratory",
+                candidate_limit=2,
+                genetics_size=0,
+            )
+
+        by_symbol = {item["gene_symbol"]: item for item in ranked}
+        self.assertGreater(by_symbol["TNIK"]["graph_score"], by_symbol["MUC5B"]["graph_score"])
+
+
+if __name__ == "__main__":
+    unittest.main()

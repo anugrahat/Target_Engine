@@ -255,6 +255,186 @@ def score_reactome_pathway_support(features: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def score_mechanistic_support(features: dict[str, Any]) -> dict[str, Any]:
+    """Score curated typed mechanistic support for one candidate gene."""
+    strongest_component = 0.5 * min(float(features["strongest_path_strength"]), 1.0)
+    mean_component = 0.35 * min(float(features["mean_path_strength"]), 1.0)
+    count_component = 0.15 * min(int(features["mechanistic_support_count"]) / 4.0, 1.0)
+    score = strongest_component + mean_component + count_component
+    return {
+        "benchmark_id": features["benchmark_id"],
+        "subset_id": features["subset_id"],
+        "ensembl_gene_id": features["ensembl_gene_id"],
+        "gene_symbol": features["gene_symbol"],
+        "score_name": "mechanistic_support_score",
+        "score": round(score, 4),
+        "components": {
+            "strongest_component": round(strongest_component, 4),
+            "mean_component": round(mean_component, 4),
+            "count_component": round(count_component, 4),
+        },
+        "mechanistic_support_count": features["mechanistic_support_count"],
+        "top_mechanisms": features["top_mechanisms"],
+        "mechanism_kinds": features["mechanism_kinds"],
+        "max_leakage_risk": features["max_leakage_risk"],
+        "evidence_kind": features["evidence_kind"],
+    }
+
+
+def score_signaling_program_activity(features: dict[str, Any]) -> dict[str, Any]:
+    """Score disease-specific signaling program activity from transcriptomics markers."""
+    marker_component = 0.5 * min(float(features["mean_marker_score"]), 1.0)
+    coverage_component = 0.3 * min(float(features["coverage"]), 1.0)
+    effect_component = 0.2 * min(float(features["effect_strength"]), 1.0)
+    score = marker_component + coverage_component + effect_component
+    return {
+        "benchmark_id": features["benchmark_id"],
+        "subset_id": features["subset_id"],
+        "program_ref": features["program_ref"],
+        "program_label": features["program_label"],
+        "score_name": "signaling_program_activity_score",
+        "score": round(score, 4),
+        "components": {
+            "marker_component": round(marker_component, 4),
+            "coverage_component": round(coverage_component, 4),
+            "effect_component": round(effect_component, 4),
+        },
+        "top_markers": features["top_markers"],
+        "marker_gene_count": features["marker_gene_count"],
+        "positive_marker_count": features["positive_marker_count"],
+        "sources": features["sources"],
+        "evidence_kind": features["evidence_kind"],
+    }
+
+
+def score_signaling_support(features: dict[str, Any]) -> dict[str, Any]:
+    """Score gene support from active disease signaling programs."""
+    strongest_component = 0.55 * min(float(features["strongest_path_strength"]), 1.0)
+    mean_component = 0.30 * min(float(features["mean_path_strength"]), 1.0)
+    count_component = 0.15 * min(int(features["program_support_count"]) / 3.0, 1.0)
+    score = strongest_component + mean_component + count_component
+    return {
+        "benchmark_id": features["benchmark_id"],
+        "subset_id": features["subset_id"],
+        "ensembl_gene_id": features["ensembl_gene_id"],
+        "gene_symbol": features["gene_symbol"],
+        "score_name": "signaling_state_support_score",
+        "score": round(score, 4),
+        "components": {
+            "strongest_component": round(strongest_component, 4),
+            "mean_component": round(mean_component, 4),
+            "count_component": round(count_component, 4),
+        },
+        "program_support_count": features["program_support_count"],
+        "top_programs": features["top_programs"],
+        "evidence_kind": features["evidence_kind"],
+    }
+
+
+def score_proteophospho_program_activity(features: dict[str, Any]) -> dict[str, Any]:
+    """Score proteomic and phosphosite activity for one curated program."""
+    marker_component = 0.35 * min(float(features["mean_marker_score"]), 1.0)
+    coverage_component = 0.15 * min(float(features["coverage"]), 1.0)
+    effect_component = 0.15 * min(float(features["effect_strength"]), 1.0)
+    phospho_component = 0.15 * min(float(features["supported_phosphosite_count"]) / 2.0, 1.0)
+    context_component = 0.2 * min(float(features["context_strength"]), 1.0)
+    score = marker_component + coverage_component + effect_component + phospho_component + context_component
+    return {
+        "benchmark_id": features["benchmark_id"],
+        "subset_id": features["subset_id"],
+        "program_ref": features["program_ref"],
+        "program_label": features["program_label"],
+        "score_name": "proteophospho_program_activity_score",
+        "score": round(score, 4),
+        "components": {
+            "marker_component": round(marker_component, 4),
+            "coverage_component": round(coverage_component, 4),
+            "effect_component": round(effect_component, 4),
+            "phospho_component": round(phospho_component, 4),
+            "context_component": round(context_component, 4),
+        },
+        "supported_protein_count": features["supported_protein_count"],
+        "supported_phosphosite_count": features["supported_phosphosite_count"],
+        "top_markers": features["top_markers"],
+        "sources": features["sources"],
+        "evidence_kind": features["evidence_kind"],
+    }
+
+
+def score_proteophospho_support(features: dict[str, Any]) -> dict[str, Any]:
+    """Score target support from active proteo-phospho programs."""
+    strongest_component = 0.55 * min(float(features["strongest_path_strength"]), 1.0)
+    mean_component = 0.3 * min(float(features["mean_path_strength"]), 1.0)
+    count_component = 0.15 * min(int(features["program_support_count"]) / 3.0, 1.0)
+    score = strongest_component + mean_component + count_component
+    return {
+        "benchmark_id": features["benchmark_id"],
+        "subset_id": features["subset_id"],
+        "ensembl_gene_id": features["ensembl_gene_id"],
+        "gene_symbol": features["gene_symbol"],
+        "score_name": "proteophospho_support_score",
+        "score": round(score, 4),
+        "components": {
+            "strongest_component": round(strongest_component, 4),
+            "mean_component": round(mean_component, 4),
+            "count_component": round(count_component, 4),
+        },
+        "program_support_count": features["program_support_count"],
+        "top_programs": features["top_programs"],
+        "evidence_kind": features["evidence_kind"],
+    }
+
+
+def score_cell_state_program_activity(features: dict[str, Any]) -> dict[str, Any]:
+    """Score activity of a single-cell-derived cell-state program."""
+    marker_component = 0.5 * min(float(features["mean_marker_score"]), 1.0)
+    coverage_component = 0.3 * min(float(features["coverage"]), 1.0)
+    effect_component = 0.2 * min(float(features["effect_strength"]), 1.0)
+    score = marker_component + coverage_component + effect_component
+    return {
+        "benchmark_id": features["benchmark_id"],
+        "subset_id": features["subset_id"],
+        "program_ref": features["program_ref"],
+        "program_label": features["program_label"],
+        "cell_state_kind": features["cell_state_kind"],
+        "score_name": "cell_state_program_activity_score",
+        "score": round(score, 4),
+        "components": {
+            "marker_component": round(marker_component, 4),
+            "coverage_component": round(coverage_component, 4),
+            "effect_component": round(effect_component, 4),
+        },
+        "linked_targets": features["linked_targets"],
+        "top_markers": features["top_markers"],
+        "sources": features["sources"],
+        "evidence_kind": features["evidence_kind"],
+    }
+
+
+def score_cell_state_support(features: dict[str, Any]) -> dict[str, Any]:
+    """Score gene support from active single-cell-derived cell-state programs."""
+    strongest_component = 0.6 * min(float(features["strongest_program_score"]), 1.0)
+    mean_component = 0.25 * min(float(features["mean_program_score"]), 1.0)
+    count_component = 0.15 * min(int(features["program_support_count"]) / 3.0, 1.0)
+    score = strongest_component + mean_component + count_component
+    return {
+        "benchmark_id": features["benchmark_id"],
+        "subset_id": features["subset_id"],
+        "ensembl_gene_id": features["ensembl_gene_id"],
+        "gene_symbol": features["gene_symbol"],
+        "score_name": "cell_state_support_score",
+        "score": round(score, 4),
+        "components": {
+            "strongest_component": round(strongest_component, 4),
+            "mean_component": round(mean_component, 4),
+            "count_component": round(count_component, 4),
+        },
+        "program_support_count": features["program_support_count"],
+        "top_programs": features["top_programs"],
+        "evidence_kind": features["evidence_kind"],
+    }
+
+
 def score_pubmed_literature_support(features: dict[str, Any]) -> dict[str, Any]:
     """Score disease-gene PubMed support without fusing it into ranking yet."""
     count_component = min(float(features["log_count"]) / 2.0, 1.0)

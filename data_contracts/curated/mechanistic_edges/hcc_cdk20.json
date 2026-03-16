@@ -1,0 +1,176 @@
+{
+  "schema_version": "0.1.0",
+  "benchmark_id": "hcc_cdk20",
+  "edges": [
+    {
+      "id": "hcc_disease_ar_signaling",
+      "source": {"ref_kind": "disease", "ref": "hcc_cdk20", "label": "Hepatocellular carcinoma", "node_type": "disease"},
+      "target": {"ref_kind": "mechanism", "ref": "androgen_receptor_signaling", "label": "Androgen receptor signaling", "node_type": "mechanism", "mechanism_kind": "signaling_program"},
+      "edge_type": "disease_mechanism_support",
+      "polarity": "up",
+      "weight": 0.88,
+      "discovery_time_valid": true,
+      "leakage_risk": "low",
+      "sources": [
+        {
+          "title": "Cell cycle-related kinase is a crucial inducer of androgen receptor-mediated hepatocarcinogenesis",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3148736/",
+          "note": "The paper frames hepatocarcinogenesis through androgen receptor signaling and CCRK induction."
+        }
+      ]
+    },
+    {
+      "id": "hcc_disease_beta_catenin",
+      "source": {"ref_kind": "disease", "ref": "hcc_cdk20", "label": "Hepatocellular carcinoma", "node_type": "disease"},
+      "target": {"ref_kind": "mechanism", "ref": "beta_catenin_signaling", "label": "Beta-catenin signaling", "node_type": "mechanism", "mechanism_kind": "signaling_program"},
+      "edge_type": "disease_mechanism_support",
+      "polarity": "up",
+      "weight": 0.82,
+      "discovery_time_valid": true,
+      "leakage_risk": "low",
+      "sources": [
+        {
+          "title": "Cell cycle-related kinase is a crucial inducer of androgen receptor-mediated hepatocarcinogenesis",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3148736/",
+          "note": "The HCC program is connected to CCRK-driven beta-catenin and TCF signaling."
+        }
+      ]
+    },
+    {
+      "id": "hcc_disease_mtorc1",
+      "source": {"ref_kind": "disease", "ref": "hcc_cdk20", "label": "Hepatocellular carcinoma", "node_type": "disease"},
+      "target": {"ref_kind": "mechanism", "ref": "mtorc1_signaling", "label": "mTORC1 signaling", "node_type": "mechanism", "mechanism_kind": "signaling_program"},
+      "edge_type": "disease_mechanism_support",
+      "polarity": "up",
+      "weight": 0.76,
+      "discovery_time_valid": true,
+      "leakage_risk": "low",
+      "sources": [
+        {
+          "title": "Role of androgen receptor and CCRK in obesity-associated hepatocarcinogenesis",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6283830/",
+          "note": "The obesity-associated HCC paper connects AR and CCRK to mTORC1 activation."
+        }
+      ]
+    },
+    {
+      "id": "hcc_disease_il6_mdsC",
+      "source": {"ref_kind": "disease", "ref": "hcc_cdk20", "label": "Hepatocellular carcinoma", "node_type": "disease"},
+      "target": {"ref_kind": "mechanism", "ref": "il6_pmn_mdsc_program", "label": "IL-6 / PMN-MDSC program", "node_type": "mechanism", "mechanism_kind": "immune_program"},
+      "edge_type": "disease_mechanism_support",
+      "polarity": "up",
+      "weight": 0.72,
+      "discovery_time_valid": true,
+      "leakage_risk": "low",
+      "sources": [
+        {
+          "title": "Cell cycle-related kinase promotes immunosuppressive microenvironment in hepatocellular carcinoma",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8115036/",
+          "note": "The study links CCRK to IL-6 signaling and PMN-MDSC accumulation in HCC."
+        }
+      ]
+    },
+    {
+      "id": "hcc_disease_nfkb_inflammatory",
+      "source": {"ref_kind": "disease", "ref": "hcc_cdk20", "label": "Hepatocellular carcinoma", "node_type": "disease"},
+      "target": {"ref_kind": "mechanism", "ref": "nfkb_inflammatory_program", "label": "NF-kB inflammatory program", "node_type": "mechanism", "mechanism_kind": "immune_program"},
+      "edge_type": "disease_mechanism_support",
+      "polarity": "up",
+      "weight": 0.78,
+      "discovery_time_valid": true,
+      "leakage_risk": "low",
+      "sources": [
+        {
+          "title": "Cell cycle-related kinase reprograms the liver immune microenvironment to promote cancer metastasis",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8115036/",
+          "note": "The CCRK metastasis paper reports NF-kB-dependent CXCL1 production and inflammatory microenvironment remodeling in HCC."
+        }
+      ]
+    },
+    {
+      "id": "cdk20_ar_signaling",
+      "source": {"ref_kind": "gene_symbol", "ref": "CDK20", "label": "CDK20", "node_type": "gene"},
+      "target": {"ref_kind": "mechanism", "ref": "androgen_receptor_signaling", "label": "Androgen receptor signaling", "node_type": "mechanism", "mechanism_kind": "signaling_program"},
+      "edge_type": "gene_mechanism_support",
+      "polarity": "up",
+      "weight": 0.86,
+      "discovery_time_valid": true,
+      "leakage_risk": "medium",
+      "sources": [
+        {
+          "title": "Cell cycle-related kinase is a crucial inducer of androgen receptor-mediated hepatocarcinogenesis",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3148736/",
+          "note": "AR directly induces CCRK in the foundational hepatocarcinogenesis study."
+        }
+      ]
+    },
+    {
+      "id": "cdk20_beta_catenin",
+      "source": {"ref_kind": "gene_symbol", "ref": "CDK20", "label": "CDK20", "node_type": "gene"},
+      "target": {"ref_kind": "mechanism", "ref": "beta_catenin_signaling", "label": "Beta-catenin signaling", "node_type": "mechanism", "mechanism_kind": "signaling_program"},
+      "edge_type": "gene_mechanism_support",
+      "polarity": "up",
+      "weight": 0.84,
+      "discovery_time_valid": true,
+      "leakage_risk": "medium",
+      "sources": [
+        {
+          "title": "Cell cycle-related kinase is a crucial inducer of androgen receptor-mediated hepatocarcinogenesis",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3148736/",
+          "note": "CCRK activates beta-catenin and TCF signaling in the HCC mechanistic literature."
+        }
+      ]
+    },
+    {
+      "id": "cdk20_mtorc1",
+      "source": {"ref_kind": "gene_symbol", "ref": "CDK20", "label": "CDK20", "node_type": "gene"},
+      "target": {"ref_kind": "mechanism", "ref": "mtorc1_signaling", "label": "mTORC1 signaling", "node_type": "mechanism", "mechanism_kind": "signaling_program"},
+      "edge_type": "gene_mechanism_support",
+      "polarity": "up",
+      "weight": 0.78,
+      "discovery_time_valid": true,
+      "leakage_risk": "medium",
+      "sources": [
+        {
+          "title": "Role of androgen receptor and CCRK in obesity-associated hepatocarcinogenesis",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6283830/",
+          "note": "The obesity/NASH-associated HCC paper ties CCRK to mTORC1 activation."
+        }
+      ]
+    },
+    {
+      "id": "cdk20_il6_mdsC",
+      "source": {"ref_kind": "gene_symbol", "ref": "CDK20", "label": "CDK20", "node_type": "gene"},
+      "target": {"ref_kind": "mechanism", "ref": "il6_pmn_mdsc_program", "label": "IL-6 / PMN-MDSC program", "node_type": "mechanism", "mechanism_kind": "immune_program"},
+      "edge_type": "gene_mechanism_support",
+      "polarity": "up",
+      "weight": 0.74,
+      "discovery_time_valid": true,
+      "leakage_risk": "medium",
+      "sources": [
+        {
+          "title": "Cell cycle-related kinase promotes immunosuppressive microenvironment in hepatocellular carcinoma",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8115036/",
+          "note": "The HCC immunology paper ties CCRK to IL-6-driven PMN-MDSC accumulation."
+        }
+      ]
+    },
+    {
+      "id": "cdk20_nfkb_inflammatory",
+      "source": {"ref_kind": "gene_symbol", "ref": "CDK20", "label": "CDK20", "node_type": "gene"},
+      "target": {"ref_kind": "mechanism", "ref": "nfkb_inflammatory_program", "label": "NF-kB inflammatory program", "node_type": "mechanism", "mechanism_kind": "immune_program"},
+      "edge_type": "gene_mechanism_support",
+      "polarity": "up",
+      "weight": 0.8,
+      "discovery_time_valid": true,
+      "leakage_risk": "medium",
+      "sources": [
+        {
+          "title": "Cell cycle-related kinase reprograms the liver immune microenvironment to promote cancer metastasis",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8115036/",
+          "note": "The metastasis paper links CCRK to NF-kB-dependent inflammatory signaling and PMN-MDSC accumulation."
+        }
+      ]
+    }
+  ]
+}

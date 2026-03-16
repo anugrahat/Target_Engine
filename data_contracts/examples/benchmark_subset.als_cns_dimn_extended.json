@@ -1,0 +1,190 @@
+{
+  "schema_version": "0.1.0",
+  "subset_id": "als_cns_dimn_extended",
+  "benchmark_id": "als_pandaomics",
+  "mode": "curated_prioritx_subset",
+  "objective": "Exploratory ALS benchmark subset that extends the accession-coded CNS core with Answer ALS induced motor-neuron resources.",
+  "readiness": "candidate",
+  "inclusion_principles": [
+    "Preserve the accession-coded CNS core as the strict benchmark anchor.",
+    "Add induced motor-neuron evidence only when the paper provides explicit counts and the provenance gaps are clearly flagged.",
+    "Keep unresolved multi-comparison CNS accessions excluded until per-comparison manifests are modeled explicitly; split `GSE67196` and `GSE124439` comparisons are now admitted."
+  ],
+  "included_datasets": [
+    {
+      "id": "E-MTAB-1925",
+      "source": "ArrayExpress",
+      "selection_mode": "direct",
+      "case_definition": "Motor cortex samples from familial ALS C9ORF72 expansion carriers",
+      "control_definition": "Matched control motor cortex samples",
+      "sample_counts": {
+        "case": 3,
+        "control": 3
+      },
+      "reason": "Explicit Table 1 motor cortex comparison with accession-coded case and control counts."
+    },
+    {
+      "id": "GSE68605",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Motor neurons from familial ALS C9ORF72 expansion carriers",
+      "control_definition": "Matched control motor neurons",
+      "sample_counts": {
+        "case": 8,
+        "control": 3
+      },
+      "reason": "Explicit Table 1 motor-neuron comparison with accession-coded case and control counts."
+    },
+    {
+      "id": "GSE20589",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Motor neurons from familial ALS SOD1 carriers",
+      "control_definition": "Matched control motor neurons",
+      "sample_counts": {
+        "case": 3,
+        "control": 7
+      },
+      "reason": "Explicit Table 1 motor-neuron comparison with accession-coded case and control counts."
+    },
+    {
+      "id": "GSE122649",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Sporadic ALS motor cortex samples",
+      "control_definition": "Matched control motor cortex samples",
+      "sample_counts": {
+        "case": 26,
+        "control": 12
+      },
+      "reason": "Explicit Table 1 sALS motor cortex comparison with accession-coded counts."
+    },
+    {
+      "id": "GSE19332",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "CHMP2B-related ALS motor neurons",
+      "control_definition": "Matched control motor neurons",
+      "sample_counts": {
+        "case": 3,
+        "control": 7
+      },
+      "reason": "Explicit Table 1 motor-neuron comparison with accession-coded counts; GEO metadata identifies the case arm as CHMP2B-related ALS."
+    },
+    {
+      "id": "GSE76220",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Sporadic ALS spinal motor neurons",
+      "control_definition": "Matched control spinal motor neurons",
+      "sample_counts": {
+        "case": 13,
+        "control": 8
+      },
+      "reason": "Explicit Table 1 spinal motor-neuron comparison with accession-coded counts."
+    },
+    {
+      "id": "GSE67196_c9_fcx",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Familial ALS C9ORF72 frontal cortex samples",
+      "control_definition": "Healthy frontal cortex samples",
+      "sample_counts": {
+        "case": 8,
+        "control": 9
+      },
+      "reason": "Split from GSE67196 Table 1 frontal-cortex C9ORF72 comparison using the public rawcount matrix."
+    },
+    {
+      "id": "GSE67196_c9_cereb",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Familial ALS C9ORF72 cerebellum samples",
+      "control_definition": "Healthy cerebellum samples",
+      "sample_counts": {
+        "case": 8,
+        "control": 8
+      },
+      "reason": "Split from GSE67196 Table 1 cerebellar C9ORF72 comparison using the public rawcount matrix."
+    },
+    {
+      "id": "GSE67196_sals_fcx",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Sporadic ALS frontal cortex samples",
+      "control_definition": "Healthy frontal cortex samples",
+      "sample_counts": {
+        "case": 10,
+        "control": 9
+      },
+      "reason": "Split from GSE67196 Table 1 frontal-cortex sporadic ALS comparison using the public rawcount matrix."
+    },
+    {
+      "id": "GSE67196_sals_cereb",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Sporadic ALS cerebellum samples",
+      "control_definition": "Healthy cerebellum samples",
+      "sample_counts": {
+        "case": 10,
+        "control": 8
+      },
+      "reason": "Split from GSE67196 Table 1 cerebellar sporadic ALS comparison using the public rawcount matrix."
+    },
+    {
+      "id": "GSE124439_fcx",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Sporadic ALS frontal cortex samples",
+      "control_definition": "Non-neurological control frontal cortex samples",
+      "sample_counts": {
+        "case": 65,
+        "control": 9
+      },
+      "reason": "Split from GSE124439 Table 1 frontal-cortex sporadic ALS comparison using the public per-sample RNA-seq count tarball."
+    },
+    {
+      "id": "GSE124439_motor",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Sporadic ALS motor cortex samples",
+      "control_definition": "Non-neurological control motor cortex samples",
+      "sample_counts": {
+        "case": 80,
+        "control": 8
+      },
+      "reason": "Split from GSE124439 Table 1 motor-cortex sporadic ALS comparison using the public per-sample RNA-seq count tarball."
+    },
+    {
+      "id": "Answer ALS transcriptomics",
+      "source": "Answer ALS",
+      "selection_mode": "requires_subsetting",
+      "case_definition": "Familial or sporadic ALS induced motor neurons",
+      "control_definition": "Control induced motor neurons",
+      "sample_counts": {
+        "case": 135,
+        "control": 31
+      },
+      "reason": "Table 1 reports explicit diMN transcriptomic counts, but the exact public identifiers and per-subtype subset manifests still need stable recovery."
+    },
+    {
+      "id": "Answer ALS proteomics",
+      "source": "Answer ALS",
+      "selection_mode": "requires_subsetting",
+      "case_definition": "Familial or sporadic ALS induced motor-neuron proteomes",
+      "control_definition": "Control induced motor-neuron proteomes",
+      "sample_counts": {
+        "case": 135,
+        "control": 31
+      },
+      "reason": "Table 1 reports explicit diMN proteomic counts, but the exact public identifiers and per-subtype subset manifests still need stable recovery."
+    }
+  ],
+  "excluded_datasets": [
+    {
+      "id": "A-MEXP-2246",
+      "reason": "Control-reference accession for the E-MTAB-1925 comparison rather than a standalone ALS discovery cohort."
+    }
+  ],
+  "notes": "This exploratory subset broadens ALS context with induced motor-neuron evidence while keeping unresolved public-identifier gaps explicit."
+}

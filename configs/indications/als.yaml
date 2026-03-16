@@ -47,7 +47,58 @@ datasets:
     control_group: matched_control
     sample_counts: null
     status: verified
-    notes: Used in multiple tissue-specific comparisons in Table 1.
+    notes: >
+      Used in multiple tissue-specific comparisons in Table 1:
+      cerebellum fALS_C9orf72 8/8, frontal cortex fALS_C9orf72 8/9,
+      cerebellum sALS 10/8, frontal cortex sALS 10/9.
+  - id: GSE67196_c9_fcx
+    source: GEO
+    role: discovery_cns
+    modality: transcriptomics
+    tissue: frontal_cortex
+    case_group: fALS_C9orf72
+    control_group: matched_control
+    sample_counts:
+      case: 8
+      control: 9
+    status: verified
+    notes: Split from GSE67196 Table 1 frontal-cortex C9ORF72 comparison.
+  - id: GSE67196_c9_cereb
+    source: GEO
+    role: discovery_cns
+    modality: transcriptomics
+    tissue: cerebellum
+    case_group: fALS_C9orf72
+    control_group: matched_control
+    sample_counts:
+      case: 8
+      control: 8
+    status: verified
+    notes: Split from GSE67196 Table 1 cerebellar C9ORF72 comparison.
+  - id: GSE67196_sals_fcx
+    source: GEO
+    role: discovery_cns
+    modality: transcriptomics
+    tissue: frontal_cortex
+    case_group: sALS
+    control_group: matched_control
+    sample_counts:
+      case: 10
+      control: 9
+    status: verified
+    notes: Split from GSE67196 Table 1 frontal-cortex sporadic ALS comparison.
+  - id: GSE67196_sals_cereb
+    source: GEO
+    role: discovery_cns
+    modality: transcriptomics
+    tissue: cerebellum
+    case_group: sALS
+    control_group: matched_control
+    sample_counts:
+      case: 10
+      control: 8
+    status: verified
+    notes: Split from GSE67196 Table 1 cerebellar sporadic ALS comparison.
   - id: GSE68605
     source: GEO
     role: discovery_cns
@@ -93,19 +144,45 @@ datasets:
     control_group: matched_control
     sample_counts: null
     status: verified
-    notes: Used in multiple tissue-specific comparisons in Table 1.
+    notes: >
+      Used in multiple tissue-specific comparisons in Table 1:
+      frontal cortex sALS 65/9 and motor cortex sALS 80/8.
+  - id: GSE124439_fcx
+    source: GEO
+    role: discovery_cns
+    modality: transcriptomics
+    tissue: frontal_cortex
+    case_group: sALS
+    control_group: matched_control
+    sample_counts:
+      case: 65
+      control: 9
+    status: verified
+    notes: Split from GSE124439 Table 1 frontal-cortex sporadic ALS comparison.
+  - id: GSE124439_motor
+    source: GEO
+    role: discovery_cns
+    modality: transcriptomics
+    tissue: motor_cortex
+    case_group: sALS
+    control_group: matched_control
+    sample_counts:
+      case: 80
+      control: 8
+    status: verified
+    notes: Split from GSE124439 Table 1 motor-cortex sporadic ALS comparison.
   - id: GSE19332
     source: GEO
     role: discovery_cns
     modality: transcriptomics
     tissue: motor_neurons
-    case_group: sALS
+    case_group: fALS_CHMP2B
     control_group: matched_control
     sample_counts:
       case: 3
       control: 7
     status: verified
-    notes: Explicitly listed in Table 1.
+    notes: Explicitly listed in Table 1; accession metadata identifies the case arm as CHMP2B-mutant ALS rather than sporadic ALS.
   - id: GSE76220
     source: GEO
     role: discovery_cns
@@ -125,9 +202,14 @@ datasets:
     tissue: induced_motor_neurons
     case_group: fALS_or_sALS
     control_group: control
-    sample_counts: null
+    sample_counts:
+      case: 135
+      control: 31
     status: partial
-    notes: Explicitly named in the paper, but not accession-coded in the verified text.
+    notes: >
+      Explicitly named in the paper, but not accession-coded in the verified text.
+      Table 1 reports 25 fALS cases versus 31 controls and 110 sALS cases versus
+      31 controls for the diMN transcriptomic analysis.
   - id: Answer ALS proteomics
     source: Answer ALS
     role: discovery_diMN
@@ -135,15 +217,19 @@ datasets:
     tissue: induced_motor_neurons
     case_group: fALS_or_sALS
     control_group: control
-    sample_counts: null
+    sample_counts:
+      case: 135
+      control: 31
     status: partial
-    notes: Explicitly named in the paper, but not accession-coded in the verified text.
+    notes: >
+      Explicitly named in the paper, but not accession-coded in the verified text.
+      Table 1 reports 25 fALS cases versus 31 controls and 110 sALS cases versus
+      31 controls for the diMN proteomic analysis.
 validation:
   experimental:
     - Drosophila c9ALS rescue experiments
   clinical: []
   notes: Eight prioritized genes were reported to rescue neurodegeneration in the fly model.
 open_questions:
-  - Recover stable public identifiers and exact subsets for the Answer ALS data used in the study.
-  - Separate tissue-specific comparisons for GSE67196 and GSE124439 in the formal manifest.
+  - Recover authenticated portal access or stable downloadable identifiers for the exact Answer ALS transcriptomic and proteomic subsets used in the study.
   - Define how Drosophila rescue should map to benchmark labels without overstating translational certainty.

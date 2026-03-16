@@ -1,0 +1,42 @@
+{
+  "schema_version": "0.1.0",
+  "benchmark_id": "hcc_cdk20",
+  "programs": [
+    {
+      "ref": "beta_catenin_signaling",
+      "label": "Beta-catenin signaling",
+      "expected_direction": "up",
+      "marker_genes": ["AXIN2", "GLUL", "TBX3", "MYC", "CCND1", "EGFR"],
+      "sources": [
+        {
+          "title": "Cell cycle-related kinase is a crucial inducer of androgen receptor-mediated hepatocarcinogenesis",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3148736/",
+          "note": "The CCRK paper links hepatocarcinogenesis to beta-catenin and TCF signaling, including EGFR and CCND1."
+        },
+        {
+          "title": "Molecular pathogenesis and targeted therapies for HCC",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3170867/",
+          "note": "Review articles describe GLUL, AXIN2, TBX3, and related genes as beta-catenin-responsive in HCC."
+        }
+      ]
+    },
+    {
+      "ref": "il6_pmn_mdsc_program",
+      "label": "IL-6 / PMN-MDSC program",
+      "expected_direction": "up",
+      "marker_genes": ["IL6", "IL6R", "IL6ST", "STAT3", "CXCL1", "SAA1", "SAA2"],
+      "sources": [
+        {
+          "title": "Cell cycle-related kinase promotes immunosuppressive microenvironment in hepatocellular carcinoma",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8115036/",
+          "note": "The HCC immunology paper ties CCRK to IL-6 signaling and PMN-MDSC accumulation."
+        },
+        {
+          "title": "The role of IL-6/STAT3 signaling in HCC",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6347020/",
+          "note": "Reviews and mechanistic studies describe IL6, STAT3, and inflammatory cytokine programs as key HCC signaling axes."
+        }
+      ]
+    }
+  ]
+}

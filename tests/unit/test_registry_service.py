@@ -26,7 +26,14 @@ class RegistryServiceTests(unittest.TestCase):
         subsets = list_benchmark_subsets()
         subset_ids = {subset["subset_id"] for subset in subsets}
         self.assertEqual(
-            {"ipf_lung_core", "ipf_lung_extended", "hcc_adult_core", "hcc_adult_extended"},
+            {
+                "ipf_lung_core",
+                "ipf_lung_extended",
+                "hcc_adult_core",
+                "hcc_adult_extended",
+                "als_cns_core",
+                "als_cns_dimn_extended",
+            },
             subset_ids,
         )
 
@@ -46,6 +53,7 @@ class RegistryServiceTests(unittest.TestCase):
 
     def test_builds_benchmark_index(self) -> None:
         rows = {row["benchmark_id"]: row for row in benchmark_index()}
+        self.assertEqual(["als_cns_core", "als_cns_dimn_extended"], rows["als_pandaomics"]["subset_ids"])
         self.assertEqual(["hcc_adult_core", "hcc_adult_extended"], rows["hcc_cdk20"]["subset_ids"])
         self.assertEqual(["ipf_lung_core", "ipf_lung_extended"], rows["ipf_tnik"]["subset_ids"])
 

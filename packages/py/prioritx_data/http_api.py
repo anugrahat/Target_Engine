@@ -34,6 +34,19 @@ from prioritx_eval.service import (
     summarize_benchmark_dashboard,
     target_evidence_graph,
 )
+from prioritx_graph.service import (
+    build_benchmark_knowledge_graph,
+    cell_state_program_activity_scores,
+    cell_state_support_scores,
+    evaluate_graph_augmented_benchmark,
+    graph_augmented_target_evidence,
+    graph_feature_scores,
+    mechanistic_support_scores,
+    proteophospho_program_activity_scores,
+    proteophospho_support_scores,
+    signaling_program_activity_scores,
+    signaling_support_scores,
+)
 from prioritx_rl.service import evaluate_bandit_agents
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -102,6 +115,17 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
                 "/target-shortlist-explanations",
                 "/target-evidence-graph",
                 "/target-audit",
+                "/knowledge-graph",
+                "/mechanistic-support",
+                "/cell-state-program-activity",
+                "/cell-state-support",
+                "/signaling-program-activity",
+                "/signaling-support",
+                "/proteophospho-program-activity",
+                "/proteophospho-support",
+                "/graph-feature-scores",
+                "/graph-augmented-target-evidence",
+                "/graph-augmented-benchmark-evaluation",
                 "/rl-benchmark-evaluation",
                 "/transcriptomics-evidence",
                 "/transcriptomics-real-scores",
@@ -476,6 +500,248 @@ def handle_get(path: str, query: dict[str, list[str]]) -> tuple[int, dict[str, A
             tractability_top_n=tractability_top_n,
             pathway_top_n=pathway_top_n,
             network_top_n=network_top_n,
+        )
+
+    if path == "/knowledge-graph":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        mode = _mode(query)
+        if mode == "__invalid__":
+            return 400, {"error": "mode must be one of: strict, exploratory"}
+        candidate_limit_raw = _single(query, "candidate_limit")
+        genetics_size_raw = _single(query, "genetics_size")
+        mechanistic_seed_top_n_raw = _single(query, "mechanistic_seed_top_n")
+        try:
+            candidate_limit = int(candidate_limit_raw) if candidate_limit_raw else 500
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else None
+            mechanistic_seed_top_n = int(mechanistic_seed_top_n_raw) if mechanistic_seed_top_n_raw else 10
+        except ValueError:
+            return 400, {"error": "candidate_limit, genetics_size, and mechanistic_seed_top_n must be integers"}
+        return 200, build_benchmark_knowledge_graph(
+            benchmark_id,
+            mode=mode or "strict",
+            subset_id=_single(query, "subset_id"),
+            candidate_limit=candidate_limit,
+            genetics_size=genetics_size,
+            mechanistic_seed_top_n=mechanistic_seed_top_n,
+        )
+
+    if path == "/mechanistic-support":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        mode = _mode(query)
+        if mode == "__invalid__":
+            return 400, {"error": "mode must be one of: strict, exploratory"}
+        candidate_limit_raw = _single(query, "candidate_limit")
+        genetics_size_raw = _single(query, "genetics_size")
+        try:
+            candidate_limit = int(candidate_limit_raw) if candidate_limit_raw else 500
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else None
+        except ValueError:
+            return 400, {"error": "candidate_limit and genetics_size must be integers"}
+        return 200, {
+            "items": mechanistic_support_scores(
+                benchmark_id,
+                mode=mode or "strict",
+                subset_id=_single(query, "subset_id"),
+                candidate_limit=candidate_limit,
+                genetics_size=genetics_size,
+            )
+        }
+
+    if path == "/cell-state-program-activity":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        subset_id = _single(query, "subset_id")
+        if not subset_id:
+            return 400, {"error": "subset_id query parameter is required"}
+        return 200, {
+            "items": cell_state_program_activity_scores(
+                benchmark_id,
+                subset_id=subset_id,
+            )
+        }
+
+    if path == "/cell-state-support":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        mode = _mode(query)
+        if mode == "__invalid__":
+            return 400, {"error": "mode must be one of: strict, exploratory"}
+        candidate_limit_raw = _single(query, "candidate_limit")
+        genetics_size_raw = _single(query, "genetics_size")
+        try:
+            candidate_limit = int(candidate_limit_raw) if candidate_limit_raw else 500
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else None
+        except ValueError:
+            return 400, {"error": "candidate_limit and genetics_size must be integers"}
+        return 200, {
+            "items": cell_state_support_scores(
+                benchmark_id,
+                mode=mode or "strict",
+                subset_id=_single(query, "subset_id"),
+                candidate_limit=candidate_limit,
+                genetics_size=genetics_size,
+            )
+        }
+
+    if path == "/signaling-program-activity":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        subset_id = _single(query, "subset_id")
+        if not subset_id:
+            return 400, {"error": "subset_id query parameter is required"}
+        return 200, {
+            "items": signaling_program_activity_scores(
+                benchmark_id,
+                subset_id=subset_id,
+            )
+        }
+
+    if path == "/signaling-support":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        mode = _mode(query)
+        if mode == "__invalid__":
+            return 400, {"error": "mode must be one of: strict, exploratory"}
+        candidate_limit_raw = _single(query, "candidate_limit")
+        genetics_size_raw = _single(query, "genetics_size")
+        try:
+            candidate_limit = int(candidate_limit_raw) if candidate_limit_raw else 500
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else None
+        except ValueError:
+            return 400, {"error": "candidate_limit and genetics_size must be integers"}
+        return 200, {
+            "items": signaling_support_scores(
+                benchmark_id,
+                mode=mode or "strict",
+                subset_id=_single(query, "subset_id"),
+                candidate_limit=candidate_limit,
+                genetics_size=genetics_size,
+            )
+        }
+
+    if path == "/proteophospho-program-activity":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        subset_id = _single(query, "subset_id")
+        if not subset_id:
+            return 400, {"error": "subset_id query parameter is required"}
+        return 200, {
+            "items": proteophospho_program_activity_scores(
+                benchmark_id,
+                subset_id=subset_id,
+            )
+        }
+
+    if path == "/proteophospho-support":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        mode = _mode(query)
+        if mode == "__invalid__":
+            return 400, {"error": "mode must be one of: strict, exploratory"}
+        candidate_limit_raw = _single(query, "candidate_limit")
+        genetics_size_raw = _single(query, "genetics_size")
+        try:
+            candidate_limit = int(candidate_limit_raw) if candidate_limit_raw else 500
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else 200
+        except ValueError:
+            return 400, {"error": "candidate_limit and genetics_size must be integers"}
+        return 200, {
+            "items": proteophospho_support_scores(
+                benchmark_id,
+                mode=mode or "strict",
+                subset_id=_single(query, "subset_id"),
+                candidate_limit=candidate_limit,
+                genetics_size=genetics_size,
+            )
+        }
+
+    if path == "/graph-feature-scores":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        mode = _mode(query)
+        if mode == "__invalid__":
+            return 400, {"error": "mode must be one of: strict, exploratory"}
+        candidate_limit_raw = _single(query, "candidate_limit")
+        genetics_size_raw = _single(query, "genetics_size")
+        mechanistic_seed_top_n_raw = _single(query, "mechanistic_seed_top_n")
+        try:
+            candidate_limit = int(candidate_limit_raw) if candidate_limit_raw else 500
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else None
+            mechanistic_seed_top_n = int(mechanistic_seed_top_n_raw) if mechanistic_seed_top_n_raw else 10
+        except ValueError:
+            return 400, {"error": "candidate_limit, genetics_size, and mechanistic_seed_top_n must be integers"}
+        return 200, {
+            "items": graph_feature_scores(
+                benchmark_id,
+                mode=mode or "strict",
+                subset_id=_single(query, "subset_id"),
+                candidate_limit=candidate_limit,
+                genetics_size=genetics_size,
+                mechanistic_seed_top_n=mechanistic_seed_top_n,
+            )
+        }
+
+    if path == "/graph-augmented-target-evidence":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        mode = _mode(query)
+        if mode == "__invalid__":
+            return 400, {"error": "mode must be one of: strict, exploratory"}
+        candidate_limit_raw = _single(query, "candidate_limit")
+        genetics_size_raw = _single(query, "genetics_size")
+        mechanistic_seed_top_n_raw = _single(query, "mechanistic_seed_top_n")
+        try:
+            candidate_limit = int(candidate_limit_raw) if candidate_limit_raw else 500
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else None
+            mechanistic_seed_top_n = int(mechanistic_seed_top_n_raw) if mechanistic_seed_top_n_raw else 10
+        except ValueError:
+            return 400, {"error": "candidate_limit, genetics_size, and mechanistic_seed_top_n must be integers"}
+        return 200, {
+            "items": graph_augmented_target_evidence(
+                benchmark_id,
+                mode=mode or "strict",
+                subset_id=_single(query, "subset_id"),
+                candidate_limit=candidate_limit,
+                genetics_size=genetics_size,
+                mechanistic_seed_top_n=mechanistic_seed_top_n,
+            )
+        }
+
+    if path == "/graph-augmented-benchmark-evaluation":
+        benchmark_id = _single(query, "benchmark_id")
+        if not benchmark_id:
+            return 400, {"error": "benchmark_id query parameter is required"}
+        mode = _mode(query)
+        if mode == "__invalid__":
+            return 400, {"error": "mode must be one of: strict, exploratory"}
+        candidate_limit_raw = _single(query, "candidate_limit")
+        genetics_size_raw = _single(query, "genetics_size")
+        mechanistic_seed_top_n_raw = _single(query, "mechanistic_seed_top_n")
+        try:
+            candidate_limit = int(candidate_limit_raw) if candidate_limit_raw else 500
+            genetics_size = int(genetics_size_raw) if genetics_size_raw else None
+            mechanistic_seed_top_n = int(mechanistic_seed_top_n_raw) if mechanistic_seed_top_n_raw else 10
+        except ValueError:
+            return 400, {"error": "candidate_limit, genetics_size, and mechanistic_seed_top_n must be integers"}
+        return 200, evaluate_graph_augmented_benchmark(
+            benchmark_id,
+            mode=mode or "strict",
+            subset_id=_single(query, "subset_id"),
+            candidate_limit=candidate_limit,
+            genetics_size=genetics_size,
+            mechanistic_seed_top_n=mechanistic_seed_top_n,
         )
 
     if path == "/rl-benchmark-evaluation":
