@@ -88,6 +88,8 @@ Reason:
 - validation labels should be encoded carefully so Drosophila rescue is not over-generalized to human translational success
 - the public `GSE76220` RPKM supplement appears to expose `12` ALS columns against the paper-level `13`-case comparison, so the missing sample alignment should be documented before treating that cohort as fully resolved
 - `Answer ALS` is now clearly distributed through the official portal with structured omics data levels and participant-linked iPSC-derived motor-neuron assays, but the public stable file identifiers used in the PandaOmics paper are still not accession-coded in a way PrioriTx can ingest directly yet
+- the official Answer ALS release notes now explicitly document versioned level-4 transcriptomics and proteomics matrices plus participant-keyed metadata, including examples such as `AnswerALS-290-T-v1-release5_rna-counts-matrix.csv`
+- however, the live release-package download path currently returns `403 Forbidden` without an authenticated portal session, so PrioriTx should treat `Answer ALS` as a real but access-controlled source rather than as a missing or hypothetical dataset
 
 ## PrioriTx implication
 
@@ -122,4 +124,4 @@ Interpretation:
 
 - ALS is now benchmarked honestly with real CNS transcriptomics and genetics
 - but the eight rescue genes still look more like downstream functional hits than easy first-wave public-expression hits
-- the next high-value ALS additions are now `Answer ALS` reconstruction and, if needed, more phenotype-aware ALS subgrouping rather than more unsplit GEO accessions
+- the next high-value ALS additions are now authenticated `Answer ALS` reconstruction and, if needed, more phenotype-aware ALS subgrouping rather than more unsplit GEO accessions
