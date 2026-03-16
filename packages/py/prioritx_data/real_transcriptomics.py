@@ -88,6 +88,7 @@ REAL_CONTRASTS: dict[str, dict[str, str]] = {
         "dataset_id": "GSE122649",
         "case_label": "sals",
         "control_label": "non-neurological control",
+        "aggregate_subject_level": "true",
         "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE122nnn/GSE122649/suppl/GSE122649_RAW.tar",
     },
     "als_cns_dimn_extended_gse122649": {
@@ -97,7 +98,30 @@ REAL_CONTRASTS: dict[str, dict[str, str]] = {
         "dataset_id": "GSE122649",
         "case_label": "sals",
         "control_label": "non-neurological control",
+        "aggregate_subject_level": "true",
         "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE122nnn/GSE122649/suppl/GSE122649_RAW.tar",
+    },
+    "als_cns_dimn_extended_gse124439_fcx": {
+        "source_type": "geo_tar_rnaseq_counts",
+        "series_accession": "GSE124439",
+        "benchmark_id": "als_pandaomics",
+        "dataset_id": "GSE124439_fcx",
+        "case_label": "als spectrum mnd",
+        "control_label": "non-neurological control",
+        "tissue_label": "frontal cortex",
+        "aggregate_subject_level": "false",
+        "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE124nnn/GSE124439/suppl/GSE124439_RAW.tar",
+    },
+    "als_cns_dimn_extended_gse124439_motor": {
+        "source_type": "geo_tar_rnaseq_counts",
+        "series_accession": "GSE124439",
+        "benchmark_id": "als_pandaomics",
+        "dataset_id": "GSE124439_motor",
+        "case_label": "als spectrum mnd",
+        "control_label": "non-neurological control",
+        "tissue_label": "motor cortex",
+        "aggregate_subject_level": "false",
+        "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE124nnn/GSE124439/suppl/GSE124439_RAW.tar",
     },
     "als_cns_dimn_extended_gse67196_c9_fcx": {
         "source_type": "geo_symbol_count_matrix",
@@ -550,6 +574,8 @@ def _filter_samples_by_tissue(samples: list[GeoSample], tissue_label: str | None
         sample
         for sample in samples
         if expected in sample.metadata.get("tissue", "").lower()
+        or expected in sample.metadata.get("cns subregion", "").lower()
+        or expected in sample.metadata.get("source_name", "").lower()
         or expected in sample.phenotype.lower()
         or expected in sample.title.lower()
     ]
@@ -1332,12 +1358,21 @@ def _load_supplement_expression_matrix_contrast(config: dict[str, str], contrast
 def _load_tar_rnaseq_count_contrast(config: dict[str, str], contrast_id: str) -> list[dict[str, Any]]:
     series_text = load_text_with_cache(_series_matrix_url(config["series_accession"]), namespace="geo_cache")
     samples = parse_geo_series_samples(series_text)
-    selected_samples = _select_samples(samples, config["case_label"]) + _select_samples(samples, config["control_label"])
+    case_samples_from_series = _filter_samples_by_tissue(
+        _select_samples(samples, config["case_label"]),
+        config.get("tissue_label"),
+    )
+    control_samples_from_series = _filter_samples_by_tissue(
+        _select_samples(samples, config["control_label"]),
+        config.get("tissue_label"),
+    )
+    selected_samples = case_samples_from_series + control_samples_from_series
     if not selected_samples:
         raise ValueError(f"Failed to recover case/control samples for {contrast_id}")
 
     tar_bytes = load_bytes_with_cache(config["supplementary_url"], namespace="geo_cache")
     symbol_to_gene = load_hgnc_symbol_reverse_map()
+    aggregate_subject_level = config.get("aggregate_subject_level", "false").lower() == "true"
     subject_counts: dict[str, dict[str, Any]] = {}
     with tarfile.open(fileobj=io.BytesIO(tar_bytes), mode="r:") as archive:
         members = {
@@ -1346,15 +1381,15 @@ def _load_tar_rnaseq_count_contrast(config: dict[str, str], contrast_id: str) ->
             if member.isfile() and member.name.endswith("_counts.txt.gz")
         }
         for sample in selected_samples:
-            subject_id = _gse122649_subject_id(sample)
-            if subject_id is None:
-                continue
             member = next((member for name, member in members.items() if name.startswith(f"{sample.geo_accession}_")), None)
             if member is None:
                 continue
             raw_counts = parse_symbol_count_text(
                 gzip.decompress(archive.extractfile(member).read()).decode("utf-8", "ignore")
             )
+            subject_id = _gse122649_subject_id(sample) if aggregate_subject_level else sample.geo_accession
+            if aggregate_subject_level and subject_id is None:
+                continue
             bucket = subject_counts.setdefault(
                 subject_id,
                 {
@@ -1425,10 +1460,15 @@ def _load_tar_rnaseq_count_contrast(config: dict[str, str], contrast_id: str) ->
             titles.extend(provenance.get("source_sample_titles", []))
         record["provenance"]["source_kind"] = "geo_tar_symbol_counts"
         record["provenance"]["supplementary_url"] = config["supplementary_url"]
-        record["provenance"]["analysis_notes"] = (
-            "Computed from GEO tarball per-sample symbol count tables aggregated to subject level across replicate libraries, then analyzed with log2(CPM+1) Welch t-tests and BH FDR."
-        )
-        record["provenance"]["aggregated_subject_level"] = True
+        if aggregate_subject_level:
+            record["provenance"]["analysis_notes"] = (
+                "Computed from GEO tarball per-sample symbol count tables aggregated to subject level across replicate libraries, then analyzed with log2(CPM+1) Welch t-tests and BH FDR."
+            )
+        else:
+            record["provenance"]["analysis_notes"] = (
+                "Computed directly from GEO tarball per-sample symbol count tables after tissue-specific sample selection, then analyzed with log2(CPM+1) Welch t-tests and BH FDR."
+            )
+        record["provenance"]["aggregated_subject_level"] = aggregate_subject_level
         record["provenance"]["source_geo_accessions"] = accessions
         record["provenance"]["source_sample_titles"] = titles
     return records

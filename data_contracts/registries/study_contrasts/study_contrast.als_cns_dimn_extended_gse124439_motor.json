@@ -1,0 +1,28 @@
+{
+  "schema_version": "0.1.0",
+  "contrast_id": "als_cns_dimn_extended_gse124439_motor",
+  "benchmark_id": "als_pandaomics",
+  "dataset_ids": [
+    "GSE124439_motor"
+  ],
+  "modality": "transcriptomics",
+  "tissue": "motor_cortex",
+  "case_definition": "Sporadic ALS motor cortex samples",
+  "control_definition": "Non-neurological control motor cortex samples",
+  "analysis_unit": "bulk_rna",
+  "comparison_label": "GSE124439_motor curated first-wave contrast",
+  "sample_counts": {
+    "case": 80,
+    "control": 8
+  },
+  "inclusion_rule_summary": "Included in curated subset als_cns_dimn_extended because split from gse124439 table 1 motor-cortex sporadic als comparison using the public per-sample rna-seq count tarball.",
+  "exclusion_rule_summary": "Restrict the contrast to the curated case and control arms defined in configs/subsets/als_cns_dimn_extended.yaml.",
+  "leakage_risks": [
+    "Do not use downstream validation outcomes as discovery-time features."
+  ],
+  "status": "verified",
+  "provenance": {
+    "primary_source_url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE124439_motor",
+    "notes": "Generated from curated subset als_cns_dimn_extended."
+  }
+}

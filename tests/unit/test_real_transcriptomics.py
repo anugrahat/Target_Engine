@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from prioritx_data.real_transcriptomics import (
     GeoSample,
+    _filter_samples_by_tissue,
     _gse122649_subject_id,
     _gse67196_sample_column_from_title,
     _gse76220_sample_column_from_title,
@@ -68,6 +69,26 @@ class RealTranscriptomicsTests(unittest.TestCase):
         self.assertEqual("ALS001_fcx", _gse67196_sample_column_from_title("1_FCX"))
         self.assertEqual("ALS007_cereb", _gse67196_sample_column_from_title("7_cereb_b"))
         self.assertIsNone(_gse67196_sample_column_from_title("bad_title"))
+
+    def test_filters_samples_by_cns_subregion(self) -> None:
+        samples = [
+            GeoSample(
+                geo_accession="GSM1",
+                title="sample one",
+                phenotype="ALS Spectrum MND",
+                supplementary_gene_url="",
+                metadata={"cns subregion": "Frontal Cortex"},
+            ),
+            GeoSample(
+                geo_accession="GSM2",
+                title="sample two",
+                phenotype="ALS Spectrum MND",
+                supplementary_gene_url="",
+                metadata={"cns subregion": "Motor Cortex (Medial)"},
+            ),
+        ]
+        filtered = _filter_samples_by_tissue(samples, "motor cortex")
+        self.assertEqual(["GSM2"], [sample.geo_accession for sample in filtered])
 
     def test_parses_gene_count_text(self) -> None:
         text = (self.fixture_dir / "gsm_norm1.genes.txt").read_text()

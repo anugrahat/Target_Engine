@@ -52,7 +52,9 @@ Note:
   - `GSE67196_c9_cereb`
   - `GSE67196_sals_fcx`
   - `GSE67196_sals_cereb`
-- `GSE124439` still requires the same per-comparison treatment before admission.
+- PrioriTx has now also split `GSE124439` into the two paper-disclosed sporadic ALS contrasts using the public per-sample RNA-seq count tarball and series metadata:
+  - `GSE124439_fcx`
+  - `GSE124439_motor`
 - GEO accession metadata indicates `GSE19332` is CHMP2B-related ALS rather than sporadic ALS, so PrioriTx should encode it as a familial/mechanistic ALS cohort instead of a generic sALS cohort.
 
 ## Validation evidence
@@ -100,9 +102,9 @@ The right benchmark label is not a single nominated gene from the paper narrativ
 
 ## Current live PrioriTx baseline
 
-After wiring the first four real accession-backed ALS CNS cohorts (`GSE68605`, `GSE20589`, `GSE76220`, and `GSE122649`) and then adding the split `GSE67196` exploratory contrasts, the current PrioriTx baseline is still modest:
+After wiring the first four real accession-backed ALS CNS cohorts (`GSE68605`, `GSE20589`, `GSE76220`, and `GSE122649`) and then adding the split `GSE67196` and `GSE124439` exploratory contrasts, the current PrioriTx baseline is still modest:
 
-- cross-contrast ALS CNS transcriptomics currently yields only `2` supported genes in the strict core subset and still only `2` supported genes in the broader exploratory subset
+- cross-contrast ALS CNS transcriptomics currently yields only `2` supported genes in the strict core subset and still only `2` supported genes in the broader exploratory subset even after adding the split `GSE124439` cortex comparisons
 - none of the eight Drosophila rescue genes are yet supported by either live cross-contrast transcriptomics layer
 - the bounded fused ALS ranking is still dominated by established ALS genetics hits such as `SOD1`, `TUBA4A`, `FUS`, `TARDBP`, `OPTN`, `SQSTM1`, `TBK1`, and `CHMP2B`
 - all eight Drosophila rescue genes are measured in the live `GSE122649` subject-collapsed RNA-seq cohort, but they remain weak and non-significant there rather than missing outright
@@ -111,10 +113,13 @@ After wiring the first four real accession-backed ALS CNS cohorts (`GSE68605`, `
   - `fALS C9ORF72 cerebellum`: `8` case / `8` control
   - `sALS frontal cortex`: `10` case / `9` control
   - `sALS cerebellum`: `10` case / `8` control
-- despite those added cohorts, the exploratory ALS transcriptomics layer still does not elevate the eight rescue genes above the current support threshold
+- both split `GSE124439` contrasts are now live and recover the expected paper-level sample counts:
+  - `sALS frontal cortex`: `65` case / `9` control
+  - `sALS motor cortex`: `80` case / `8` control
+- despite those added cohorts, the exploratory ALS transcriptomics layer still does not elevate the eight rescue genes above the current support threshold, and the only supported genes remain `SERPINA3` and `CDKN2B-AS1`
 
 Interpretation:
 
 - ALS is now benchmarked honestly with real CNS transcriptomics and genetics
 - but the eight rescue genes still look more like downstream functional hits than easy first-wave public-expression hits
-- the next high-value ALS additions are likely split handling for `GSE124439`, and eventually `Answer ALS` once the public identifiers and subgroup manifests are reconstructed cleanly
+- the next high-value ALS additions are now `Answer ALS` reconstruction and, if needed, more phenotype-aware ALS subgrouping rather than more unsplit GEO accessions

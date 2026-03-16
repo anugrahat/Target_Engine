@@ -8,7 +8,7 @@
   "inclusion_principles": [
     "Preserve the accession-coded CNS core as the strict benchmark anchor.",
     "Add induced motor-neuron evidence only when the paper provides explicit counts and the provenance gaps are clearly flagged.",
-    "Keep unresolved multi-comparison CNS accessions excluded until per-comparison manifests are modeled explicitly."
+    "Keep unresolved multi-comparison CNS accessions excluded until per-comparison manifests are modeled explicitly; split `GSE67196` and `GSE124439` comparisons are now admitted."
   ],
   "included_datasets": [
     {
@@ -132,6 +132,30 @@
       "reason": "Split from GSE67196 Table 1 cerebellar sporadic ALS comparison using the public rawcount matrix."
     },
     {
+      "id": "GSE124439_fcx",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Sporadic ALS frontal cortex samples",
+      "control_definition": "Non-neurological control frontal cortex samples",
+      "sample_counts": {
+        "case": 65,
+        "control": 9
+      },
+      "reason": "Split from GSE124439 Table 1 frontal-cortex sporadic ALS comparison using the public per-sample RNA-seq count tarball."
+    },
+    {
+      "id": "GSE124439_motor",
+      "source": "GEO",
+      "selection_mode": "direct",
+      "case_definition": "Sporadic ALS motor cortex samples",
+      "control_definition": "Non-neurological control motor cortex samples",
+      "sample_counts": {
+        "case": 80,
+        "control": 8
+      },
+      "reason": "Split from GSE124439 Table 1 motor-cortex sporadic ALS comparison using the public per-sample RNA-seq count tarball."
+    },
+    {
       "id": "Answer ALS transcriptomics",
       "source": "Answer ALS",
       "selection_mode": "requires_subsetting",
@@ -160,10 +184,6 @@
     {
       "id": "A-MEXP-2246",
       "reason": "Control-reference accession for the E-MTAB-1925 comparison rather than a standalone ALS discovery cohort."
-    },
-    {
-      "id": "GSE124439",
-      "reason": "Frontal and motor cortex comparisons are bundled under one accession and should be split into per-comparison manifests before admission."
     }
   ],
   "notes": "This exploratory subset broadens ALS context with induced motor-neuron evidence while keeping unresolved public-identifier gaps explicit."
