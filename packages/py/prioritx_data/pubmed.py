@@ -16,7 +16,7 @@ HGNC_COMPLETE_SET_URL = "https://storage.googleapis.com/public-download-files/hg
 BENCHMARK_DISEASE_TERMS: dict[str, tuple[str, ...]] = {
     "ipf_tnik": ("idiopathic pulmonary fibrosis", "IPF"),
     "hcc_cdk20": ("hepatocellular carcinoma", "HCC"),
-    "als": ("amyotrophic lateral sclerosis", "ALS"),
+    "als_pandaomics": ("amyotrophic lateral sclerosis", "ALS"),
     "ad_phase_separation": ("Alzheimer disease", "Alzheimer's disease", "AD"),
 }
 

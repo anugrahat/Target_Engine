@@ -22,6 +22,8 @@
     "default_subset_id": { "type": "string" },
     "exploratory_subset_id": { "type": ["string", "null"] },
     "indication_name": { "type": "string" },
+    "recovery_tier": { "type": ["string", "null"] },
+    "recovery_tier_note": { "type": ["string", "null"] },
     "target_assertions": {
       "type": "array",
       "minItems": 1,

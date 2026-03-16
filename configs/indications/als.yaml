@@ -47,7 +47,10 @@ datasets:
     control_group: matched_control
     sample_counts: null
     status: verified
-    notes: Used in multiple tissue-specific comparisons in Table 1.
+    notes: >
+      Used in multiple tissue-specific comparisons in Table 1:
+      cerebellum fALS_C9orf72 8/8, frontal cortex fALS_C9orf72 8/9,
+      cerebellum sALS 10/8, frontal cortex sALS 10/9.
   - id: GSE68605
     source: GEO
     role: discovery_cns
@@ -93,19 +96,21 @@ datasets:
     control_group: matched_control
     sample_counts: null
     status: verified
-    notes: Used in multiple tissue-specific comparisons in Table 1.
+    notes: >
+      Used in multiple tissue-specific comparisons in Table 1:
+      frontal cortex sALS 65/9 and motor cortex sALS 80/8.
   - id: GSE19332
     source: GEO
     role: discovery_cns
     modality: transcriptomics
     tissue: motor_neurons
-    case_group: sALS
+    case_group: fALS_CHMP2B
     control_group: matched_control
     sample_counts:
       case: 3
       control: 7
     status: verified
-    notes: Explicitly listed in Table 1.
+    notes: Explicitly listed in Table 1; accession metadata identifies the case arm as CHMP2B-mutant ALS rather than sporadic ALS.
   - id: GSE76220
     source: GEO
     role: discovery_cns
@@ -125,9 +130,14 @@ datasets:
     tissue: induced_motor_neurons
     case_group: fALS_or_sALS
     control_group: control
-    sample_counts: null
+    sample_counts:
+      case: 135
+      control: 31
     status: partial
-    notes: Explicitly named in the paper, but not accession-coded in the verified text.
+    notes: >
+      Explicitly named in the paper, but not accession-coded in the verified text.
+      Table 1 reports 25 fALS cases versus 31 controls and 110 sALS cases versus
+      31 controls for the diMN transcriptomic analysis.
   - id: Answer ALS proteomics
     source: Answer ALS
     role: discovery_diMN
@@ -135,9 +145,14 @@ datasets:
     tissue: induced_motor_neurons
     case_group: fALS_or_sALS
     control_group: control
-    sample_counts: null
+    sample_counts:
+      case: 135
+      control: 31
     status: partial
-    notes: Explicitly named in the paper, but not accession-coded in the verified text.
+    notes: >
+      Explicitly named in the paper, but not accession-coded in the verified text.
+      Table 1 reports 25 fALS cases versus 31 controls and 110 sALS cases versus
+      31 controls for the diMN proteomic analysis.
 validation:
   experimental:
     - Drosophila c9ALS rescue experiments

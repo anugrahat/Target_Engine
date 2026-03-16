@@ -18,7 +18,7 @@ OPEN_TARGETS_DISEASES: dict[str, dict[str, str]] = {
         "disease_id": "EFO_0000182",
         "disease_name": "hepatocellular carcinoma",
     },
-    "als": {
+    "als_pandaomics": {
         "disease_id": "MONDO_0004976",
         "disease_name": "amyotrophic lateral sclerosis",
     },

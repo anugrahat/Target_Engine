@@ -16,6 +16,8 @@ Current curated candidates:
 - `ipf_lung_extended.yaml`
 - `hcc_adult_core.yaml`
 - `hcc_adult_extended.yaml`
+- `als_cns_core.yaml`
+- `als_cns_dimn_extended.yaml`
 
 Validate with:
 

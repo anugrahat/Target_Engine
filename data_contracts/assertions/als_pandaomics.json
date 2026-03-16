@@ -1,0 +1,141 @@
+{
+  "schema_version": "0.1.0",
+  "assertion_status": "source_backed",
+  "benchmark_id": "als_pandaomics",
+  "default_subset_id": "als_cns_core",
+  "exploratory_subset_id": "als_cns_dimn_extended",
+  "indication_name": "amyotrophic lateral sclerosis",
+  "recovery_tier": "experimental_validation_set",
+  "recovery_tier_note": "ALS is source-backed and experimentally anchored by Drosophila rescue, but the current first-wave benchmark should treat those rescue outcomes as evaluation labels only, not discovery-time features.",
+  "target_assertions": [
+    {
+      "gene_symbol": "KCNB2",
+      "ensembl_gene_id": null,
+      "label_tier": "tier2_translational_support",
+      "assertion_kind": "source_backed_positive_target",
+      "source": {
+        "title": "Identification of Therapeutic Targets for Amyotrophic Lateral Sclerosis Using PandaOmics",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9273868/",
+        "note": "KCNB2 was one of eight previously unreported genes reported to rescue neurodegeneration in the Drosophila C9ORF72 ALS model."
+      },
+      "forbidden_feature_leakage": [
+        "Drosophila rescue outcome",
+        "discussion-section retrospective rationale",
+        "later validation interpretation from the same paper"
+      ]
+    },
+    {
+      "gene_symbol": "KCNS3",
+      "ensembl_gene_id": null,
+      "label_tier": "tier2_translational_support",
+      "assertion_kind": "source_backed_positive_target",
+      "source": {
+        "title": "Identification of Therapeutic Targets for Amyotrophic Lateral Sclerosis Using PandaOmics",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9273868/",
+        "note": "KCNS3 was one of eight previously unreported genes reported to rescue neurodegeneration in the Drosophila C9ORF72 ALS model."
+      },
+      "forbidden_feature_leakage": [
+        "Drosophila rescue outcome",
+        "discussion-section retrospective rationale",
+        "later validation interpretation from the same paper"
+      ]
+    },
+    {
+      "gene_symbol": "ADRA2B",
+      "ensembl_gene_id": null,
+      "label_tier": "tier2_translational_support",
+      "assertion_kind": "source_backed_positive_target",
+      "source": {
+        "title": "Identification of Therapeutic Targets for Amyotrophic Lateral Sclerosis Using PandaOmics",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9273868/",
+        "note": "ADRA2B was one of eight previously unreported genes reported to rescue neurodegeneration in the Drosophila C9ORF72 ALS model."
+      },
+      "forbidden_feature_leakage": [
+        "Drosophila rescue outcome",
+        "discussion-section retrospective rationale",
+        "later validation interpretation from the same paper"
+      ]
+    },
+    {
+      "gene_symbol": "NR3C1",
+      "ensembl_gene_id": null,
+      "label_tier": "tier2_translational_support",
+      "assertion_kind": "source_backed_positive_target",
+      "source": {
+        "title": "Identification of Therapeutic Targets for Amyotrophic Lateral Sclerosis Using PandaOmics",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9273868/",
+        "note": "NR3C1 was one of eight previously unreported genes reported to rescue neurodegeneration in the Drosophila C9ORF72 ALS model."
+      },
+      "forbidden_feature_leakage": [
+        "Drosophila rescue outcome",
+        "discussion-section retrospective rationale",
+        "later validation interpretation from the same paper"
+      ]
+    },
+    {
+      "gene_symbol": "P2RY14",
+      "ensembl_gene_id": null,
+      "label_tier": "tier2_translational_support",
+      "assertion_kind": "source_backed_positive_target",
+      "source": {
+        "title": "Identification of Therapeutic Targets for Amyotrophic Lateral Sclerosis Using PandaOmics",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9273868/",
+        "note": "P2RY14 was one of eight previously unreported genes reported to rescue neurodegeneration in the Drosophila C9ORF72 ALS model."
+      },
+      "forbidden_feature_leakage": [
+        "Drosophila rescue outcome",
+        "discussion-section retrospective rationale",
+        "later validation interpretation from the same paper"
+      ]
+    },
+    {
+      "gene_symbol": "PPP3CB",
+      "ensembl_gene_id": null,
+      "label_tier": "tier2_translational_support",
+      "assertion_kind": "source_backed_positive_target",
+      "source": {
+        "title": "Identification of Therapeutic Targets for Amyotrophic Lateral Sclerosis Using PandaOmics",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9273868/",
+        "note": "PPP3CB was one of eight previously unreported genes reported to rescue neurodegeneration in the Drosophila C9ORF72 ALS model."
+      },
+      "forbidden_feature_leakage": [
+        "Drosophila rescue outcome",
+        "discussion-section retrospective rationale",
+        "later validation interpretation from the same paper"
+      ]
+    },
+    {
+      "gene_symbol": "PTPRC",
+      "ensembl_gene_id": null,
+      "label_tier": "tier2_translational_support",
+      "assertion_kind": "source_backed_positive_target",
+      "source": {
+        "title": "Identification of Therapeutic Targets for Amyotrophic Lateral Sclerosis Using PandaOmics",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9273868/",
+        "note": "PTPRC was one of eight previously unreported genes reported to rescue neurodegeneration in the Drosophila C9ORF72 ALS model."
+      },
+      "forbidden_feature_leakage": [
+        "Drosophila rescue outcome",
+        "discussion-section retrospective rationale",
+        "later validation interpretation from the same paper"
+      ]
+    },
+    {
+      "gene_symbol": "RARA",
+      "ensembl_gene_id": null,
+      "label_tier": "tier2_translational_support",
+      "assertion_kind": "source_backed_positive_target",
+      "source": {
+        "title": "Identification of Therapeutic Targets for Amyotrophic Lateral Sclerosis Using PandaOmics",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9273868/",
+        "note": "RARA was one of eight previously unreported genes reported to rescue neurodegeneration in the Drosophila C9ORF72 ALS model."
+      },
+      "forbidden_feature_leakage": [
+        "Drosophila rescue outcome",
+        "discussion-section retrospective rationale",
+        "later validation interpretation from the same paper"
+      ]
+    }
+  ],
+  "notes": "Use the eight Drosophila rescue genes as source-backed ALS benchmark positives while keeping fly rescue strictly out of discovery-time features."
+}

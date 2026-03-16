@@ -1,0 +1,55 @@
+{
+  "schema_version": "0.1.0",
+  "dataset_id": "als_cns_core_gse76220",
+  "benchmark_id": "als_pandaomics",
+  "accession": {
+    "database": "GEO",
+    "id": "GSE76220",
+    "url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE76220"
+  },
+  "source_publication_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9273868/",
+  "disease_context": {
+    "name": "amyotrophic lateral sclerosis",
+    "ontology_ids": {
+      "efo": null,
+      "mesh": null,
+      "doid": null,
+      "open_targets": "MONDO_0004976"
+    }
+  },
+  "modality": "transcriptomics",
+  "tissue": "spinal_motor_neurons",
+  "platform": null,
+  "species": "Homo sapiens",
+  "role": "discovery_cns",
+  "sample_units": "bulk_sample",
+  "cohorts": [
+    {
+      "cohort_id": "case",
+      "label": "Sporadic ALS spinal motor neurons",
+      "case_control_status": "case",
+      "disease_subtype": null,
+      "sample_count": 13,
+      "status": "verified",
+      "notes": "Explicit Table 1 spinal motor-neuron comparison with accession-coded counts."
+    },
+    {
+      "cohort_id": "control",
+      "label": "Matched control spinal motor neurons",
+      "case_control_status": "control",
+      "disease_subtype": null,
+      "sample_count": 8,
+      "status": "verified",
+      "notes": null
+    }
+  ],
+  "manifest_status": "verified",
+  "provenance": {
+    "primary_source_url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE76220",
+    "extraction_method": "generated_from_curated_subset_config",
+    "extracted_from_section": "configs/subsets/als_cns_core.yaml"
+  },
+  "open_questions": [
+    "Cross-check the generated registry record against the benchmark-pack note: Explicitly listed in Table 1."
+  ]
+}

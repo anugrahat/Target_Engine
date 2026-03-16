@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import csv
+import gzip
 import functools
 import io
 import math
 import re
+import tarfile
 from zipfile import ZipFile
 from xml.etree import ElementTree as ET
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from statistics import fmean, stdev
 from typing import Any
 
@@ -17,6 +19,86 @@ from prioritx_data.hgnc import load_hgnc_symbol_map, load_hgnc_symbol_reverse_ma
 from prioritx_data.remote_cache import load_bytes_with_cache, load_text_with_cache, normalize_geo_url
 
 REAL_CONTRASTS: dict[str, dict[str, str]] = {
+    "als_cns_core_gse68605": {
+        "source_type": "geo_microarray_series",
+        "series_accession": "GSE68605",
+        "platform_accession": "GPL570",
+        "design": "unpaired",
+        "benchmark_id": "als_pandaomics",
+        "dataset_id": "GSE68605",
+        "case_label": "als due to mutated c9orf72",
+        "control_label": "neurologically healthy, non-disease control",
+    },
+    "als_cns_dimn_extended_gse68605": {
+        "source_type": "geo_microarray_series",
+        "series_accession": "GSE68605",
+        "platform_accession": "GPL570",
+        "design": "unpaired",
+        "benchmark_id": "als_pandaomics",
+        "dataset_id": "GSE68605",
+        "case_label": "als due to mutated c9orf72",
+        "control_label": "neurologically healthy, non-disease control",
+    },
+    "als_cns_core_gse20589": {
+        "source_type": "geo_microarray_series",
+        "series_accession": "GSE20589",
+        "platform_accession": "GPL570",
+        "design": "unpaired",
+        "benchmark_id": "als_pandaomics",
+        "dataset_id": "GSE20589",
+        "case_label": "sod1 mutant individual",
+        "control_label": "neurologically normal control",
+    },
+    "als_cns_dimn_extended_gse20589": {
+        "source_type": "geo_microarray_series",
+        "series_accession": "GSE20589",
+        "platform_accession": "GPL570",
+        "design": "unpaired",
+        "benchmark_id": "als_pandaomics",
+        "dataset_id": "GSE20589",
+        "case_label": "sod1 mutant individual",
+        "control_label": "neurologically normal control",
+    },
+    "als_cns_core_gse76220": {
+        "source_type": "geo_supplement_expression_matrix",
+        "series_accession": "GSE76220",
+        "benchmark_id": "als_pandaomics",
+        "dataset_id": "GSE76220",
+        "case_label": "sals",
+        "control_label": "control",
+        "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE76nnn/GSE76220/suppl/GSE76220_ALS_LCM_RPKM.txt.gz",
+        "gene_symbol_column": "Gene_symbol",
+        "sample_id_strategy": "gse76220_title_suffix",
+    },
+    "als_cns_dimn_extended_gse76220": {
+        "source_type": "geo_supplement_expression_matrix",
+        "series_accession": "GSE76220",
+        "benchmark_id": "als_pandaomics",
+        "dataset_id": "GSE76220",
+        "case_label": "sals",
+        "control_label": "control",
+        "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE76nnn/GSE76220/suppl/GSE76220_ALS_LCM_RPKM.txt.gz",
+        "gene_symbol_column": "Gene_symbol",
+        "sample_id_strategy": "gse76220_title_suffix",
+    },
+    "als_cns_core_gse122649": {
+        "source_type": "geo_tar_rnaseq_counts",
+        "series_accession": "GSE122649",
+        "benchmark_id": "als_pandaomics",
+        "dataset_id": "GSE122649",
+        "case_label": "sals",
+        "control_label": "non-neurological control",
+        "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE122nnn/GSE122649/suppl/GSE122649_RAW.tar",
+    },
+    "als_cns_dimn_extended_gse122649": {
+        "source_type": "geo_tar_rnaseq_counts",
+        "series_accession": "GSE122649",
+        "benchmark_id": "als_pandaomics",
+        "dataset_id": "GSE122649",
+        "case_label": "sals",
+        "control_label": "non-neurological control",
+        "supplementary_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE122nnn/GSE122649/suppl/GSE122649_RAW.tar",
+    },
     "ipf_lung_core_gse52463": {
         "source_type": "geo_rnaseq_counts",
         "series_accession": "GSE52463",
@@ -164,6 +246,7 @@ class GeoSample:
     title: str
     phenotype: str
     supplementary_gene_url: str
+    metadata: dict[str, str] = field(default_factory=dict)
 
 
 XLSX_NS = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
@@ -231,7 +314,10 @@ def parse_geo_series_samples(series_matrix_text: str) -> list[GeoSample]:
             characteristics[index].get("phenotype")
             or characteristics[index].get("disease")
             or characteristics[index].get("disease state")
+            or characteristics[index].get("disease status")
             or characteristics[index].get("diagnosis")
+            or characteristics[index].get("patient group")
+            or characteristics[index].get("mutation")
             or characteristics[index].get("tissue type")
             or characteristics[index].get("tissue")
             or ""
@@ -242,6 +328,7 @@ def parse_geo_series_samples(series_matrix_text: str) -> list[GeoSample]:
                 title=titles[index],
                 phenotype=phenotype,
                 supplementary_gene_url=normalize_geo_url(supplementary_urls[index]),
+                metadata=dict(characteristics[index]),
             )
         )
     return samples
@@ -255,6 +342,29 @@ def parse_gene_count_text(gene_count_text: str) -> dict[str, int]:
             continue
         gene_id, raw_count = line.split("\t", 1)
         counts[gene_id] = int(raw_count)
+    return counts
+
+
+def parse_symbol_count_text(gene_count_text: str) -> dict[str, int]:
+    """Parse a symbol-keyed GEO count table."""
+    counts: dict[str, int] = {}
+    lines = gene_count_text.splitlines()
+    for index, line in enumerate(lines):
+        if not line.strip():
+            continue
+        if index == 0 and line.lower().startswith("gene/te"):
+            continue
+        cells = _parse_tsv_row(line)
+        if len(cells) < 2:
+            continue
+        symbol = cells[0].strip().strip('"')
+        raw_count = cells[1].strip().strip('"')
+        if not symbol:
+            continue
+        try:
+            counts[symbol] = int(raw_count)
+        except ValueError:
+            continue
     return counts
 
 
@@ -375,7 +485,11 @@ def parse_geo_platform_gene_symbols(platform_text: str) -> dict[str, str]:
 
 def _select_samples(samples: list[GeoSample], label: str) -> list[GeoSample]:
     expected = label.lower()
-    return [sample for sample in samples if expected in sample.phenotype.lower()]
+    return [
+        sample
+        for sample in samples
+        if expected in sample.phenotype.lower() or expected in sample.title.lower()
+    ]
 
 
 def _library_sizes(sample_counts: dict[str, dict[str, int]]) -> dict[str, int]:
@@ -1055,6 +1169,199 @@ def _load_xlsx_expression_matrix_contrast(config: dict[str, str], contrast_id: s
     )
 
 
+def _gse76220_sample_column_from_title(title: str) -> str | None:
+    match = re.match(r"(?P<subject>\d+)_(?P<label>Control|sALS)$", title, re.IGNORECASE)
+    if not match:
+        return None
+    suffix = "c" if match.group("label").lower() == "control" else "a"
+    return f"{match.group('subject')}{suffix}"
+
+
+def _gse122649_subject_id(sample: GeoSample) -> str | None:
+    subject_id = sample.metadata.get("subject id")
+    if subject_id:
+        return subject_id
+    match = re.search(r"\b(JR\d+)\b", sample.title, re.IGNORECASE)
+    return match.group(1) if match else None
+
+
+def _load_supplement_expression_matrix_contrast(config: dict[str, str], contrast_id: str) -> list[dict[str, Any]]:
+    series_text = load_text_with_cache(_series_matrix_url(config["series_accession"]), namespace="geo_cache")
+    samples = parse_geo_series_samples(series_text)
+    selected_samples = _select_samples(samples, config["case_label"]) + _select_samples(samples, config["control_label"])
+    if not selected_samples:
+        raise ValueError(f"Failed to recover case/control samples for {contrast_id}")
+
+    if config.get("sample_id_strategy") != "gse76220_title_suffix":
+        raise ValueError(f"Unsupported supplement sample-id strategy for {contrast_id}")
+
+    sample_column_names = []
+    filtered_samples = []
+    for sample in selected_samples:
+        column_name = _gse76220_sample_column_from_title(sample.title)
+        if column_name is None:
+            continue
+        filtered_samples.append(sample)
+        sample_column_names.append(column_name)
+    if not filtered_samples:
+        raise ValueError(f"Failed to map supplement matrix columns for {contrast_id}")
+
+    reader = csv.DictReader(
+        io.StringIO(load_text_with_cache(config["supplementary_url"], namespace="geo_cache")),
+        delimiter="\t",
+    )
+    available_columns = set(reader.fieldnames or [])
+    aligned_samples = []
+    aligned_column_names = []
+    for sample, column_name in zip(filtered_samples, sample_column_names):
+        if column_name in available_columns:
+            aligned_samples.append(sample)
+            aligned_column_names.append(column_name)
+    if not aligned_samples:
+        raise ValueError(f"Failed to align supplement matrix columns for {contrast_id}")
+
+    symbol_to_gene = load_hgnc_symbol_reverse_map()
+    gene_rows = []
+    for row in reader:
+        symbol = (row.get(config["gene_symbol_column"], "") or "").strip()
+        if not symbol:
+            continue
+        gene = symbol_to_gene.get(symbol)
+        if gene is None:
+            continue
+        try:
+            values = [float(row[column_name]) for column_name in aligned_column_names]
+        except (KeyError, TypeError, ValueError):
+            continue
+        gene_rows.append(
+            {
+                "ensembl_gene_id": gene["ensembl_gene_id"],
+                "symbol": gene["symbol"],
+                "hgnc_id": gene["hgnc_id"],
+                "source_symbols": [symbol],
+                "values": values,
+            }
+        )
+    return build_expression_matrix_gene_statistics(
+        contrast_id=contrast_id,
+        benchmark_id=config["benchmark_id"],
+        dataset_id=config["dataset_id"],
+        case_label=config["case_label"],
+        control_label=config["control_label"],
+        samples=aligned_samples,
+        sample_ids=[sample.geo_accession for sample in aligned_samples],
+        gene_rows=gene_rows,
+        paired_design=False,
+        source_kind="geo_expression_supplement_matrix",
+        analysis_notes="Computed from the official GEO supplementary RPKM matrix using sample-title to supplement-column alignment and Welch t-tests over the public expression matrix.",
+    )
+
+
+def _load_tar_rnaseq_count_contrast(config: dict[str, str], contrast_id: str) -> list[dict[str, Any]]:
+    series_text = load_text_with_cache(_series_matrix_url(config["series_accession"]), namespace="geo_cache")
+    samples = parse_geo_series_samples(series_text)
+    selected_samples = _select_samples(samples, config["case_label"]) + _select_samples(samples, config["control_label"])
+    if not selected_samples:
+        raise ValueError(f"Failed to recover case/control samples for {contrast_id}")
+
+    tar_bytes = load_bytes_with_cache(config["supplementary_url"], namespace="geo_cache")
+    symbol_to_gene = load_hgnc_symbol_reverse_map()
+    subject_counts: dict[str, dict[str, Any]] = {}
+    with tarfile.open(fileobj=io.BytesIO(tar_bytes), mode="r:") as archive:
+        members = {
+            member.name: member
+            for member in archive.getmembers()
+            if member.isfile() and member.name.endswith("_counts.txt.gz")
+        }
+        for sample in selected_samples:
+            subject_id = _gse122649_subject_id(sample)
+            if subject_id is None:
+                continue
+            member = next((member for name, member in members.items() if name.startswith(f"{sample.geo_accession}_")), None)
+            if member is None:
+                continue
+            raw_counts = parse_symbol_count_text(
+                gzip.decompress(archive.extractfile(member).read()).decode("utf-8", "ignore")
+            )
+            bucket = subject_counts.setdefault(
+                subject_id,
+                {
+                    "phenotype": sample.phenotype,
+                    "counts": {},
+                    "sample_geo_accessions": [],
+                    "sample_titles": [],
+                },
+            )
+            bucket["sample_geo_accessions"].append(sample.geo_accession)
+            bucket["sample_titles"].append(sample.title)
+            for symbol, count in raw_counts.items():
+                gene = symbol_to_gene.get(symbol)
+                if gene is None:
+                    continue
+                ensembl_gene_id = gene["ensembl_gene_id"]
+                bucket["counts"][ensembl_gene_id] = bucket["counts"].get(ensembl_gene_id, 0) + count
+
+    case_samples = []
+    control_samples = []
+    sample_counts: dict[str, dict[str, int]] = {}
+    subject_provenance: dict[str, dict[str, list[str]]] = {}
+    for subject_id, bucket in subject_counts.items():
+        synthetic_accession = f"{config['dataset_id']}:{subject_id}"
+        synthetic_sample = GeoSample(
+            geo_accession=synthetic_accession,
+            title=subject_id,
+            phenotype=bucket["phenotype"],
+            supplementary_gene_url=config["supplementary_url"],
+            metadata={"subject id": subject_id},
+        )
+        sample_counts[synthetic_accession] = bucket["counts"]
+        subject_provenance[synthetic_accession] = {
+            "source_geo_accessions": bucket["sample_geo_accessions"],
+            "source_sample_titles": bucket["sample_titles"],
+        }
+        if config["case_label"] in bucket["phenotype"].lower():
+            case_samples.append(synthetic_sample)
+        elif config["control_label"] in bucket["phenotype"].lower():
+            control_samples.append(synthetic_sample)
+
+    if not case_samples or not control_samples:
+        raise ValueError(f"Failed to aggregate case/control subjects for {contrast_id}")
+
+    records = build_real_gene_statistics(
+        contrast_id=contrast_id,
+        benchmark_id=config["benchmark_id"],
+        dataset_id=config["dataset_id"],
+        case_samples=case_samples,
+        control_samples=control_samples,
+        sample_counts=sample_counts,
+    )
+    symbol_map = load_hgnc_symbol_map()
+    for record in records:
+        mapping = symbol_map.get(record["gene"]["ensembl_gene_id"])
+        if mapping is not None:
+            record["gene"]["symbol"] = mapping["symbol"]
+            record["gene"]["hgnc_id"] = mapping["hgnc_id"]
+            record["provenance"]["identifier_mapping"] = {
+                "source": "HGNC complete set",
+                "hgnc_id": mapping["hgnc_id"],
+            }
+        accessions = []
+        titles = []
+        for synthetic_accession in record["provenance"]["sample_geo_accessions"]:
+            provenance = subject_provenance.get(synthetic_accession, {})
+            accessions.extend(provenance.get("source_geo_accessions", []))
+            titles.extend(provenance.get("source_sample_titles", []))
+        record["provenance"]["source_kind"] = "geo_tar_symbol_counts"
+        record["provenance"]["supplementary_url"] = config["supplementary_url"]
+        record["provenance"]["analysis_notes"] = (
+            "Computed from GEO tarball per-sample symbol count tables aggregated to subject level across replicate libraries, then analyzed with log2(CPM+1) Welch t-tests and BH FDR."
+        )
+        record["provenance"]["aggregated_subject_level"] = True
+        record["provenance"]["source_geo_accessions"] = accessions
+        record["provenance"]["source_sample_titles"] = titles
+    return records
+
+
 def _load_microarray_series_contrast(config: dict[str, str], contrast_id: str) -> list[dict[str, Any]]:
     series_text = load_text_with_cache(_series_matrix_url(config["series_accession"]), namespace="geo_cache")
     samples = parse_geo_series_samples(series_text)
@@ -1091,6 +1398,10 @@ def load_real_geo_gene_statistics(contrast_id: str) -> list[dict[str, Any]]:
         return _load_rnaseq_matrix_count_contrast(config, contrast_id)
     if source_type == "geo_xlsx_expression_matrix":
         return _load_xlsx_expression_matrix_contrast(config, contrast_id)
+    if source_type == "geo_supplement_expression_matrix":
+        return _load_supplement_expression_matrix_contrast(config, contrast_id)
+    if source_type == "geo_tar_rnaseq_counts":
+        return _load_tar_rnaseq_count_contrast(config, contrast_id)
     if source_type == "geo_microarray_series":
         return _load_microarray_series_contrast(config, contrast_id)
     raise ValueError(f"Unsupported real contrast source type: {source_type}")

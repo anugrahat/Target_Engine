@@ -1,0 +1,28 @@
+{
+  "schema_version": "0.1.0",
+  "contrast_id": "als_cns_dimn_extended_e_mtab_1925",
+  "benchmark_id": "als_pandaomics",
+  "dataset_ids": [
+    "E-MTAB-1925"
+  ],
+  "modality": "transcriptomics",
+  "tissue": "motor_cortex",
+  "case_definition": "Motor cortex samples from familial ALS C9ORF72 expansion carriers",
+  "control_definition": "Matched control motor cortex samples",
+  "analysis_unit": "bulk_rna",
+  "comparison_label": "E-MTAB-1925 curated first-wave contrast",
+  "sample_counts": {
+    "case": 3,
+    "control": 3
+  },
+  "inclusion_rule_summary": "Included in curated subset als_cns_dimn_extended because explicit table 1 motor cortex comparison with accession-coded case and control counts.",
+  "exclusion_rule_summary": "Restrict the contrast to the curated case and control arms defined in configs/subsets/als_cns_dimn_extended.yaml.",
+  "leakage_risks": [
+    "Do not use downstream validation outcomes as discovery-time features."
+  ],
+  "status": "verified",
+  "provenance": {
+    "primary_source_url": "https://www.ebi.ac.uk/biostudies/arrayexpress/studies/E-MTAB-1925",
+    "notes": "Generated from curated subset als_cns_dimn_extended."
+  }
+}

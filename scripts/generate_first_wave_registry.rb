@@ -51,13 +51,20 @@ end
 FileUtils.mkdir_p(DATASET_OUT_DIR)
 FileUtils.mkdir_p(CONTRAST_OUT_DIR)
 
+indication_by_benchmark_id = Dir[INDICATIONS_DIR.join("*.yaml").to_s].each_with_object({}) do |path, memo|
+  indication = Psych.safe_load(File.read(path), aliases: false)
+  benchmark_id = indication["benchmark_id"]
+  memo[benchmark_id] = indication if benchmark_id
+end
+
 subset_paths = Dir[SUBSETS_DIR.join("*.yaml").to_s].sort
 generated = []
 
 subset_paths.each do |subset_path|
   subset = Psych.safe_load(File.read(subset_path), aliases: false)
-  indication_path = INDICATIONS_DIR.join("#{subset['benchmark_id']}.yaml")
-  indication = Psych.safe_load(File.read(indication_path), aliases: false)
+  indication = indication_by_benchmark_id.fetch(subset["benchmark_id"]) do
+    raise KeyError, "No indication config found for benchmark #{subset['benchmark_id']}"
+  end
 
   dataset_index = indication.fetch("datasets", []).each_with_object({}) do |dataset, memo|
     memo[dataset["id"]] = dataset

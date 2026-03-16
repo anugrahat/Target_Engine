@@ -9,7 +9,7 @@ Rank the first candidate indication case studies by how ready they are for Prior
 | Case | Primary paper | Manifest readiness | Why |
 | --- | --- | --- | --- |
 | IPF / TNIK | Nature Biotechnology 2024 | High | The discovery GEO cohorts are explicitly listed in `Data availability`, and validation is unusually strong. |
-| ALS | Frontiers in Aging Neuroscience 2022 | Medium-High | Multiple accession-coded datasets are named, and the disease framing is cleaner than the public HCC pool, though part of the stack is consortium-based (`Answer ALS`). |
+| ALS | Frontiers in Aging Neuroscience 2022 | Medium-High | Multiple accession-coded datasets are named, the first-wave CNS core can now be contract-scaffolded cleanly, and the main remaining gap is stable public recovery for `Answer ALS`. |
 | HCC / CDK20 | Chemical Science 2023 | Medium-Low | The cohorts are public, but the live PrioriTx stack still recovers CDK20 only as a weak mechanistic/stress-test target, not a strong public discovery-time hit. |
 | AD / phase separation | PNAS 2023 | Medium | The paper is scientifically useful and exposes structured supplements, but accession-level recovery is still unresolved. |
 
@@ -47,6 +47,12 @@ Rank the first candidate indication case studies by how ready they are for Prior
 
 - reconstruct sample contrasts and verify how `1133` disease and `674` healthy-control samples are distributed across the 10 cohorts
 - decide whether the benchmark should use the paper's full heterogeneous pool or a curated HCC-only subset
+
+### ALS
+
+- keep the first-wave core restricted to accession-coded CNS cohorts with explicit counts
+- model `Answer ALS` as exploratory-only until stable public identifiers and per-subtype manifests are recovered
+- treat the eight Drosophila rescue genes as evaluation labels only, not discovery-time features
 
 ### AD
 

@@ -15,7 +15,7 @@ class HttpApiTests(unittest.TestCase):
     def test_benchmarks_route(self) -> None:
         status, payload = handle_get("/benchmarks", {})
         self.assertEqual(200, status)
-        self.assertEqual(2, len(payload["items"]))
+        self.assertEqual(3, len(payload["items"]))
 
     def test_benchmark_dashboard_summary_route(self) -> None:
         mocked_result = {"benchmark_count": 2, "items": [{"benchmark_id": "ipf_tnik"}]}

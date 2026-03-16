@@ -1,0 +1,28 @@
+{
+  "schema_version": "0.1.0",
+  "contrast_id": "als_cns_core_gse122649",
+  "benchmark_id": "als_pandaomics",
+  "dataset_ids": [
+    "GSE122649"
+  ],
+  "modality": "transcriptomics",
+  "tissue": "motor_cortex",
+  "case_definition": "Sporadic ALS motor cortex samples",
+  "control_definition": "Matched control motor cortex samples",
+  "analysis_unit": "bulk_rna",
+  "comparison_label": "GSE122649 curated first-wave contrast",
+  "sample_counts": {
+    "case": 26,
+    "control": 12
+  },
+  "inclusion_rule_summary": "Included in curated subset als_cns_core because explicit table 1 sals motor cortex comparison with accession-coded counts.",
+  "exclusion_rule_summary": "Restrict the contrast to the curated case and control arms defined in configs/subsets/als_cns_core.yaml.",
+  "leakage_risks": [
+    "Do not use downstream validation outcomes as discovery-time features."
+  ],
+  "status": "verified",
+  "provenance": {
+    "primary_source_url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE122649",
+    "notes": "Generated from curated subset als_cns_core."
+  }
+}

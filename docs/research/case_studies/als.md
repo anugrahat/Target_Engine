@@ -45,6 +45,9 @@ The paper explicitly names these ALS datasets or data resources:
 Note:
 
 - In the verified paper text, `Answer ALS` is explicitly named as a data source but is not represented as a GEO accession in the same table.
+- Table 1 also reports explicit diMN sample counts for `Answer ALS`: `25` familial ALS versus `31` controls and `110` sporadic ALS versus `31` controls for both transcriptomic and proteomic analyses.
+- `GSE67196` and `GSE124439` are useful but bundle multiple tissue-specific comparisons under one accession, so PrioriTx should not treat them as clean one-line first-wave contrasts without per-comparison manifests.
+- GEO accession metadata indicates `GSE19332` is CHMP2B-related ALS rather than sporadic ALS, so PrioriTx should encode it as a familial/mechanistic ALS cohort instead of a generic sALS cohort.
 
 ## Validation evidence
 
@@ -75,7 +78,31 @@ Reason:
 - exact inclusion and exclusion logic across those accessions still needs to be reconstructed from methods and any supplementary material
 - sample grouping and covariate handling should be extracted before building the final manifest
 - validation labels should be encoded carefully so Drosophila rescue is not over-generalized to human translational success
+- the public `GSE76220` RPKM supplement appears to expose `12` ALS columns against the paper-level `13`-case comparison, so the missing sample alignment should be documented before treating that cohort as fully resolved
+- `Answer ALS` is now clearly distributed through the official portal with structured omics data levels and participant-linked iPSC-derived motor-neuron assays, but the public stable file identifiers used in the PandaOmics paper are still not accession-coded in a way PrioriTx can ingest directly yet
 
 ## PrioriTx implication
 
-ALS is a strong benchmark candidate, but it no longer looks uniquely cleaner than IPF or HCC after the latest verification pass.
+ALS is a strong benchmark candidate and is now suitable for first-wave benchmark scaffolding in two layers:
+
+- `als_cns_core`
+  - conservative accession-coded CNS-only subset
+- `als_cns_dimn_extended`
+  - exploratory extension that admits `Answer ALS` induced motor-neuron resources with explicit provenance gaps
+
+The right benchmark label is not a single nominated gene from the paper narrative. It is the set of eight previously unreported genes reported to rescue neurodegeneration in the Drosophila C9ORF72 ALS model, treated as evaluation labels only.
+
+## Current live PrioriTx baseline
+
+After wiring the first four real accession-backed ALS CNS cohorts (`GSE68605`, `GSE20589`, `GSE76220`, and `GSE122649`), the current PrioriTx baseline is still modest:
+
+- cross-contrast ALS CNS transcriptomics currently yields only `2` supported genes in the strict core subset
+- none of the eight Drosophila rescue genes are yet supported by that cross-contrast transcriptomics layer
+- the bounded fused ALS ranking is still dominated by established ALS genetics hits such as `SOD1`, `TUBA4A`, `FUS`, `TARDBP`, `OPTN`, `SQSTM1`, `TBK1`, and `CHMP2B`
+- all eight Drosophila rescue genes are measured in the live `GSE122649` subject-collapsed RNA-seq cohort, but they remain weak and non-significant there rather than missing outright
+
+Interpretation:
+
+- ALS is now benchmarked honestly with real CNS transcriptomics and genetics
+- but the eight rescue genes still look more like downstream functional hits than easy first-wave public-expression hits
+- the next high-value ALS additions are likely split handling for `GSE67196` and `GSE124439`, and eventually `Answer ALS` once the public identifiers and subgroup manifests are reconstructed cleanly

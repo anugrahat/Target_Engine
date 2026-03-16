@@ -1,0 +1,28 @@
+{
+  "schema_version": "0.1.0",
+  "contrast_id": "als_cns_dimn_extended_answer_als_proteomics",
+  "benchmark_id": "als_pandaomics",
+  "dataset_ids": [
+    "Answer ALS proteomics"
+  ],
+  "modality": "proteomics",
+  "tissue": "induced_motor_neurons",
+  "case_definition": "Familial or sporadic ALS induced motor-neuron proteomes",
+  "control_definition": "Control induced motor-neuron proteomes",
+  "analysis_unit": "proteomics",
+  "comparison_label": "Answer ALS proteomics curated first-wave contrast",
+  "sample_counts": {
+    "case": 135,
+    "control": 31
+  },
+  "inclusion_rule_summary": "Included in curated subset als_cns_dimn_extended because table 1 reports explicit dimn proteomic counts, but the exact public identifiers and per-subtype subset manifests still need stable recovery.",
+  "exclusion_rule_summary": "Restrict the contrast to the curated case and control arms defined in configs/subsets/als_cns_dimn_extended.yaml.",
+  "leakage_risks": [
+    "Do not use downstream validation outcomes as discovery-time features."
+  ],
+  "status": "partial",
+  "provenance": {
+    "primary_source_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9273868/",
+    "notes": "Generated from curated subset als_cns_dimn_extended."
+  }
+}

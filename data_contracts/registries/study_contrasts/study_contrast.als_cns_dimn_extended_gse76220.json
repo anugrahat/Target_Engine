@@ -1,0 +1,28 @@
+{
+  "schema_version": "0.1.0",
+  "contrast_id": "als_cns_dimn_extended_gse76220",
+  "benchmark_id": "als_pandaomics",
+  "dataset_ids": [
+    "GSE76220"
+  ],
+  "modality": "transcriptomics",
+  "tissue": "spinal_motor_neurons",
+  "case_definition": "Sporadic ALS spinal motor neurons",
+  "control_definition": "Matched control spinal motor neurons",
+  "analysis_unit": "bulk_rna",
+  "comparison_label": "GSE76220 curated first-wave contrast",
+  "sample_counts": {
+    "case": 13,
+    "control": 8
+  },
+  "inclusion_rule_summary": "Included in curated subset als_cns_dimn_extended because explicit table 1 spinal motor-neuron comparison with accession-coded counts.",
+  "exclusion_rule_summary": "Restrict the contrast to the curated case and control arms defined in configs/subsets/als_cns_dimn_extended.yaml.",
+  "leakage_risks": [
+    "Do not use downstream validation outcomes as discovery-time features."
+  ],
+  "status": "verified",
+  "provenance": {
+    "primary_source_url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE76220",
+    "notes": "Generated from curated subset als_cns_dimn_extended."
+  }
+}

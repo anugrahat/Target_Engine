@@ -1,0 +1,55 @@
+{
+  "schema_version": "0.1.0",
+  "dataset_id": "als_cns_dimn_extended_answer_als_transcriptomics",
+  "benchmark_id": "als_pandaomics",
+  "accession": {
+    "database": "Answer ALS",
+    "id": "Answer ALS transcriptomics",
+    "url": null
+  },
+  "source_publication_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9273868/",
+  "disease_context": {
+    "name": "amyotrophic lateral sclerosis",
+    "ontology_ids": {
+      "efo": null,
+      "mesh": null,
+      "doid": null,
+      "open_targets": "MONDO_0004976"
+    }
+  },
+  "modality": "transcriptomics",
+  "tissue": "induced_motor_neurons",
+  "platform": null,
+  "species": "Homo sapiens",
+  "role": "discovery_diMN",
+  "sample_units": "bulk_sample",
+  "cohorts": [
+    {
+      "cohort_id": "case",
+      "label": "Familial or sporadic ALS induced motor neurons",
+      "case_control_status": "case",
+      "disease_subtype": null,
+      "sample_count": 135,
+      "status": "partial",
+      "notes": "Table 1 reports explicit diMN transcriptomic counts, but the exact public identifiers and per-subtype subset manifests still need stable recovery."
+    },
+    {
+      "cohort_id": "control",
+      "label": "Control induced motor neurons",
+      "case_control_status": "control",
+      "disease_subtype": null,
+      "sample_count": 31,
+      "status": "partial",
+      "notes": null
+    }
+  ],
+  "manifest_status": "partial",
+  "provenance": {
+    "primary_source_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9273868/",
+    "extraction_method": "generated_from_curated_subset_config",
+    "extracted_from_section": "configs/subsets/als_cns_dimn_extended.yaml"
+  },
+  "open_questions": [
+    "Cross-check the generated registry record against the benchmark-pack note: Explicitly named in the paper, but not accession-coded in the verified text. Table 1 reports 25 fALS cases versus 31 controls and 110 sALS cases versus 31 controls for the diMN transcriptomic analysis.\n"
+  ]
+}
